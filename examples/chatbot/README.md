@@ -1,6 +1,6 @@
-# TinyAI On-Device Chatbot Example
+# Hyperion On-Device Chatbot Example
 
-This example demonstrates how to implement a memory-efficient chatbot using TinyAI on resource-constrained devices. The chatbot uses a small language model with efficient memory management to provide conversational capabilities while respecting strict memory limitations.
+This example demonstrates how to implement a memory-efficient chatbot using Hyperion on resource-constrained devices. The chatbot uses a small language model with efficient memory management to provide conversational capabilities while respecting strict memory limitations.
 
 ## Features
 
@@ -14,7 +14,7 @@ This example demonstrates how to implement a memory-efficient chatbot using Tiny
 
 ## Building the Example
 
-To build the chatbot example, ensure the `BUILD_EXAMPLES` option is set to `ON` when configuring TinyAI:
+To build the chatbot example, ensure the `BUILD_EXAMPLES` option is set to `ON` when configuring Hyperion:
 
 ```bash
 mkdir build && cd build
@@ -86,7 +86,7 @@ The context management system preserves conversation flow while respecting memor
 
 ## Model Support
 
-The chatbot example works with any language model compatible with TinyAI's interface, but is specifically optimized for:
+The chatbot example works with any language model compatible with Hyperion's interface, but is specifically optimized for:
 
 - Small language models (1-10M parameters)
 - Models quantized to 4 or 8 bits

@@ -1,6 +1,6 @@
 /**
  * @file progressive_loader.c
- * @brief Implementation of progressive model loading utilities for TinyAI
+ * @brief Implementation of progressive model loading utilities for Hyperion
  */
 
 #include "progressive_loader.h"
@@ -17,7 +17,7 @@
  */
 typedef struct {
     int              index;            /* Layer index */
-    TinyAILayerState state;            /* Current state */
+    HyperionLayerState state;            /* Current state */
     void            *weights;          /* Pointer to weights if loaded */
     size_t           size;             /* Size in bytes */
     int              precision;        /* Precision of weights (bits) */
@@ -30,16 +30,16 @@ typedef struct {
     int              dependent_count;  /* Number of dependents */
     double           avg_load_time;    /* Average time to load in milliseconds */
     int              load_count;       /* Number of times loaded */
-} TinyAILayerInfo;
+} HyperionLayerInfo;
 
 /**
  * Progressive loader structure
  */
-struct TinyAIProgressiveLoader {
-    TinyAIMappedModel            *mapped_model;        /* Underlying memory-mapped model */
+struct HyperionProgressiveLoader {
+    HyperionMappedModel            *mapped_model;        /* Underlying memory-mapped model */
     bool                          owns_mapped_model;   /* Whether we own the mapped model */
-    TinyAIProgressiveLoaderConfig config;              /* Configuration */
-    TinyAILayerInfo              *layers;              /* Array of layer information */
+    HyperionProgressiveLoaderConfig config;              /* Configuration */
+    HyperionLayerInfo              *layers;              /* Array of layer information */
     int                           layer_count;         /* Number of layers */
     size_t                        current_memory;      /* Current memory usage */
     size_t                        peak_memory;         /* Peak memory usage */
@@ -50,8 +50,8 @@ struct TinyAIProgressiveLoader {
     int                           history_pos;         /* Current position in history buffer */
     bool                          track_usage;         /* Whether to track usage patterns */
     clock_t                       last_timestamp;      /* Last operation timestamp */
-    TinyAIMemoryStats             stats;               /* Memory statistics */
-    TinyAILayerState             *layer_states;        /* Array of layer states */
+    HyperionMemoryStats             stats;               /* Memory statistics */
+    HyperionLayerState             *layer_states;        /* Array of layer states */
     void                         *layer_weights;       /* Array of layer weights */
     size_t                       *layer_sizes;         /* Array of layer sizes */
     float                        *layer_priorities;    /* Array of layer priorities */
@@ -62,7 +62,7 @@ struct TinyAIProgressiveLoader {
 /**
  * Default configuration
  */
-static const TinyAIProgressiveConfig DEFAULT_CONFIG = {.max_memory     = 1024 * 1024 * 1024, // 1GB
+static const HyperionProgressiveConfig DEFAULT_CONFIG = {.max_memory     = 1024 * 1024 * 1024, // 1GB
                                                        .min_memory     = 128 * 1024 * 1024, // 128MB
                                                        .load_threshold = 768 * 1024 * 1024, // 768MB
                                                        .unload_threshold =
@@ -84,13 +84,13 @@ static uint64_t get_timestamp_ms()
 /**
  * Create a default progressive loader configuration
  */
-TinyAIProgressiveLoaderConfig tinyaiCreateDefaultProgressiveLoaderConfig(void)
+HyperionProgressiveLoaderConfig hyperionCreateDefaultProgressiveLoaderConfig(void)
 {
-    TinyAIProgressiveLoaderConfig config;
+    HyperionProgressiveLoaderConfig config;
 
     config.max_memory_budget          = 1024 * 1024 * 1024; /* 1GB default */
     config.enable_layer_unloading     = true;
-    config.priority_strategy          = TINYAI_PRIORITY_LRU;
+    config.priority_strategy          = HYPERION_PRIORITY_LRU;
     config.prefetch_threshold         = 0.7f;
     config.max_prefetch_layers        = 2;
     config.enable_compression         = false;
@@ -103,24 +103,24 @@ TinyAIProgressiveLoaderConfig tinyaiCreateDefaultProgressiveLoaderConfig(void)
 /**
  * Create a progressive loader for a model
  */
-TinyAIProgressiveLoader *tinyaiCreateProgressiveLoader(const char                    *model_path,
-                                                       TinyAIProgressiveLoaderConfig *config)
+HyperionProgressiveLoader *hyperionCreateProgressiveLoader(const char                    *model_path,
+                                                       HyperionProgressiveLoaderConfig *config)
 {
     if (!model_path || !config) {
         return NULL;
     }
 
     /* Create a memory-mapped model loader with default configuration */
-    TinyAIMmapConfig   mmap_config  = tinyaiCreateDefaultMmapConfig();
-    TinyAIMappedModel *mapped_model = tinyaiOpenMappedModel(model_path, &mmap_config);
+    HyperionMmapConfig   mmap_config  = hyperionCreateDefaultMmapConfig();
+    HyperionMappedModel *mapped_model = hyperionOpenMappedModel(model_path, &mmap_config);
     if (!mapped_model) {
         return NULL;
     }
 
     /* Create the progressive loader from the mapped model */
-    TinyAIProgressiveLoader *loader = tinyaiCreateProgressiveLoaderFromMapped(mapped_model, config);
+    HyperionProgressiveLoader *loader = hyperionCreateProgressiveLoaderFromMapped(mapped_model, config);
     if (!loader) {
-        tinyaiCloseMappedModel(mapped_model);
+        hyperionCloseMappedModel(mapped_model);
         return NULL;
     }
 
@@ -133,23 +133,23 @@ TinyAIProgressiveLoader *tinyaiCreateProgressiveLoader(const char               
 /**
  * Create a progressive loader from an existing mapped model
  */
-TinyAIProgressiveLoader *
-tinyaiCreateProgressiveLoaderFromMapped(TinyAIMappedModel             *mapped_model,
-                                        TinyAIProgressiveLoaderConfig *config)
+HyperionProgressiveLoader *
+hyperionCreateProgressiveLoaderFromMapped(HyperionMappedModel             *mapped_model,
+                                        HyperionProgressiveLoaderConfig *config)
 {
     if (!mapped_model || !config) {
         return NULL;
     }
 
     /* Allocate the loader structure */
-    TinyAIProgressiveLoader *loader =
-        (TinyAIProgressiveLoader *)malloc(sizeof(TinyAIProgressiveLoader));
+    HyperionProgressiveLoader *loader =
+        (HyperionProgressiveLoader *)malloc(sizeof(HyperionProgressiveLoader));
     if (!loader) {
         return NULL;
     }
 
     /* Initialize the loader */
-    memset(loader, 0, sizeof(TinyAIProgressiveLoader));
+    memset(loader, 0, sizeof(HyperionProgressiveLoader));
     loader->mapped_model      = mapped_model;
     loader->owns_mapped_model = false;
     loader->config            = *config;
@@ -159,14 +159,14 @@ tinyaiCreateProgressiveLoaderFromMapped(TinyAIMappedModel             *mapped_mo
     loader->last_timestamp    = clock();
 
     /* Get layer count from mapped model */
-    loader->layer_count = tinyaiGetMappedLayerCount(mapped_model);
+    loader->layer_count = hyperionGetMappedLayerCount(mapped_model);
     if (loader->layer_count <= 0) {
         free(loader);
         return NULL;
     }
 
     /* Allocate layer information structures */
-    loader->layers = (TinyAILayerInfo *)malloc(loader->layer_count * sizeof(TinyAILayerInfo));
+    loader->layers = (HyperionLayerInfo *)malloc(loader->layer_count * sizeof(HyperionLayerInfo));
     if (!loader->layers) {
         free(loader);
         return NULL;
@@ -174,7 +174,7 @@ tinyaiCreateProgressiveLoaderFromMapped(TinyAIMappedModel             *mapped_mo
 
     /* Initialize layer information */
     for (int i = 0; i < loader->layer_count; i++) {
-        const TinyAILayerDescriptor *desc = tinyaiGetLayerDescriptor(mapped_model, i);
+        const HyperionLayerDescriptor *desc = hyperionGetLayerDescriptor(mapped_model, i);
         if (!desc) {
             free(loader->layers);
             free(loader);
@@ -182,7 +182,7 @@ tinyaiCreateProgressiveLoaderFromMapped(TinyAIMappedModel             *mapped_mo
         }
 
         loader->layers[i].index            = i;
-        loader->layers[i].state            = TINYAI_LAYER_UNLOADED;
+        loader->layers[i].state            = HYPERION_LAYER_UNLOADED;
         loader->layers[i].weights          = NULL;
         loader->layers[i].size             = desc->size;
         loader->layers[i].precision        = desc->precision;
@@ -219,7 +219,7 @@ tinyaiCreateProgressiveLoaderFromMapped(TinyAIMappedModel             *mapped_mo
 /**
  * Free progressive loader and release all resources
  */
-void tinyaiFreeProgressiveLoader(TinyAIProgressiveLoader *loader)
+void hyperionFreeProgressiveLoader(HyperionProgressiveLoader *loader)
 {
     if (!loader) {
         return;
@@ -247,7 +247,7 @@ void tinyaiFreeProgressiveLoader(TinyAIProgressiveLoader *loader)
 
     /* Close mapped model if we own it */
     if (loader->owns_mapped_model && loader->mapped_model) {
-        tinyaiCloseMappedModel(loader->mapped_model);
+        hyperionCloseMappedModel(loader->mapped_model);
     }
 
     /* Free the loader structure */
@@ -257,23 +257,23 @@ void tinyaiFreeProgressiveLoader(TinyAIProgressiveLoader *loader)
 /**
  * Load a specific layer from the model
  */
-bool tinyaiLoadModelLayer(TinyAIProgressiveLoader *loader, int layer_index)
+bool hyperionLoadModelLayer(HyperionProgressiveLoader *loader, int layer_index)
 {
     if (!loader || layer_index < 0 || layer_index >= loader->layer_count) {
         return false;
     }
 
-    TinyAILayerInfo *layer = &loader->layers[layer_index];
+    HyperionLayerInfo *layer = &loader->layers[layer_index];
 
     /* Check if already loaded */
-    if (layer->state == TINYAI_LAYER_LOADED) {
+    if (layer->state == HYPERION_LAYER_LOADED) {
         /* Update access statistics */
-        tinyaiUpdateLayerAccessStats(loader, layer_index);
+        hyperionUpdateLayerAccess(loader, layer_index);
         return true;
     }
 
     /* Update state */
-    layer->state = TINYAI_LAYER_LOADING;
+    layer->state = HYPERION_LAYER_LOADING;
 
     /* Check if we need to free memory first */
     if (loader->config.enable_layer_unloading &&
@@ -284,12 +284,12 @@ bool tinyaiLoadModelLayer(TinyAIProgressiveLoader *loader, int layer_index)
 
             /* Find layer to unload based on priority strategy */
             switch (loader->config.priority_strategy) {
-            case TINYAI_PRIORITY_LRU: {
+            case HYPERION_PRIORITY_LRU: {
                 /* Find least recently used layer */
                 uint64_t oldest_time = UINT64_MAX;
                 for (int i = 0; i < loader->layer_count; i++) {
-                    if (loader->layers[i].state == TINYAI_LAYER_LOADED && i != layer_index &&
-                        tinyaiCanUnloadLayer(loader, i) &&
+                    if (loader->layers[i].state == HYPERION_LAYER_LOADED && i != layer_index &&
+                        hyperionCanUnloadLayer(loader, i) &&
                         loader->layers[i].last_access_time < oldest_time) {
                         oldest_time     = loader->layers[i].last_access_time;
                         layer_to_unload = i;
@@ -297,12 +297,12 @@ bool tinyaiLoadModelLayer(TinyAIProgressiveLoader *loader, int layer_index)
                 }
                 break;
             }
-            case TINYAI_PRIORITY_MFU: {
+            case HYPERION_PRIORITY_MFU: {
                 /* Find most frequently used layer */
                 uint64_t lowest_count = UINT64_MAX;
                 for (int i = 0; i < loader->layer_count; i++) {
-                    if (loader->layers[i].state == TINYAI_LAYER_LOADED && i != layer_index &&
-                        tinyaiCanUnloadLayer(loader, i) &&
+                    if (loader->layers[i].state == HYPERION_LAYER_LOADED && i != layer_index &&
+                        hyperionCanUnloadLayer(loader, i) &&
                         loader->layers[i].access_count < lowest_count) {
                         lowest_count    = loader->layers[i].access_count;
                         layer_to_unload = i;
@@ -310,12 +310,12 @@ bool tinyaiLoadModelLayer(TinyAIProgressiveLoader *loader, int layer_index)
                 }
                 break;
             }
-            case TINYAI_PRIORITY_CUSTOM: {
+            case HYPERION_PRIORITY_CUSTOM: {
                 /* Find layer with lowest custom priority */
                 float lowest_priority = FLT_MAX;
                 for (int i = 0; i < loader->layer_count; i++) {
-                    if (loader->layers[i].state == TINYAI_LAYER_LOADED && i != layer_index &&
-                        tinyaiCanUnloadLayer(loader, i) &&
+                    if (loader->layers[i].state == HYPERION_LAYER_LOADED && i != layer_index &&
+                        hyperionCanUnloadLayer(loader, i) &&
                         loader->layers[i].custom_priority < lowest_priority) {
                         lowest_priority = loader->layers[i].custom_priority;
                         layer_to_unload = i;
@@ -326,8 +326,8 @@ bool tinyaiLoadModelLayer(TinyAIProgressiveLoader *loader, int layer_index)
             default:
                 /* FIFO (sequential) - unload earliest loaded layer */
                 for (int i = 0; i < loader->layer_count; i++) {
-                    if (loader->layers[i].state == TINYAI_LAYER_LOADED && i != layer_index &&
-                        tinyaiCanUnloadLayer(loader, i)) {
+                    if (loader->layers[i].state == HYPERION_LAYER_LOADED && i != layer_index &&
+                        hyperionCanUnloadLayer(loader, i)) {
                         layer_to_unload = i;
                         break;
                     }
@@ -337,15 +337,15 @@ bool tinyaiLoadModelLayer(TinyAIProgressiveLoader *loader, int layer_index)
 
             /* If we found a layer to unload, do it */
             if (layer_to_unload >= 0) {
-                if (!tinyaiUnloadModelLayer(loader, layer_to_unload)) {
-                    layer->state = TINYAI_LAYER_UNLOADED;
+                if (!hyperionUnloadLayer(loader, layer_to_unload)) {
+                    layer->state = HYPERION_LAYER_UNLOADED;
                     return false;
                 }
             }
             else {
                 /* No more layers can be unloaded */
                 fprintf(stderr, "Cannot free enough memory to load layer %d\n", layer_index);
-                layer->state = TINYAI_LAYER_UNLOADED;
+                layer->state = HYPERION_LAYER_UNLOADED;
                 return false;
             }
         }
@@ -355,15 +355,15 @@ bool tinyaiLoadModelLayer(TinyAIProgressiveLoader *loader, int layer_index)
     clock_t start = clock();
 
     /* Get layer weights from mapped model */
-    void *weights = tinyaiGetLayerWeights(loader->mapped_model, layer_index);
+    void *weights = hyperionGetLayerWeights(loader->mapped_model, layer_index);
     if (!weights) {
-        layer->state = TINYAI_LAYER_UNLOADED;
+        layer->state = HYPERION_LAYER_UNLOADED;
         return false;
     }
 
     /* Update layer info */
     layer->weights = weights;
-    layer->state   = TINYAI_LAYER_LOADED;
+    layer->state   = HYPERION_LAYER_LOADED;
 
     /* Update memory usage */
     loader->current_memory += layer->size;
@@ -387,7 +387,7 @@ bool tinyaiLoadModelLayer(TinyAIProgressiveLoader *loader, int layer_index)
     layer->load_count++;
 
     /* Update access statistics */
-    tinyaiUpdateLayerAccessStats(loader, layer_index);
+    hyperionUpdateLayerAccess(loader, layer_index);
 
     return true;
 }
@@ -395,33 +395,33 @@ bool tinyaiLoadModelLayer(TinyAIProgressiveLoader *loader, int layer_index)
 /**
  * Unload a specific layer from the model
  */
-bool tinyaiUnloadModelLayer(TinyAIProgressiveLoader *loader, int layer_index)
+bool hyperionUnloadLayer(HyperionProgressiveLoader *loader, int layer_index)
 {
     if (!loader || layer_index < 0 || layer_index >= loader->layer_count) {
         return false;
     }
 
-    TinyAILayerInfo *layer = &loader->layers[layer_index];
+    HyperionLayerInfo *layer = &loader->layers[layer_index];
 
     /* Check if already unloaded */
-    if (layer->state != TINYAI_LAYER_LOADED) {
+    if (layer->state != HYPERION_LAYER_LOADED) {
         return true;
     }
 
     /* Check if the layer can be unloaded */
-    if (!tinyaiCanUnloadLayer(loader, layer_index)) {
+    if (!hyperionCanUnloadLayer(loader, layer_index)) {
         return false;
     }
 
     /* Update state */
-    layer->state = TINYAI_LAYER_UNLOADING;
+    layer->state = HYPERION_LAYER_UNLOADING;
 
     /* Release the layer weights in the mapped model */
-    tinyaiReleaseLayerWeights(loader->mapped_model, layer_index);
+    hyperionReleaseLayerWeights(loader->mapped_model, layer_index);
 
     /* Update layer info */
     layer->weights = NULL;
-    layer->state   = TINYAI_LAYER_UNLOADED;
+    layer->state   = HYPERION_LAYER_UNLOADED;
 
     /* Update memory usage */
     loader->current_memory -= layer->size;
@@ -432,29 +432,29 @@ bool tinyaiUnloadModelLayer(TinyAIProgressiveLoader *loader, int layer_index)
 /**
  * Get pointer to a layer's weights, loading from disk if necessary
  */
-void *tinyaiGetProgressiveLayerWeights(TinyAIProgressiveLoader *loader, int layer_index)
+void *hyperionGetProgressiveLayerWeights(HyperionProgressiveLoader *loader, int layer_index)
 {
     if (!loader || layer_index < 0 || layer_index >= loader->layer_count) {
         return NULL;
     }
 
-    TinyAILayerInfo *layer = &loader->layers[layer_index];
+    HyperionLayerInfo *layer = &loader->layers[layer_index];
 
     /* Load the layer if it's not already loaded */
-    if (layer->state != TINYAI_LAYER_LOADED) {
-        if (!tinyaiLoadModelLayer(loader, layer_index)) {
+    if (layer->state != HYPERION_LAYER_LOADED) {
+        if (!hyperionLoadModelLayer(loader, layer_index)) {
             return NULL;
         }
     }
     else {
         /* Update access statistics if already loaded */
-        tinyaiUpdateLayerAccessStats(loader, layer_index);
+        hyperionUpdateLayerAccess(loader, layer_index);
     }
 
     /* Prefetch next layers if enabled */
     if (loader->config.prefetch_threshold > 0 && loader->config.max_prefetch_layers > 0) {
         int  count              = 0;
-        int *layers_to_prefetch = tinyaiGetLayersToPreload(loader, layer_index, &count);
+        int *layers_to_prefetch = hyperionGetLayersToPreload(loader, layer_index, &count);
         if (layers_to_prefetch) {
             /* Limit the number of layers to prefetch based on configuration */
             count = (count > loader->config.max_prefetch_layers)
@@ -464,9 +464,9 @@ void *tinyaiGetProgressiveLayerWeights(TinyAIProgressiveLoader *loader, int laye
             /* Prefetch layers */
             for (int i = 0; i < count; i++) {
                 int next_layer = layers_to_prefetch[i];
-                if (loader->layers[next_layer].state == TINYAI_LAYER_UNLOADED) {
-                    loader->layers[next_layer].state = TINYAI_LAYER_PREFETCHING;
-                    tinyaiPrefetchLayerWeights(loader->mapped_model, next_layer);
+                if (loader->layers[next_layer].state == HYPERION_LAYER_UNLOADED) {
+                    loader->layers[next_layer].state = HYPERION_LAYER_PREFETCHING;
+                    hyperionPrefetchLayerWeights(loader->mapped_model, next_layer);
                 }
             }
 
@@ -480,10 +480,10 @@ void *tinyaiGetProgressiveLayerWeights(TinyAIProgressiveLoader *loader, int laye
 /**
  * Get memory usage statistics for progressive loader
  */
-TinyAIMemoryStats tinyaiGetProgressiveLoaderMemoryStats(const TinyAIProgressiveLoader *loader)
+HyperionMemoryStats hyperionGetProgressiveLoaderMemoryStats(const HyperionProgressiveLoader *loader)
 {
     if (!loader) {
-        TinyAIMemoryStats empty = {0};
+        HyperionMemoryStats empty = {0};
         return empty;
     }
     return loader->stats;
@@ -492,7 +492,7 @@ TinyAIMemoryStats tinyaiGetProgressiveLoaderMemoryStats(const TinyAIProgressiveL
 /**
  * Set memory budget for progressive loading
  */
-bool tinyaiSetProgressiveLoaderMemoryBudget(TinyAIProgressiveLoader *loader, size_t budget_bytes)
+bool hyperionSetProgressiveLoaderMemoryBudget(HyperionProgressiveLoader *loader, size_t budget_bytes)
 {
     if (!loader || budget_bytes == 0) {
         return false;
@@ -510,15 +510,15 @@ bool tinyaiSetProgressiveLoaderMemoryBudget(TinyAIProgressiveLoader *loader, siz
 
             /* Find largest loadable layer that can be freed */
             for (int i = 0; i < loader->layer_count; i++) {
-                if (loader->layers[i].state == TINYAI_LAYER_LOADED &&
-                    tinyaiCanUnloadLayer(loader, i) && loader->layers[i].size > largest_size) {
+                if (loader->layers[i].state == HYPERION_LAYER_LOADED &&
+                    hyperionCanUnloadLayer(loader, i) && loader->layers[i].size > largest_size) {
                     largest_size    = loader->layers[i].size;
                     layer_to_unload = i;
                 }
             }
 
             if (layer_to_unload >= 0) {
-                if (!tinyaiUnloadModelLayer(loader, layer_to_unload)) {
+                if (!hyperionUnloadLayer(loader, layer_to_unload)) {
                     /* Failed to unload */
                     return false;
                 }
@@ -540,7 +540,7 @@ bool tinyaiSetProgressiveLoaderMemoryBudget(TinyAIProgressiveLoader *loader, siz
 /**
  * Add a dependency between layers
  */
-bool tinyaiAddLayerDependency(TinyAIProgressiveLoader *loader, int dependent_layer,
+bool hyperionAddLayerDependency(HyperionProgressiveLoader *loader, int dependent_layer,
                               int dependency_layer)
 {
     if (!loader || dependent_layer < 0 || dependent_layer >= loader->layer_count ||
@@ -549,8 +549,8 @@ bool tinyaiAddLayerDependency(TinyAIProgressiveLoader *loader, int dependent_lay
         return false;
     }
 
-    TinyAILayerInfo *dependent  = &loader->layers[dependent_layer];
-    TinyAILayerInfo *dependency = &loader->layers[dependency_layer];
+    HyperionLayerInfo *dependent  = &loader->layers[dependent_layer];
+    HyperionLayerInfo *dependency = &loader->layers[dependency_layer];
 
     /* Check if dependency already exists */
     for (int i = 0; i < dependent->dependency_count; i++) {
@@ -587,16 +587,16 @@ bool tinyaiAddLayerDependency(TinyAIProgressiveLoader *loader, int dependent_lay
 /**
  * Check if a layer can be safely unloaded
  */
-bool tinyaiCanUnloadLayer(const TinyAIProgressiveLoader *loader, int layer_index)
+bool hyperionCanUnloadLayer(const HyperionProgressiveLoader *loader, int layer_index)
 {
     if (!loader || layer_index < 0 || layer_index >= loader->layer_count) {
         return false;
     }
 
-    const TinyAILayerInfo *layer = &loader->layers[layer_index];
+    const HyperionLayerInfo *layer = &loader->layers[layer_index];
 
     /* Can't unload if not loaded */
-    if (layer->state != TINYAI_LAYER_LOADED) {
+    if (layer->state != HYPERION_LAYER_LOADED) {
         return false;
     }
 
@@ -604,7 +604,7 @@ bool tinyaiCanUnloadLayer(const TinyAIProgressiveLoader *loader, int layer_index
     if (loader->config.enable_dependency_tracking) {
         for (int i = 0; i < layer->dependent_count; i++) {
             int dep_idx = layer->dependents[i];
-            if (loader->layers[dep_idx].state == TINYAI_LAYER_LOADED) {
+            if (loader->layers[dep_idx].state == HYPERION_LAYER_LOADED) {
                 return false;
             }
         }
@@ -616,13 +616,13 @@ bool tinyaiCanUnloadLayer(const TinyAIProgressiveLoader *loader, int layer_index
 /**
  * Update layer access statistics
  */
-void tinyaiUpdateLayerAccessStats(TinyAIProgressiveLoader *loader, int layer_index)
+void hyperionUpdateLayerAccess(HyperionProgressiveLoader *loader, int layer_index)
 {
     if (!loader || layer_index < 0 || layer_index >= loader->layer_count) {
         return;
     }
 
-    TinyAILayerInfo *layer = &loader->layers[layer_index];
+    HyperionLayerInfo *layer = &loader->layers[layer_index];
 
     /* Update access time and count */
     layer->last_access_time = ++loader->access_counter;
@@ -638,7 +638,7 @@ void tinyaiUpdateLayerAccessStats(TinyAIProgressiveLoader *loader, int layer_ind
 /**
  * Get next layers to preload based on usage patterns
  */
-int *tinyaiGetLayersToPreload(TinyAIProgressiveLoader *loader, int current_layer, int *count)
+int *hyperionGetLayersToPreload(HyperionProgressiveLoader *loader, int current_layer, int *count)
 {
     if (!loader || current_layer < 0 || current_layer >= loader->layer_count || !count) {
         *count = 0;
@@ -664,7 +664,7 @@ int *tinyaiGetLayersToPreload(TinyAIProgressiveLoader *loader, int current_layer
     }
 
     /* Analyze usage pattern */
-    TinyAIUsagePattern pattern = tinyaiGetUsagePattern(loader);
+    HyperionUsagePattern pattern = hyperionGetUsagePattern(loader);
 
     /* Allocate result array (max size we might need) */
     int *result = (int *)malloc(loader->config.max_prefetch_layers * sizeof(int));
@@ -673,7 +673,7 @@ int *tinyaiGetLayersToPreload(TinyAIProgressiveLoader *loader, int current_layer
     }
 
     switch (pattern) {
-    case TINYAI_USAGE_SEQUENTIAL:
+    case HYPERION_USAGE_SEQUENTIAL:
         /* Predict next N layers sequentially */
         for (int i = 0; i < loader->config.max_prefetch_layers; i++) {
             int next = current_layer + i + 1;
@@ -683,7 +683,7 @@ int *tinyaiGetLayersToPreload(TinyAIProgressiveLoader *loader, int current_layer
         }
         break;
 
-    case TINYAI_USAGE_REPEATED:
+    case HYPERION_USAGE_REPEATED:
         /* Find most frequently accessed layers that aren't loaded */
         {
             /* Create array of layers with access counts */
@@ -703,7 +703,7 @@ int *tinyaiGetLayersToPreload(TinyAIProgressiveLoader *loader, int current_layer
             /* Fill access counts */
             int count_idx = 0;
             for (int i = 0; i < loader->layer_count; i++) {
-                if (i != current_layer && loader->layers[i].state == TINYAI_LAYER_UNLOADED &&
+                if (i != current_layer && loader->layers[i].state == HYPERION_LAYER_UNLOADED &&
                     loader->layers[i].access_count > 0) {
                     access_counts[count_idx].layer_index  = i;
                     access_counts[count_idx].access_count = loader->layers[i].access_count;
@@ -731,7 +731,7 @@ int *tinyaiGetLayersToPreload(TinyAIProgressiveLoader *loader, int current_layer
         }
         break;
 
-    case TINYAI_USAGE_RANDOM:
+    case HYPERION_USAGE_RANDOM:
     default:
         /* For random access or unknown patterns, don't prefetch */
         *count = 0;
@@ -751,10 +751,10 @@ int *tinyaiGetLayersToPreload(TinyAIProgressiveLoader *loader, int current_layer
 /**
  * Get usage pattern for the model based on layer access history
  */
-TinyAIUsagePattern tinyaiGetUsagePattern(const TinyAIProgressiveLoader *loader)
+HyperionUsagePattern hyperionGetUsagePattern(const HyperionProgressiveLoader *loader)
 {
     if (!loader || !loader->track_usage || loader->access_counter < 10) {
-        return TINYAI_USAGE_UNKNOWN;
+        return HYPERION_USAGE_UNKNOWN;
     }
 
     /* Count sequential accesses in history */
@@ -784,20 +784,20 @@ TinyAIUsagePattern tinyaiGetUsagePattern(const TinyAIProgressiveLoader *loader)
     float repeat_ratio = (float)repeat_count / (float)loader->history_size;
 
     if (seq_ratio > 0.6f) {
-        return TINYAI_USAGE_SEQUENTIAL;
+        return HYPERION_USAGE_SEQUENTIAL;
     }
     else if (repeat_ratio > 0.4f) {
-        return TINYAI_USAGE_REPEATED;
+        return HYPERION_USAGE_REPEATED;
     }
     else {
-        return TINYAI_USAGE_RANDOM;
+        return HYPERION_USAGE_RANDOM;
     }
 }
 
 /**
  * Set custom priority for a layer
  */
-bool tinyaiSetLayerCustomPriority(TinyAIProgressiveLoader *loader, int layer_index, float priority)
+bool hyperionSetLayerCustomPriority(HyperionProgressiveLoader *loader, int layer_index, float priority)
 {
     if (!loader || layer_index < 0 || layer_index >= loader->layer_count) {
         return false;
@@ -810,10 +810,10 @@ bool tinyaiSetLayerCustomPriority(TinyAIProgressiveLoader *loader, int layer_ind
 /**
  * Get the current state of a layer
  */
-TinyAILayerState tinyaiGetLayerState(const TinyAIProgressiveLoader *loader, int layer_index)
+HyperionLayerState hyperionGetLayerState(const HyperionProgressiveLoader *loader, int layer_index)
 {
     if (!loader || layer_index < 0 || layer_index >= loader->layer_count) {
-        return TINYAI_LAYER_UNLOADED;
+        return HYPERION_LAYER_UNLOADED;
     }
 
     return loader->layers[layer_index].state;
@@ -822,18 +822,18 @@ TinyAILayerState tinyaiGetLayerState(const TinyAIProgressiveLoader *loader, int 
 /**
  * Optimize memory allocation across layers based on importance
  */
-bool tinyaiOptimizeLayerMemoryAllocation(TinyAIProgressiveLoader *loader)
+bool hyperionOptimizeLayerMemoryAllocation(HyperionProgressiveLoader *loader)
 {
     if (!loader) {
         return false;
     }
 
     /* Switch to custom priority strategy */
-    loader->config.priority_strategy = TINYAI_PRIORITY_CUSTOM;
+    loader->config.priority_strategy = HYPERION_PRIORITY_CUSTOM;
 
     /* Analyze access patterns and set priorities */
     for (int i = 0; i < loader->layer_count; i++) {
-        TinyAILayerInfo *layer = &loader->layers[i];
+        HyperionLayerInfo *layer = &loader->layers[i];
 
         /* Calculate priority based on access frequency and recency */
         float freq_score    = (float)layer->access_count / (float)(loader->access_counter + 1);
@@ -858,7 +858,7 @@ bool tinyaiOptimizeLayerMemoryAllocation(TinyAIProgressiveLoader *loader)
 /**
  * Preload a fixed sequence of layers
  */
-bool tinyaiPreloadLayers(TinyAIProgressiveLoader *loader, const int *layer_indices, int count)
+bool hyperionPreloadLayers(HyperionProgressiveLoader *loader, const int *layer_indices, int count)
 {
     if (!loader || !layer_indices || count <= 0) {
         return false;
@@ -870,8 +870,8 @@ bool tinyaiPreloadLayers(TinyAIProgressiveLoader *loader, const int *layer_indic
     for (int i = 0; i < count; i++) {
         int layer_idx = layer_indices[i];
         if (layer_idx >= 0 && layer_idx < loader->layer_count) {
-            if (loader->layers[layer_idx].state == TINYAI_LAYER_UNLOADED) {
-                if (!tinyaiLoadModelLayer(loader, layer_idx)) {
+            if (loader->layers[layer_idx].state == HYPERION_LAYER_UNLOADED) {
+                if (!hyperionLoadModelLayer(loader, layer_idx)) {
                     success = false;
                 }
             }
@@ -884,7 +884,7 @@ bool tinyaiPreloadLayers(TinyAIProgressiveLoader *loader, const int *layer_indic
 /**
  * Clear all loaded layers to free memory
  */
-bool tinyaiClearAllLayers(TinyAIProgressiveLoader *loader)
+bool hyperionClearAllLayers(HyperionProgressiveLoader *loader)
 {
     if (!loader) {
         return false;
@@ -894,8 +894,8 @@ bool tinyaiClearAllLayers(TinyAIProgressiveLoader *loader)
 
     /* Try to unload each loaded layer */
     for (int i = 0; i < loader->layer_count; i++) {
-        if (loader->layers[i].state == TINYAI_LAYER_LOADED) {
-            if (!tinyaiUnloadModelLayer(loader, i)) {
+        if (loader->layers[i].state == HYPERION_LAYER_LOADED) {
+            if (!hyperionUnloadLayer(loader, i)) {
                 success = false;
             }
         }
@@ -905,9 +905,9 @@ bool tinyaiClearAllLayers(TinyAIProgressiveLoader *loader)
 }
 
 // Create progressive loader
-TinyAIProgressiveLoader *tinyaiCreateProgressiveLoader(const TinyAIProgressiveConfig *config)
+HyperionProgressiveLoader *hyperionCreateProgressiveLoader(const HyperionProgressiveConfig *config)
 {
-    TinyAIProgressiveLoader *loader = malloc(sizeof(TinyAIProgressiveLoader));
+    HyperionProgressiveLoader *loader = malloc(sizeof(HyperionProgressiveLoader));
     if (!loader)
         return NULL;
 
@@ -935,8 +935,8 @@ TinyAIProgressiveLoader *tinyaiCreateProgressiveLoader(const TinyAIProgressiveCo
 }
 
 // Initialize layer information
-bool tinyaiInitLayerInfo(TinyAIProgressiveLoader *loader, size_t layer_id, size_t memory_usage,
-                         TinyAILayerPriority priority, const size_t *dependencies,
+bool hyperionInitLayerInfo(HyperionProgressiveLoader *loader, size_t layer_id, size_t memory_usage,
+                         HyperionLayerPriority priority, const size_t *dependencies,
                          size_t num_dependencies)
 {
     if (!loader || !dependencies || num_dependencies == 0)
@@ -945,7 +945,7 @@ bool tinyaiInitLayerInfo(TinyAIProgressiveLoader *loader, size_t layer_id, size_
     // Resize layers array if needed
     if (layer_id >= loader->layer_count) {
         size_t           new_size   = layer_id + 1;
-        TinyAILayerInfo *new_layers = realloc(loader->layers, new_size * sizeof(TinyAILayerInfo));
+        HyperionLayerInfo *new_layers = realloc(loader->layers, new_size * sizeof(HyperionLayerInfo));
         if (!new_layers)
             return false;
         loader->layers      = new_layers;
@@ -953,11 +953,11 @@ bool tinyaiInitLayerInfo(TinyAIProgressiveLoader *loader, size_t layer_id, size_
     }
 
     // Initialize layer info
-    TinyAILayerInfo *layer  = &loader->layers[layer_id];
+    HyperionLayerInfo *layer  = &loader->layers[layer_id];
     layer->index            = layer_id;
     layer->size             = memory_usage;
     layer->priority         = priority;
-    layer->state            = TINYAI_LAYER_UNLOADED;
+    layer->state            = HYPERION_LAYER_UNLOADED;
     layer->access_count     = 0;
     layer->last_access_time = 0;
 
@@ -973,61 +973,61 @@ bool tinyaiInitLayerInfo(TinyAIProgressiveLoader *loader, size_t layer_id, size_
 }
 
 // Request layer loading
-bool tinyaiRequestLayer(TinyAIProgressiveLoader *loader, size_t layer_id)
+bool hyperionRequestLayer(HyperionProgressiveLoader *loader, size_t layer_id)
 {
     if (!loader || layer_id >= loader->layer_count)
         return false;
 
-    TinyAILayerInfo *layer = &loader->layers[layer_id];
+    HyperionLayerInfo *layer = &loader->layers[layer_id];
 
     // Check if layer is already loaded
-    if (layer->state == TINYAI_LAYER_LOADED) {
-        tinyaiUpdateLayerAccessStats(loader, layer_id);
+    if (layer->state == HYPERION_LAYER_LOADED) {
+        hyperionUpdateLayerAccess(loader, layer_id);
         return true;
     }
 
     // Check if we can load the layer
-    if (!tinyaiCanLoadLayer(loader, layer_id)) {
+    if (!hyperionCanLoadLayer(loader, layer_id)) {
         return false;
     }
 
     // Load dependencies first
     for (size_t i = 0; i < layer->dependency_count; i++) {
         size_t dep_id = layer->dependencies[i];
-        if (!tinyaiRequestLayer(loader, dep_id)) {
+        if (!hyperionRequestLayer(loader, dep_id)) {
             return false;
         }
     }
 
     // Update layer state and memory usage
-    layer->state = TINYAI_LAYER_LOADED;
+    layer->state = HYPERION_LAYER_LOADED;
     loader->current_memory += layer->size;
     if (loader->current_memory > loader->peak_memory) {
         loader->peak_memory = loader->current_memory;
     }
 
-    tinyaiUpdateLayerAccessStats(loader, layer_id);
+    hyperionUpdateLayerAccess(loader, layer_id);
     return true;
 }
 
 // Unload layer
-bool tinyaiUnloadLayer(TinyAIProgressiveLoader *loader, size_t layer_id)
+bool hyperionUnloadLayer(HyperionProgressiveLoader *loader, size_t layer_id)
 {
     if (!loader || layer_id >= loader->layer_count)
         return false;
 
-    TinyAILayerInfo *layer = &loader->layers[layer_id];
+    HyperionLayerInfo *layer = &loader->layers[layer_id];
 
     // Check if layer is loaded
-    if (layer->state != TINYAI_LAYER_LOADED)
+    if (layer->state != HYPERION_LAYER_LOADED)
         return true;
 
     // Check if any dependent layers are loaded
     for (size_t i = 0; i < loader->layer_count; i++) {
         if (i == layer_id)
             continue;
-        TinyAILayerInfo *other = &loader->layers[i];
-        if (other->state == TINYAI_LAYER_LOADED) {
+        HyperionLayerInfo *other = &loader->layers[i];
+        if (other->state == HYPERION_LAYER_LOADED) {
             for (size_t j = 0; j < other->dependency_count; j++) {
                 if (other->dependencies[j] == layer_id) {
                     return false; // Cannot unload, dependent layer is loaded
@@ -1037,23 +1037,23 @@ bool tinyaiUnloadLayer(TinyAIProgressiveLoader *loader, size_t layer_id)
     }
 
     // Unload the layer
-    layer->state = TINYAI_LAYER_UNLOADED;
+    layer->state = HYPERION_LAYER_UNLOADED;
     loader->current_memory -= layer->size;
     return true;
 }
 
 // Get layer state
-TinyAILayerState tinyaiGetLayerState(const TinyAIProgressiveLoader *loader, size_t layer_id)
+HyperionLayerState hyperionGetLayerState(const HyperionProgressiveLoader *loader, size_t layer_id)
 {
     if (!loader || layer_id >= loader->layer_count) {
-        return TINYAI_LAYER_UNLOADED;
+        return HYPERION_LAYER_UNLOADED;
     }
     return loader->layers[layer_id].state;
 }
 
 // Update layer priority
-bool tinyaiUpdateLayerPriority(TinyAIProgressiveLoader *loader, size_t layer_id,
-                               TinyAILayerPriority priority)
+bool hyperionUpdateLayerPriority(HyperionProgressiveLoader *loader, size_t layer_id,
+                               HyperionLayerPriority priority)
 {
     if (!loader || layer_id >= loader->layer_count)
         return false;
@@ -1062,24 +1062,24 @@ bool tinyaiUpdateLayerPriority(TinyAIProgressiveLoader *loader, size_t layer_id,
 }
 
 // Get memory usage
-size_t tinyaiGetMemoryUsage(const TinyAIProgressiveLoader *loader)
+size_t hyperionGetMemoryUsage(const HyperionProgressiveLoader *loader)
 {
     return loader ? loader->current_memory : 0;
 }
 
 // Get peak memory usage
-size_t tinyaiGetPeakMemoryUsage(const TinyAIProgressiveLoader *loader)
+size_t hyperionGetPeakMemoryUsage(const HyperionProgressiveLoader *loader)
 {
     return loader ? loader->peak_memory : 0;
 }
 
 // Check if layer can be loaded
-bool tinyaiCanLoadLayer(const TinyAIProgressiveLoader *loader, size_t layer_id)
+bool hyperionCanLoadLayer(const HyperionProgressiveLoader *loader, size_t layer_id)
 {
     if (!loader || layer_id >= loader->layer_count)
         return false;
 
-    const TinyAILayerInfo *layer           = &loader->layers[layer_id];
+    const HyperionLayerInfo *layer           = &loader->layers[layer_id];
     size_t                 required_memory = loader->current_memory + layer->size;
 
     // Check memory constraints
@@ -1097,7 +1097,7 @@ bool tinyaiCanLoadLayer(const TinyAIProgressiveLoader *loader, size_t layer_id)
 }
 
 // Get layer dependencies
-const size_t *tinyaiGetLayerDependencies(const TinyAIProgressiveLoader *loader, size_t layer_id,
+const size_t *hyperionGetLayerDependencies(const HyperionProgressiveLoader *loader, size_t layer_id,
                                          size_t *num_dependencies)
 {
     if (!loader || layer_id >= loader->layer_count || !num_dependencies) {
@@ -1109,25 +1109,25 @@ const size_t *tinyaiGetLayerDependencies(const TinyAIProgressiveLoader *loader, 
 }
 
 // Update layer access
-void tinyaiUpdateLayerAccess(TinyAIProgressiveLoader *loader, size_t layer_id)
+void hyperionUpdateLayerAccess(HyperionProgressiveLoader *loader, size_t layer_id)
 {
     if (!loader || layer_id >= loader->layer_count)
         return;
 
-    TinyAILayerInfo *layer = &loader->layers[layer_id];
+    HyperionLayerInfo *layer = &loader->layers[layer_id];
     layer->access_count++;
     layer->last_access_time = get_timestamp_ms();
 }
 
 // Reset loader state
-void tinyaiResetProgressiveLoader(TinyAIProgressiveLoader *loader)
+void hyperionResetProgressiveLoader(HyperionProgressiveLoader *loader)
 {
     if (!loader)
         return;
 
     // Reset all layers to unloaded state
     for (size_t i = 0; i < loader->layer_count; i++) {
-        loader->layers[i].state            = TINYAI_LAYER_UNLOADED;
+        loader->layers[i].state            = HYPERION_LAYER_UNLOADED;
         loader->layers[i].access_count     = 0;
         loader->layers[i].last_access_time = 0;
     }
@@ -1139,7 +1139,7 @@ void tinyaiResetProgressiveLoader(TinyAIProgressiveLoader *loader)
 }
 
 // Enable/disable prefetching
-void tinyaiEnablePrefetching(TinyAIProgressiveLoader *loader, bool enable)
+void hyperionEnablePrefetching(HyperionProgressiveLoader *loader, bool enable)
 {
     if (!loader)
         return;
@@ -1147,7 +1147,7 @@ void tinyaiEnablePrefetching(TinyAIProgressiveLoader *loader, bool enable)
 }
 
 // Set prefetch distance
-void tinyaiSetPrefetchDistance(TinyAIProgressiveLoader *loader, size_t distance)
+void hyperionSetPrefetchDistance(HyperionProgressiveLoader *loader, size_t distance)
 {
     if (!loader)
         return;
@@ -1155,13 +1155,13 @@ void tinyaiSetPrefetchDistance(TinyAIProgressiveLoader *loader, size_t distance)
 }
 
 // Get loader configuration
-const TinyAIProgressiveConfig *tinyaiGetLoaderConfig(const TinyAIProgressiveLoader *loader)
+const HyperionProgressiveConfig *hyperionGetLoaderConfig(const HyperionProgressiveLoader *loader)
 {
     return loader ? &loader->config : NULL;
 }
 
 // Set loader configuration
-bool tinyaiSetLoaderConfig(TinyAIProgressiveLoader *loader, const TinyAIProgressiveConfig *config)
+bool hyperionSetLoaderConfig(HyperionProgressiveLoader *loader, const HyperionProgressiveConfig *config)
 {
     if (!loader || !config)
         return false;

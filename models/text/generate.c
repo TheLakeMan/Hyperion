@@ -1,7 +1,7 @@
 /**
- * TinyAI Text Generation Implementation
+ * Hyperion Text Generation Implementation
  *
- * This file implements the text generation model for TinyAI,
+ * This file implements the text generation model for Hyperion,
  * using 4-bit quantization for extreme memory efficiency.
  */
 
@@ -116,7 +116,7 @@ static int sampleTopK(const float *probs, uint32_t size, uint32_t k)
     }
 
     /* Create a copy of probabilities */
-    float *probsCopy = (float *)TINYAI_MALLOC(size * sizeof(float));
+    float *probsCopy = (float *)HYPERION_MALLOC(size * sizeof(float));
     if (!probsCopy) {
         return 0; /* Error, return first token */
     }
@@ -124,9 +124,9 @@ static int sampleTopK(const float *probs, uint32_t size, uint32_t k)
     memcpy(probsCopy, probs, size * sizeof(float));
 
     /* Find top K indices */
-    uint32_t *topIndices = (uint32_t *)TINYAI_MALLOC(k * sizeof(uint32_t));
+    uint32_t *topIndices = (uint32_t *)HYPERION_MALLOC(k * sizeof(uint32_t));
     if (!topIndices) {
-        TINYAI_FREE(probsCopy);
+        HYPERION_FREE(probsCopy);
         return 0;
     }
 
@@ -155,7 +155,7 @@ static int sampleTopK(const float *probs, uint32_t size, uint32_t k)
     float r      = randomFloat() * sum;
     float cumSum = 0.0f;
 
-    int result = topIndices[0]; /* Default to first top-K token */
+    int result = probIndices[0].index; /* Default to highest probability token */
 
     for (uint32_t i = 0; i < k; i++) {
         cumSum += probs[topIndices[i]];
@@ -166,8 +166,8 @@ static int sampleTopK(const float *probs, uint32_t size, uint32_t k)
     }
 
     /* Clean up */
-    TINYAI_FREE(probsCopy);
-    TINYAI_FREE(topIndices);
+    HYPERION_FREE(probsCopy);
+    HYPERION_FREE(topIndices);
 
     return result;
 }
@@ -201,7 +201,7 @@ static int sampleTopP(const float *probs, uint32_t size, float p)
     struct ProbIndex {
         float    prob;
         uint32_t index;
-    } *probIndices = (struct ProbIndex *)TINYAI_MALLOC(size * sizeof(struct ProbIndex));
+    } *probIndices = (struct ProbIndex *)HYPERION_MALLOC(size * sizeof(struct ProbIndex));
 
     if (!probIndices) {
         return 0; /* Error, return first token */
@@ -251,7 +251,7 @@ static int sampleTopP(const float *probs, uint32_t size, float p)
     int result = probIndices[0].index; /* Default to highest probability token */
 
     for (uint32_t i = 0; i < cutoffIdx; i++) {
-        cumSum += probIndices[i].prob;
+        cumSum += probIndices[i];
         if (r < cumSum) {
             result = probIndices[i].index;
             break;
@@ -259,7 +259,7 @@ static int sampleTopP(const float *probs, uint32_t size, float p)
     }
 
     /* Clean up */
-    TINYAI_FREE(probIndices);
+    HYPERION_FREE(probIndices);
 
     return result;
 }
@@ -267,32 +267,32 @@ static int sampleTopP(const float *probs, uint32_t size, float p)
 /**
  * Copy a layer's weights from FP32 to 4-bit
  */
-static int copyLayerWeights(TinyAILayer *layer, const float *weights, const float *biases)
+static int copyLayerWeights(HyperionLayer *layer, const float *weights, const float *biases)
 {
     if (!layer || !weights) {
         return -1;
     }
 
     /* Create temporary FP32 matrix */
-    TinyAIMatrixFP32 weightsFP32;
+    HyperionMatrixFP32 weightsFP32;
     weightsFP32.rows = layer->inputSize;
     weightsFP32.cols = layer->outputSize;
     weightsFP32.data = (float *)weights;
 
     /* Quantize to 4-bit */
-    TinyAIMatrix4bit *weights4bit = tinyaiQuantizeFP32To4bit(&weightsFP32);
+    HyperionMatrix4bit *weights4bit = hyperionQuantizeFP32To4bit(&weightsFP32);
     if (!weights4bit) {
         return -1;
     }
 
     /* Copy to layer */
-    memcpy(&layer->weights, weights4bit, sizeof(TinyAIMatrix4bit));
+    memcpy(&layer->weights, weights4bit, sizeof(HyperionMatrix4bit));
 
     /* Add biases if provided */
     if (biases) {
-        layer->biases = (float *)TINYAI_MALLOC(layer->outputSize * sizeof(float));
+        layer->biases = (float *)HYPERION_MALLOC(layer->outputSize * sizeof(float));
         if (!layer->biases) {
-            tinyaiDestroyMatrix4bit(weights4bit);
+            hyperionDestroyMatrix4bit(weights4bit);
             return -1;
         }
 
@@ -300,7 +300,7 @@ static int copyLayerWeights(TinyAILayer *layer, const float *weights, const floa
     }
 
     /* Clean up */
-    TINYAI_FREE(
+    HYPERION_FREE(
         weights4bit); /* Just free the struct, not the data which is now owned by the layer */
 
     return 0;
@@ -311,14 +311,14 @@ static int copyLayerWeights(TinyAILayer *layer, const float *weights, const floa
 /**
  * Create a new text generation model
  */
-TinyAIModel *tinyaiCreateModel(uint32_t type, uint32_t hiddenSize, uint32_t contextSize,
-                               TinyAITokenizer *tokenizer)
+HyperionModel *hyperionCreateModel(uint32_t type, uint32_t hiddenSize, uint32_t contextSize,
+                               HyperionTokenizer *tokenizer)
 {
     if (!tokenizer) {
         return NULL;
     }
 
-    TinyAIModel *model = (TinyAIModel *)TINYAI_MALLOC(sizeof(TinyAIModel));
+    HyperionModel *model = (HyperionModel *)HYPERION_MALLOC(sizeof(HyperionModel));
     if (!model) {
         return NULL;
     }
@@ -332,15 +332,15 @@ TinyAIModel *tinyaiCreateModel(uint32_t type, uint32_t hiddenSize, uint32_t cont
     model->contextSize = contextSize;
 
     /* Allocate activation buffers */
-    model->activations[0] = (float *)TINYAI_MALLOC(contextSize * hiddenSize * sizeof(float));
-    model->activations[1] = (float *)TINYAI_MALLOC(contextSize * hiddenSize * sizeof(float));
+    model->activations[0] = (float *)HYPERION_MALLOC(contextSize * hiddenSize * sizeof(float));
+    model->activations[1] = (float *)HYPERION_MALLOC(contextSize * hiddenSize * sizeof(float));
 
     if (!model->activations[0] || !model->activations[1]) {
         if (model->activations[0])
-            TINYAI_FREE(model->activations[0]);
+            HYPERION_FREE(model->activations[0]);
         if (model->activations[1])
-            TINYAI_FREE(model->activations[1]);
-        TINYAI_FREE(model);
+            HYPERION_FREE(model->activations[1]);
+        HYPERION_FREE(model);
         return NULL;
     }
 
@@ -352,7 +352,7 @@ TinyAIModel *tinyaiCreateModel(uint32_t type, uint32_t hiddenSize, uint32_t cont
 /**
  * Destroy a text generation model
  */
-void tinyaiDestroyModel(TinyAIModel *model)
+void hyperionDestroyModel(HyperionModel *model)
 {
     if (!model) {
         return;
@@ -362,56 +362,56 @@ void tinyaiDestroyModel(TinyAIModel *model)
     if (model->layers) {
         for (uint32_t i = 0; i < model->layerCount; i++) {
             if (model->layers[i].weights.data) {
-                TINYAI_FREE(model->layers[i].weights.data);
+                HYPERION_FREE(model->layers[i].weights.data);
             }
             if (model->layers[i].biases) {
-                TINYAI_FREE(model->layers[i].biases);
+                HYPERION_FREE(model->layers[i].biases);
             }
         }
-        TINYAI_FREE(model->layers);
+        HYPERION_FREE(model->layers);
     }
 
     /* Free activation buffers */
     if (model->activations[0]) {
-        TINYAI_FREE(model->activations[0]);
+        HYPERION_FREE(model->activations[0]);
     }
     if (model->activations[1]) {
-        TINYAI_FREE(model->activations[1]);
+        HYPERION_FREE(model->activations[1]);
     }
 
     /* Note: We don't free the tokenizer as it might be used elsewhere */
 
     /* Free the model */
-    TINYAI_FREE(model);
+    HYPERION_FREE(model);
 }
 
 /**
  * Add a layer to a model
  */
-int tinyaiAddLayer(TinyAIModel *model, TinyAILayerType type, uint32_t inputSize,
-                   uint32_t outputSize, TinyAIActivation activation)
+int hyperionAddLayer(HyperionModel *model, HyperionLayerType type, uint32_t inputSize,
+                   uint32_t outputSize, HyperionActivation activation)
 {
     if (!model) {
         return -1;
     }
 
     /* Allocate or reallocate the layers array */
-    TinyAILayer *newLayers =
-        (TinyAILayer *)TINYAI_MALLOC((model->layerCount + 1) * sizeof(TinyAILayer));
+    HyperionLayer *newLayers =
+        (HyperionLayer *)HYPERION_MALLOC((model->layerCount + 1) * sizeof(HyperionLayer));
     if (!newLayers) {
         return -1;
     }
 
     /* Copy existing layers */
     if (model->layers) {
-        memcpy(newLayers, model->layers, model->layerCount * sizeof(TinyAILayer));
-        TINYAI_FREE(model->layers);
+        memcpy(newLayers, model->layers, model->layerCount * sizeof(HyperionLayer));
+        HYPERION_FREE(model->layers);
     }
 
     model->layers = newLayers;
 
     /* Initialize the new layer */
-    TinyAILayer *layer  = &model->layers[model->layerCount];
+    HyperionLayer *layer  = &model->layers[model->layerCount];
     layer->type         = type;
     layer->activation   = activation;
     layer->inputSize    = inputSize;
@@ -427,7 +427,7 @@ int tinyaiAddLayer(TinyAIModel *model, TinyAILayerType type, uint32_t inputSize,
 /**
  * Load model weights from a file
  */
-int tinyaiLoadModelWeights(TinyAIModel *model, const char *path)
+int hyperionLoadModelWeights(HyperionModel *model, const char *path)
 {
     if (!model || !path) {
         return -1;
@@ -440,12 +440,8 @@ int tinyaiLoadModelWeights(TinyAIModel *model, const char *path)
 
     /* Read header */
     uint32_t magic, version, layerCount;
-    if (fread(&magic, sizeof(magic), 1, file) != 1 || magic != 0x4D494E54) { /* "TINY" */
-        fclose(file);
-        return -1;
-    }
-
-    if (fread(&version, sizeof(version), 1, file) != 1 ||
+    if (fread(&magic, sizeof(magic), 1, file) != 1 || magic != 0x4D494E54 || /* "HYPERION" */
+        fread(&version, sizeof(version), 1, file) != 1 ||
         fread(&layerCount, sizeof(layerCount), 1, file) != 1 || layerCount != model->layerCount) {
         fclose(file);
         return -1;
@@ -453,10 +449,10 @@ int tinyaiLoadModelWeights(TinyAIModel *model, const char *path)
 
     /* Read layer weights */
     for (uint32_t i = 0; i < model->layerCount; i++) {
-        TinyAILayer *layer = &model->layers[i];
+        HyperionLayer *layer = &model->layers[i];
 
         /* Read layer type and sizes */
-        uint32_t layerType, inputSize, outputSize;
+        uint32_t layerType, inputSize, outputSize, activation;
         if (fread(&layerType, sizeof(layerType), 1, file) != 1 ||
             fread(&inputSize, sizeof(inputSize), 1, file) != 1 ||
             fread(&outputSize, sizeof(outputSize), 1, file) != 1) {
@@ -474,7 +470,7 @@ int tinyaiLoadModelWeights(TinyAIModel *model, const char *path)
         /* Allocate weight matrix */
         size_t dataSize =
             (layer->inputSize * layer->outputSize + 1) / 2; /* 4-bit, 2 values per byte */
-        layer->weights.data = (uint8_t *)TINYAI_MALLOC(dataSize);
+        layer->weights.data = (uint8_t *)HYPERION_MALLOC(dataSize);
         if (!layer->weights.data) {
             fclose(file);
             return -1;
@@ -492,7 +488,7 @@ int tinyaiLoadModelWeights(TinyAIModel *model, const char *path)
         layer->weights.cols = layer->outputSize;
 
         /* Allocate and read biases */
-        layer->biases = (float *)TINYAI_MALLOC(layer->outputSize * sizeof(float));
+        layer->biases = (float *)HYPERION_MALLOC(layer->outputSize * sizeof(float));
         if (!layer->biases) {
             fclose(file);
             return -1;
@@ -511,7 +507,7 @@ int tinyaiLoadModelWeights(TinyAIModel *model, const char *path)
 /**
  * Load a complete model from files
  */
-TinyAIModel *tinyaiLoadModel(const char *modelPath, const char *weightsPath,
+HyperionModel *hyperionLoadModel(const char *modelPath, const char *weightsPath,
                              const char *tokenizerPath)
 {
     /* Load model structure */
@@ -522,7 +518,7 @@ TinyAIModel *tinyaiLoadModel(const char *modelPath, const char *weightsPath,
 
     /* Read header */
     uint32_t magic, version, type, hiddenSize, contextSize, layerCount;
-    if (fread(&magic, sizeof(magic), 1, file) != 1 || magic != 0x4D494E54 || /* "TINY" */
+    if (fread(&magic, sizeof(magic), 1, file) != 1 || magic != 0x4D494E54 || /* "HYPERION" */
         fread(&version, sizeof(version), 1, file) != 1 ||
         fread(&type, sizeof(type), 1, file) != 1 ||
         fread(&hiddenSize, sizeof(hiddenSize), 1, file) != 1 ||
@@ -533,22 +529,22 @@ TinyAIModel *tinyaiLoadModel(const char *modelPath, const char *weightsPath,
     }
 
     /* Load tokenizer */
-    TinyAITokenizer *tokenizer = tinyaiCreateTokenizer();
+    HyperionTokenizer *tokenizer = hyperionCreateTokenizer();
     if (!tokenizer) {
         fclose(file);
         return NULL;
     }
 
-    if (tinyaiLoadVocabulary(tokenizer, tokenizerPath) != 0) {
-        tinyaiDestroyTokenizer(tokenizer);
+    if (hyperionLoadVocabulary(tokenizer, tokenizerPath) != 0) {
+        hyperionDestroyTokenizer(tokenizer);
         fclose(file);
         return NULL;
     }
 
     /* Create model */
-    TinyAIModel *model = tinyaiCreateModel(type, hiddenSize, contextSize, tokenizer);
+    HyperionModel *model = hyperionCreateModel(type, hiddenSize, contextSize, tokenizer);
     if (!model) {
-        tinyaiDestroyTokenizer(tokenizer);
+        hyperionDestroyTokenizer(tokenizer);
         fclose(file);
         return NULL;
     }
@@ -560,20 +556,20 @@ TinyAIModel *tinyaiLoadModel(const char *modelPath, const char *weightsPath,
             fread(&inputSize, sizeof(inputSize), 1, file) != 1 ||
             fread(&outputSize, sizeof(outputSize), 1, file) != 1 ||
             fread(&activation, sizeof(activation), 1, file) != 1) {
-            tinyaiDestroyModel(model);
+            hyperionDestroyModel(model);
             fclose(file);
             return NULL;
         }
 
-        tinyaiAddLayer(model, (TinyAILayerType)layerType, inputSize, outputSize,
-                       (TinyAIActivation)activation);
+        hyperionAddLayer(model, (HyperionLayerType)layerType, inputSize, outputSize,
+                       (HyperionActivation)activation);
     }
 
     fclose(file);
 
     /* Load weights */
-    if (tinyaiLoadModelWeights(model, weightsPath) != 0) {
-        tinyaiDestroyModel(model);
+    if (hyperionLoadModelWeights(model, weightsPath) != 0) {
+        hyperionDestroyModel(model);
         return NULL;
     }
 
@@ -592,17 +588,17 @@ static void matrixVectorMultiplySIMD(const float *matrix, const float *vector, f
 {
     if (useSIMD) {
         /* Use SIMD implementation from simd_ops.h */
-        tinyai_simd_matmul_f32(matrix, vector, output, rows, cols, 1);
+        hyperion_simd_matmul_f32(matrix, vector, output, rows, cols, 1);
     }
     else {
         /* Get cache optimization parameters */
-        TinyAICacheOptConfig config = tinyai_cache_opt_init_default();
-        tinyai_cache_opt_matrix_multiply(rows, 1, cols, &config);
+        HyperionCacheOptConfig config = hyperion_cache_opt_init_default();
+        hyperion_cache_opt_matrix_multiply(rows, 1, cols, &config);
 
         /* Use cache-friendly blocking */
-        TINYAI_LOOP_TILING_2D(i, 0, rows, k, 0, cols, config.blockSizeX, config.blockSizeY, {
+        HYPERION_LOOP_TILING_2D(i, 0, rows, k, 0, cols, config.blockSizeX, config.blockSizeY, {
             /* Inside the innermost loops, accumulate partial sums */
-            output[i] += matrix[i * cols + k] * vector[k];
+            output[i] += matrix[i] * vector[k];
         });
     }
 }
@@ -610,7 +606,7 @@ static void matrixVectorMultiplySIMD(const float *matrix, const float *vector, f
 /**
  * Perform a single forward pass through the model
  */
-int tinyaiModelForward(TinyAIModel *model, const int *input, int inputLength, float *output)
+int hyperionModelForward(HyperionModel *model, const int *input, int inputLength, float *output)
 {
     if (!model || !input || !output || inputLength <= 0) {
         return -1;
@@ -623,11 +619,11 @@ int tinyaiModelForward(TinyAIModel *model, const int *input, int inputLength, fl
 
     /* Check if SIMD is available */
     bool useSIMD =
-        tinyai_simd_detect_capabilities() > 0; /* Non-zero means some SIMD is available */
+        hyperion_simd_detect_capabilities() > 0; /* Non-zero means some SIMD is available */
 
     /* Process based on model type */
     switch (model->type) {
-    case TINYAI_MODEL_TYPE_RNN:
+    case HYPERION_MODEL_TYPE_RNN:
         /* Simple RNN implementation */
         {
             /* Embedding layer */
@@ -639,12 +635,12 @@ int tinyaiModelForward(TinyAIModel *model, const int *input, int inputLength, fl
 
             /* Check token range */
             if (lastToken < 0 || lastToken >= model->tokenizer->tokenCount) {
-                lastToken = TINYAI_TOKEN_UNKNOWN;
+                lastToken = HYPERION_TOKEN_UNKNOWN;
             }
 
             /* Apply the model layers */
             for (uint32_t i = 0; i < model->layerCount; i++) {
-                TinyAILayer *layer = &model->layers[i];
+                HyperionLayer *layer = &model->layers[i];
 
                 /* Flip activation buffers */
                 model->activeBuffer = 1 - model->activeBuffer;
@@ -653,27 +649,28 @@ int tinyaiModelForward(TinyAIModel *model, const int *input, int inputLength, fl
 
                 /* Apply layer based on type */
                 switch (layer->type) {
-                case TINYAI_LAYER_EMBEDDING:
+                case HYPERION_LAYER_EMBEDDING:
                     /* Copy embedding vector for the token */
                     {
-                        TinyAIMatrixFP32 *matrix = tinyaiDequantize4bitToFP32(&layer->weights);
+                        HyperionMatrixFP32 *matrix = hyperionDequantize4bitToFP32(&layer->weights);
 
                         if (!matrix) {
                             return -1;
                         }
 
                         /* Copy embedding for the token */
-                        memcpy(output, matrix->data + lastToken * layer->outputSize,
+                        memcpy(output + lastToken * layer->outputSize,
+                               matrix->data + lastToken * layer->outputSize,
                                layer->outputSize * sizeof(float));
 
-                        tinyaiDestroyMatrixFP32(matrix);
+                        hyperionDestroyMatrixFP32(matrix);
                     }
                     break;
 
-                case TINYAI_LAYER_DENSE:
+                case HYPERION_LAYER_DENSE:
                     /* Dense layer implementation */
                     {
-                        TinyAIMatrixFP32 *matrix = tinyaiDequantize4bitToFP32(&layer->weights);
+                        HyperionMatrixFP32 *matrix = hyperionDequantize4bitToFP32(&layer->weights);
 
                         if (!matrix) {
                             return -1;
@@ -695,11 +692,11 @@ int tinyaiModelForward(TinyAIModel *model, const int *input, int inputLength, fl
                             output[j] = sum;
                         }
 
-                        tinyaiDestroyMatrixFP32(matrix);
+                        hyperionDestroyMatrixFP32(matrix);
 
                         /* Apply activation function */
                         switch (layer->activation) {
-                        case TINYAI_ACTIVATION_RELU:
+                        case HYPERION_ACTIVATION_RELU:
                             for (uint32_t j = 0; j < layer->outputSize; j++) {
                                 if (output[j] < 0.0f) {
                                     output[j] = 0.0f;
@@ -707,19 +704,19 @@ int tinyaiModelForward(TinyAIModel *model, const int *input, int inputLength, fl
                             }
                             break;
 
-                        case TINYAI_ACTIVATION_SIGMOID:
+                        case HYPERION_ACTIVATION_SIGMOID:
                             for (uint32_t j = 0; j < layer->outputSize; j++) {
                                 output[j] = 1.0f / (1.0f + expf(-output[j]));
                             }
                             break;
 
-                        case TINYAI_ACTIVATION_TANH:
+                        case HYPERION_ACTIVATION_TANH:
                             for (uint32_t j = 0; j < layer->outputSize; j++) {
                                 output[j] = tanhf(output[j]);
                             }
                             break;
 
-                        case TINYAI_ACTIVATION_GELU:
+                        case HYPERION_ACTIVATION_GELU:
                             for (uint32_t j = 0; j < layer->outputSize; j++) {
                                 float x   = output[j];
                                 output[j] = 0.5f * x *
@@ -735,10 +732,10 @@ int tinyaiModelForward(TinyAIModel *model, const int *input, int inputLength, fl
                     }
                     break;
 
-                case TINYAI_LAYER_OUTPUT:
+                case HYPERION_LAYER_OUTPUT:
                     /* Output layer */
                     {
-                        TinyAIMatrixFP32 *matrix = tinyaiDequantize4bitToFP32(&layer->weights);
+                        HyperionMatrixFP32 *matrix = hyperionDequantize4bitToFP32(&layer->weights);
 
                         if (!matrix) {
                             return -1;
@@ -760,7 +757,7 @@ int tinyaiModelForward(TinyAIModel *model, const int *input, int inputLength, fl
                             output[j] = sum;
                         }
 
-                        tinyaiDestroyMatrixFP32(matrix);
+                        hyperionDestroyMatrixFP32(matrix);
                     }
                     break;
 
@@ -776,7 +773,7 @@ int tinyaiModelForward(TinyAIModel *model, const int *input, int inputLength, fl
         }
         break;
 
-    case TINYAI_MODEL_TYPE_TRANSFORMER:
+    case HYPERION_MODEL_TYPE_TRANSFORMER:
         /* Transformer implementation */
         /* In a real implementation, we would need much more code for transformers */
         /* This is a very simplified version for demonstration purposes */
@@ -787,7 +784,7 @@ int tinyaiModelForward(TinyAIModel *model, const int *input, int inputLength, fl
 
             /* Apply the model layers */
             for (uint32_t i = 0; i < model->layerCount; i++) {
-                TinyAILayer *layer = &model->layers[i];
+                HyperionLayer *layer = &model->layers[i];
 
                 /* Flip activation buffers */
                 model->activeBuffer = 1 - model->activeBuffer;
@@ -796,10 +793,10 @@ int tinyaiModelForward(TinyAIModel *model, const int *input, int inputLength, fl
 
                 /* Apply layer based on type */
                 switch (layer->type) {
-                case TINYAI_LAYER_EMBEDDING:
+                case HYPERION_LAYER_EMBEDDING:
                     /* Apply token embeddings */
                     {
-                        TinyAIMatrixFP32 *matrix = tinyaiDequantize4bitToFP32(&layer->weights);
+                        HyperionMatrixFP32 *matrix = hyperionDequantize4bitToFP32(&layer->weights);
 
                         if (!matrix) {
                             return -1;
@@ -811,7 +808,7 @@ int tinyaiModelForward(TinyAIModel *model, const int *input, int inputLength, fl
 
                             /* Check token range */
                             if (token < 0 || token >= model->tokenizer->tokenCount) {
-                                token = TINYAI_TOKEN_UNKNOWN;
+                                token = HYPERION_TOKEN_UNKNOWN;
                             }
 
                             /* Copy embedding for this token */
@@ -820,11 +817,11 @@ int tinyaiModelForward(TinyAIModel *model, const int *input, int inputLength, fl
                                    layer->outputSize * sizeof(float));
                         }
 
-                        tinyaiDestroyMatrixFP32(matrix);
+                        hyperionDestroyMatrixFP32(matrix);
                     }
                     break;
 
-                case TINYAI_LAYER_ATTENTION:
+                case HYPERION_LAYER_ATTENTION:
                     /* Simplified self-attention layer */
                     /* A real implementation would be much more complex */
                     {
@@ -833,18 +830,18 @@ int tinyaiModelForward(TinyAIModel *model, const int *input, int inputLength, fl
                     }
                     break;
 
-                case TINYAI_LAYER_DENSE:
+                case HYPERION_LAYER_DENSE:
                     /* Dense layer for each position */
                     {
                         for (int j = 0; j < inputLength; j++) {
-                            TinyAIMatrixFP32 *matrix = tinyaiDequantize4bitToFP32(&layer->weights);
+                            HyperionMatrixFP32 *matrix = hyperionDequantize4bitToFP32(&layer->weights);
 
                             if (!matrix) {
                                 return -1;
                             }
 
                             /* Matrix multiplication for this position */
-                            for (uint32_t k = 0; k < layer->outputSize; k++) {
+                            for (uint32_t k = 0; k < layer->inputSize; k++) {
                                 float sum = 0.0f;
                                 for (uint32_t l = 0; l < layer->inputSize; l++) {
                                     sum += input[j * layer->inputSize + l] *
@@ -860,36 +857,35 @@ int tinyaiModelForward(TinyAIModel *model, const int *input, int inputLength, fl
                                 output[j * layer->outputSize + k] = sum;
                             }
 
-                            tinyaiDestroyMatrixFP32(matrix);
+                            hyperionDestroyMatrixFP32(matrix);
 
                             /* Apply activation function */
                             switch (layer->activation) {
-                            case TINYAI_ACTIVATION_RELU:
-                                for (uint32_t k = 0; k < layer->outputSize; k++) {
+                            case HYPERION_ACTIVATION_RELU:
+                                for (uint32_t j = 0; j < layer->outputSize; j++) {
                                     float *val = &output[j * layer->outputSize + k];
                                     if (*val < 0.0f)
                                         *val = 0.0f;
                                 }
                                 break;
 
-                            case TINYAI_ACTIVATION_SIGMOID:
-                                for (uint32_t k = 0; k < layer->outputSize; k++) {
+                            case HYPERION_ACTIVATION_SIGMOID:
+                                for (uint32_t j = 0; j < layer->outputSize; j++) {
                                     float *val = &output[j * layer->outputSize + k];
                                     *val       = 1.0f / (1.0f + expf(-*val));
                                 }
                                 break;
 
-                            case TINYAI_ACTIVATION_TANH:
-                                for (uint32_t k = 0; k < layer->outputSize; k++) {
+                            case HYPERION_ACTIVATION_TANH:
+                                for (uint32_t j = 0; j < layer->outputSize; j++) {
                                     float *val = &output[j * layer->outputSize + k];
                                     *val       = tanhf(*val);
                                 }
                                 break;
 
-                            case TINYAI_ACTIVATION_GELU:
-                                for (uint32_t k = 0; k < layer->outputSize; k++) {
-                                    float *val = &output[j * layer->outputSize + k];
-                                    float  x   = *val;
+                            case HYPERION_ACTIVATION_GELU:
+                                for (uint32_t j = 0; j < layer->outputSize; j++) {
+                                    float x   = output[j];
                                     *val       = 0.5f * x *
                                            (1.0f + tanhf(sqrtf(2.0f / 3.14159f) *
                                                          (x + 0.044715f * x * x * x)));
@@ -904,7 +900,7 @@ int tinyaiModelForward(TinyAIModel *model, const int *input, int inputLength, fl
                     }
                     break;
 
-                case TINYAI_LAYER_LAYERNORM:
+                case HYPERION_LAYER_LAYERNORM:
                     /* Layer normalization */
                     /* Apply to each position separately */
                     for (int j = 0; j < inputLength; j++) {
@@ -938,11 +934,11 @@ int tinyaiModelForward(TinyAIModel *model, const int *input, int inputLength, fl
                     }
                     break;
 
-                case TINYAI_LAYER_OUTPUT:
+                case HYPERION_LAYER_OUTPUT:
                     /* Output layer */
                     /* For transformers, use only the last position */
                     {
-                        TinyAIMatrixFP32 *matrix = tinyaiDequantize4bitToFP32(&layer->weights);
+                        HyperionMatrixFP32 *matrix = hyperionDequantize4bitToFP32(&layer->weights);
 
                         if (!matrix) {
                             return -1;
@@ -967,7 +963,7 @@ int tinyaiModelForward(TinyAIModel *model, const int *input, int inputLength, fl
                             output[j] = sum;
                         }
 
-                        tinyaiDestroyMatrixFP32(matrix);
+                        hyperionDestroyMatrixFP32(matrix);
                     }
                     break;
 
@@ -977,7 +973,7 @@ int tinyaiModelForward(TinyAIModel *model, const int *input, int inputLength, fl
                 }
             }
 
-            /* Copy final logits to output */
+            /* Copy final activations to output */
             if (model->tokenizer->tokenCount <= model->layerCount) {
                 /* Vocabulary too small, there's a problem */
                 return -1;
@@ -1000,14 +996,14 @@ int tinyaiModelForward(TinyAIModel *model, const int *input, int inputLength, fl
 /**
  * Sample the next token from output probabilities
  */
-int tinyaiSampleToken(const float *output, int vocabSize, const TinyAIGenerationParams *params)
+int hyperionSampleToken(const float *output, int vocabSize, const HyperionGenerationParams *params)
 {
     if (!output || !params) {
         return 0; /* Default to first token on error */
     }
 
     /* Allocate buffer for probabilities */
-    float *probs = (float *)TINYAI_MALLOC(vocabSize * sizeof(float));
+    float *probs = (float *)HYPERION_MALLOC(vocabSize * sizeof(float));
     if (!probs) {
         return 0; /* Default to first token on error */
     }
@@ -1023,7 +1019,7 @@ int tinyaiSampleToken(const float *output, int vocabSize, const TinyAIGeneration
     int token;
 
     switch (params->samplingMethod) {
-    case TINYAI_SAMPLING_GREEDY:
+    case HYPERION_SAMPLING_GREEDY:
         /* Choose highest probability token */
         token = 0;
         for (int i = 1; i < vocabSize; i++) {
@@ -1033,15 +1029,15 @@ int tinyaiSampleToken(const float *output, int vocabSize, const TinyAIGeneration
         }
         break;
 
-    case TINYAI_SAMPLING_TOP_K:
+    case HYPERION_SAMPLING_TOP_K:
         token = sampleTopK(probs, vocabSize, params->topK);
         break;
 
-    case TINYAI_SAMPLING_TOP_P:
+    case HYPERION_SAMPLING_TOP_P:
         token = sampleTopP(probs, vocabSize, params->topP);
         break;
 
-    case TINYAI_SAMPLING_TEMPERATURE:
+    case HYPERION_SAMPLING_TEMPERATURE:
         /* Already applied temperature, sample directly */
         {
             float r      = randomFloat();
@@ -1071,7 +1067,7 @@ int tinyaiSampleToken(const float *output, int vocabSize, const TinyAIGeneration
     }
 
     /* Clean up */
-    TINYAI_FREE(probs);
+    HYPERION_FREE(probs);
 
     return token;
 }
@@ -1079,7 +1075,7 @@ int tinyaiSampleToken(const float *output, int vocabSize, const TinyAIGeneration
 /**
  * Generate text from a model
  */
-int tinyaiGenerateText(TinyAIModel *model, const TinyAIGenerationParams *params, int *outputTokens,
+int hyperionGenerateText(HyperionModel *model, const HyperionGenerationParams *params, int *outputTokens,
                        int maxOutputTokens)
 {
     if (!model || !params || !outputTokens || maxOutputTokens <= 0) {
@@ -1092,32 +1088,32 @@ int tinyaiGenerateText(TinyAIModel *model, const TinyAIGenerationParams *params,
     /* Check if prompt is provided */
     if (!params->promptTokens || params->promptLength == 0) {
         /* Start with BOS token */
-        outputTokens[0] = TINYAI_TOKEN_BOS;
+        outputTokens[0] = HYPERION_TOKEN_BOS;
 
         int numTokens = 1;
 
         /* Generate tokens */
         while (numTokens < maxOutputTokens && numTokens < params->maxTokens) {
             /* Forward pass */
-            float *logits = (float *)TINYAI_MALLOC(model->tokenizer->tokenCount * sizeof(float));
+            float *logits = (float *)HYPERION_MALLOC(model->tokenizer->tokenCount * sizeof(float));
             if (!logits) {
                 /* Memory allocation failed */
                 break;
             }
 
             /* Get logits for next token */
-            int result = tinyaiModelForward(model, outputTokens, numTokens, logits);
+            int result = hyperionModelForward(model, outputTokens, numTokens, logits);
             if (result != 0) {
-                TINYAI_FREE(logits);
+                HYPERION_FREE(logits);
                 break;
             }
 
             /* Sample next token */
-            int nextToken = tinyaiSampleToken(logits, model->tokenizer->tokenCount, params);
-            TINYAI_FREE(logits);
+            int nextToken = hyperionSampleToken(logits, model->tokenizer->tokenCount, params);
+            HYPERION_FREE(logits);
 
             /* Check for EOS token */
-            if (nextToken == TINYAI_TOKEN_EOS) {
+            if (nextToken == HYPERION_TOKEN_EOS) {
                 break;
             }
 
@@ -1141,7 +1137,7 @@ int tinyaiGenerateText(TinyAIModel *model, const TinyAIGenerationParams *params,
         /* Generate tokens */
         while (numTokens < maxOutputTokens && numTokens < params->maxTokens) {
             /* Forward pass */
-            float *logits = (float *)TINYAI_MALLOC(model->tokenizer->tokenCount * sizeof(float));
+            float *logits = (float *)HYPERION_MALLOC(model->tokenizer->tokenCount * sizeof(float));
             if (!logits) {
                 /* Memory allocation failed */
                 break;
@@ -1153,19 +1149,19 @@ int tinyaiGenerateText(TinyAIModel *model, const TinyAIGenerationParams *params,
                 contextSize = model->contextSize;
             }
 
-            int result = tinyaiModelForward(model, outputTokens + numTokens - contextSize,
+            int result = hyperionModelForward(model, outputTokens + numTokens - contextSize,
                                             contextSize, logits);
             if (result != 0) {
-                TINYAI_FREE(logits);
+                HYPERION_FREE(logits);
                 break;
             }
 
             /* Sample next token */
-            int nextToken = tinyaiSampleToken(logits, model->tokenizer->tokenCount, params);
-            TINYAI_FREE(logits);
+            int nextToken = hyperionSampleToken(logits, model->tokenizer->tokenCount, params);
+            HYPERION_FREE(logits);
 
             /* Check for EOS token */
-            if (nextToken == TINYAI_TOKEN_EOS) {
+            if (nextToken == HYPERION_TOKEN_EOS) {
                 break;
             }
 
@@ -1180,7 +1176,7 @@ int tinyaiGenerateText(TinyAIModel *model, const TinyAIGenerationParams *params,
 /**
  * Convert a model to 4-bit quantization
  */
-int tinyaiQuantizeModel(TinyAIModel *model)
+int hyperionQuantizeModel(HyperionModel *model)
 {
     if (!model) {
         return -1;

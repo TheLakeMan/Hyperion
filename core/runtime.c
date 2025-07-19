@@ -1,7 +1,7 @@
 /**
- * TinyAI Runtime Environment
+ * Hyperion Runtime Environment
  * 
- * This file implements the runtime environment for TinyAI, extending the
+ * This file implements the runtime environment for Hyperion, extending the
  * picol interpreter with module loading capabilities, command registration,
  * resource management, error handling, and event systems.
  */
@@ -21,7 +21,7 @@
 #define MAX_MODULE_PATH 256
 #define MAX_MODULE_NAME 64
 
-typedef struct tinyaiModule {
+typedef struct hyperionModule {
     char name[MAX_MODULE_NAME];
     int (*initFunc)(picolInterp *interp);
     int (*cleanupFunc)(picolInterp *interp);
@@ -29,10 +29,10 @@ typedef struct tinyaiModule {
     int isLoaded;          /* Whether the module is currently loaded */
     char version[32];      /* Module version string */
     char dependencies[256]; /* Comma-separated list of dependencies */
-} tinyaiModule;
+} hyperionModule;
 
 /* Global module registry */
-static tinyaiModule modules[MAX_MODULES];
+static hyperionModule modules[MAX_MODULES];
 static int moduleCount = 0;
 
 /* Module search paths */
@@ -42,7 +42,7 @@ static int modulePathCount = 0;
 /**
  * Add a module search path
  */
-int tinyaiAddModulePath(const char *path) {
+int hyperionAddModulePath(const char *path) {
     if (modulePathCount >= 10) return 0; /* Too many paths */
     
     strncpy(modulePaths[modulePathCount], path, MAX_MODULE_PATH - 1);
@@ -54,12 +54,12 @@ int tinyaiAddModulePath(const char *path) {
 /**
  * Register a statically linked module
  */
-int tinyaiRegisterModule(const char *name, int (*initFunc)(picolInterp*), 
+int hyperionRegisterModule(const char *name, int (*initFunc)(picolInterp*), 
                       int (*cleanupFunc)(picolInterp*), const char *version,
                       const char *dependencies) {
     if (moduleCount >= MAX_MODULES) return 0; /* Too many modules */
     
-    tinyaiModule *mod = &modules[moduleCount++];
+    hyperionModule *mod = &modules[moduleCount++];
     strncpy(mod->name, name, MAX_MODULE_NAME - 1);
     mod->name[MAX_MODULE_NAME - 1] = '\0';
     mod->initFunc = initFunc;
@@ -79,7 +79,7 @@ int tinyaiRegisterModule(const char *name, int (*initFunc)(picolInterp*),
 /**
  * Load a module by name
  */
-int tinyaiLoadModule(picolInterp *interp, const char *name) {
+int hyperionLoadModule(picolInterp *interp, const char *name) {
     /* Search for the module in the registry */
     for (int i = 0; i < moduleCount; i++) {
         if (strcmp(modules[i].name, name) == 0) {
@@ -106,7 +106,7 @@ int tinyaiLoadModule(picolInterp *interp, const char *name) {
 /**
  * Unload a module by name
  */
-int tinyaiUnloadModule(picolInterp *interp, const char *name) {
+int hyperionUnloadModule(picolInterp *interp, const char *name) {
     /* Search for the module in the registry */
     for (int i = 0; i < moduleCount; i++) {
         if (strcmp(modules[i].name, name) == 0) {
@@ -152,7 +152,7 @@ static int resourceCount = 0;
 /**
  * Register a resource for tracking
  */
-int tinyaiRegisterResource(ResourceType type, void *handle, const char *description,
+int hyperionRegisterResource(ResourceType type, void *handle, const char *description,
                         int (*cleanupFunc)(void *handle)) {
     if (resourceCount >= MAX_RESOURCES) return -1; /* Too many resources */
     
@@ -168,7 +168,7 @@ int tinyaiRegisterResource(ResourceType type, void *handle, const char *descript
 /**
  * Release a resource by ID
  */
-int tinyaiReleaseResource(int resourceId) {
+int hyperionReleaseResource(int resourceId) {
     if (resourceId < 0 || resourceId >= resourceCount) return 0; /* Invalid ID */
     
     Resource *res = &resourceRegistry[resourceId];
@@ -185,7 +185,7 @@ int tinyaiReleaseResource(int resourceId) {
 /**
  * Release all resources
  */
-void tinyaiReleaseAllResources() {
+void hyperionReleaseAllResources() {
     for (int i = 0; i < resourceCount; i++) {
         if (resourceRegistry[i].handle) {
             if (resourceRegistry[i].cleanupFunc) {
@@ -215,14 +215,14 @@ typedef struct {
     ErrorType type;
     char message[MAX_ERROR_MSG];
     int code;
-} TinyAIError;
+} HyperionError;
 
-static TinyAIError lastError = {ERROR_NONE, "", 0};
+static HyperionError lastError = {ERROR_NONE, "", 0};
 
 /**
  * Set the last error
  */
-void tinyaiSetError(ErrorType type, int code, const char *format, ...) {
+void hyperionSetError(ErrorType type, int code, const char *format, ...) {
     va_list args;
     
     lastError.type = type;
@@ -238,7 +238,7 @@ void tinyaiSetError(ErrorType type, int code, const char *format, ...) {
 /**
  * Get the last error
  */
-void tinyaiGetError(ErrorType *type, int *code, char *message, size_t maxLen) {
+void hyperionGetError(ErrorType *type, int *code, char *message, size_t maxLen) {
     if (type) *type = lastError.type;
     if (code) *code = lastError.code;
     if (message && maxLen > 0) {
@@ -250,7 +250,7 @@ void tinyaiGetError(ErrorType *type, int *code, char *message, size_t maxLen) {
 /**
  * Clear the last error
  */
-void tinyaiClearError() {
+void hyperionClearError() {
     lastError.type = ERROR_NONE;
     lastError.code = 0;
     lastError.message[0] = '\0';
@@ -280,7 +280,7 @@ static int eventCount = 0;
 /**
  * Register an event
  */
-int tinyaiRegisterEvent(const char *name) {
+int hyperionRegisterEvent(const char *name) {
     if (eventCount >= MAX_EVENTS) return -1; /* Too many events */
     
     /* Check if event already exists */
@@ -302,7 +302,7 @@ int tinyaiRegisterEvent(const char *name) {
 /**
  * Register an event handler
  */
-int tinyaiRegisterEventHandler(const char *eventName, int priority,
+int hyperionRegisterEventHandler(const char *eventName, int priority,
                             int (*handler)(void *data), void *userData) {
     /* Find the event */
     int eventId = -1;
@@ -315,7 +315,7 @@ int tinyaiRegisterEventHandler(const char *eventName, int priority,
     
     if (eventId == -1) {
         /* Event doesn't exist, create it */
-        eventId = tinyaiRegisterEvent(eventName);
+        eventId = hyperionRegisterEvent(eventName);
         if (eventId == -1) return 0; /* Failed to create event */
     }
     
@@ -350,7 +350,7 @@ int tinyaiRegisterEventHandler(const char *eventName, int priority,
 /**
  * Trigger an event
  */
-int tinyaiTriggerEvent(const char *eventName, void *data) {
+int hyperionTriggerEvent(const char *eventName, void *data) {
     /* Find the event */
     int eventId = -1;
     for (int i = 0; i < eventCount; i++) {
@@ -391,7 +391,7 @@ int picolCommandLoadModule(picolInterp *i, int argc, char **argv, void *pd) {
         return PICOL_ERR; // Return error code
     }
     
-    if (tinyaiLoadModule(i, argv[1])) {
+    if (hyperionLoadModule(i, argv[1])) {
         picolSetResult(i, "");
         return PICOL_OK; // Added return
     } else {
@@ -411,7 +411,7 @@ int picolCommandUnloadModule(picolInterp *i, int argc, char **argv, void *pd) {
         return PICOL_ERR; // Return error code
     }
     
-    if (tinyaiUnloadModule(i, argv[1])) {
+    if (hyperionUnloadModule(i, argv[1])) {
         picolSetResult(i, "");
         return PICOL_OK; // Added return
     } else {
@@ -460,24 +460,24 @@ int picolCommandListModules(picolInterp *i, int argc, char **argv, void *pd) {
 /**
  * Initialize the runtime environment
  */
-int tinyaiRuntimeInit(picolInterp *interp) {
+int hyperionRuntimeInit(picolInterp *interp) {
     /* Register module-related commands */
     picolRegisterCommand(interp, "loadmodule", picolCommandLoadModule, NULL);
     picolRegisterCommand(interp, "unloadmodule", picolCommandUnloadModule, NULL);
     picolRegisterCommand(interp, "listmodules", picolCommandListModules, NULL);
     
     /* Initialize default module search paths */
-    tinyaiAddModulePath("./modules");
-    tinyaiAddModulePath("../modules");
+    hyperionAddModulePath("./modules");
+    hyperionAddModulePath("../modules");
     
     /* Register core events */
-    tinyaiRegisterEvent("init");
-    tinyaiRegisterEvent("shutdown");
-    tinyaiRegisterEvent("command");
-    tinyaiRegisterEvent("error");
+    hyperionRegisterEvent("init");
+    hyperionRegisterEvent("shutdown");
+    hyperionRegisterEvent("command");
+    hyperionRegisterEvent("error");
     
     /* Trigger init event */
-    tinyaiTriggerEvent("init", interp);
+    hyperionTriggerEvent("init", interp);
     
     return 0;
 }
@@ -485,17 +485,17 @@ int tinyaiRuntimeInit(picolInterp *interp) {
 /**
  * Cleanup the runtime environment
  */
-void tinyaiRuntimeCleanup(picolInterp *interp) {
+void hyperionRuntimeCleanup(picolInterp *interp) {
     /* Trigger shutdown event */
-    tinyaiTriggerEvent("shutdown", interp);
+    hyperionTriggerEvent("shutdown", interp);
     
     /* Unload all modules */
     for (int i = 0; i < moduleCount; i++) {
         if (modules[i].isLoaded) {
-            tinyaiUnloadModule(interp, modules[i].name);
+            hyperionUnloadModule(interp, modules[i].name);
         }
     }
     
     /* Release all resources */
-    tinyaiReleaseAllResources();
+    hyperionReleaseAllResources();
 }

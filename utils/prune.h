@@ -1,13 +1,13 @@
 /**
  * @file prune.h
- * @brief Model pruning utilities for TinyAI
+ * @brief Model pruning utilities for Hyperion
  *
  * This header provides utilities for pruning neural network models
  * to reduce their size and computational requirements.
  */
 
-#ifndef TINYAI_PRUNE_H
-#define TINYAI_PRUNE_H
+#ifndef HYPERION_PRUNE_H
+#define HYPERION_PRUNE_H
 
 #include "quantize.h"
 #include <stdbool.h>
@@ -22,24 +22,24 @@ extern "C" {
  * Pruning method to use
  */
 typedef enum {
-    TINYAI_PRUNE_MAGNITUDE,  /* Prune by absolute magnitude (remove smallest weights) */
-    TINYAI_PRUNE_THRESHOLD,  /* Prune by threshold (remove weights below threshold) */
-    TINYAI_PRUNE_STRUCTURED, /* Structured pruning (remove entire filters/channels) */
-    TINYAI_PRUNE_RANDOM      /* Random pruning (for baseline comparison) */
-} TinyAIPruneMethod;
+    HYPERION_PRUNE_MAGNITUDE,  /* Prune by absolute magnitude (remove smallest weights) */
+    HYPERION_PRUNE_THRESHOLD,  /* Prune by threshold (remove weights below threshold) */
+    HYPERION_PRUNE_STRUCTURED, /* Structured pruning (remove entire filters/channels) */
+    HYPERION_PRUNE_RANDOM      /* Random pruning (for baseline comparison) */
+} HyperionPruneMethod;
 
 /**
  * Configuration for pruning a model
  */
 typedef struct {
-    TinyAIPruneMethod method;              /* Pruning method to use */
+    HyperionPruneMethod method;              /* Pruning method to use */
     float             pruneRate;           /* Target sparsity (0.0-1.0) */
     float             threshold;           /* Threshold for THRESHOLD method */
     bool              layerWisePruning;    /* Whether to prune each layer separately */
     bool              retrainAfterPrune;   /* Whether to do fine-tuning after pruning */
     int               numRetrainSteps;     /* Number of retraining steps after pruning */
     float             retrainLearningRate; /* Learning rate for retraining */
-} TinyAIPruneConfig;
+} HyperionPruneConfig;
 
 /**
  * Prune a model with the given configuration
@@ -49,8 +49,8 @@ typedef struct {
  * @param config Pruning configuration
  * @return true on success, false on failure
  */
-bool tinyaiPruneModel(const char *srcModelPath, const char *dstModelPath,
-                      const TinyAIPruneConfig *config);
+bool hyperionPruneModel(const char *srcModelPath, const char *dstModelPath,
+                      const HyperionPruneConfig *config);
 
 /**
  * Apply magnitude-based pruning to a weight matrix
@@ -61,7 +61,7 @@ bool tinyaiPruneModel(const char *srcModelPath, const char *dstModelPath,
  * @param pruneRate Target sparsity (0.0-1.0)
  * @return true on success, false on failure
  */
-bool tinyaiPruneMatrixByMagnitude(float *weights, int rows, int cols, float pruneRate);
+bool hyperionPruneMatrixByMagnitude(float *weights, int rows, int cols, float pruneRate);
 
 /**
  * Apply threshold-based pruning to a weight matrix
@@ -72,7 +72,7 @@ bool tinyaiPruneMatrixByMagnitude(float *weights, int rows, int cols, float prun
  * @param threshold Threshold value (weights with magnitude below this are pruned)
  * @return true on success, false on failure
  */
-bool tinyaiPruneMatrixByThreshold(float *weights, int rows, int cols, float threshold);
+bool hyperionPruneMatrixByThreshold(float *weights, int rows, int cols, float threshold);
 
 /**
  * Apply structured pruning to a weight matrix (remove entire filters/channels)
@@ -85,7 +85,7 @@ bool tinyaiPruneMatrixByThreshold(float *weights, int rows, int cols, float thre
  * @param filterShape Array containing filter dimensions [depth, height, width, filters]
  * @return true on success, false on failure
  */
-bool tinyaiPruneMatrixStructured(float *weights, int rows, int cols, float pruneRate,
+bool hyperionPruneMatrixStructured(float *weights, int rows, int cols, float pruneRate,
                                  bool isConvFilter, const int *filterShape);
 
 /**
@@ -97,7 +97,7 @@ bool tinyaiPruneMatrixStructured(float *weights, int rows, int cols, float prune
  * @param pruneRate Target sparsity (0.0-1.0)
  * @return true on success, false on failure
  */
-bool tinyaiPruneMatrixRandom(float *weights, int rows, int cols, float pruneRate);
+bool hyperionPruneMatrixRandom(float *weights, int rows, int cols, float pruneRate);
 
 /**
  * Calculate the sparsity of a weight matrix
@@ -108,14 +108,14 @@ bool tinyaiPruneMatrixRandom(float *weights, int rows, int cols, float pruneRate
  * @param threshold Threshold for considering a weight as zero
  * @return Sparsity as a fraction (0.0-1.0)
  */
-float tinyaiCalculateSparsity(const float *weights, int rows, int cols, float threshold);
+float hyperionCalculateSparsity(const float *weights, int rows, int cols, float threshold);
 
 /**
  * Create a default pruning configuration
  *
  * @return Default configuration (must be freed with free())
  */
-TinyAIPruneConfig *tinyaiCreateDefaultPruneConfig(void);
+HyperionPruneConfig *hyperionCreateDefaultPruneConfig(void);
 
 /**
  * Estimate memory savings from pruning
@@ -127,7 +127,7 @@ TinyAIPruneConfig *tinyaiCreateDefaultPruneConfig(void);
  * @param prunedSize Output parameter for pruned model size in bytes
  * @return true on success, false on failure
  */
-bool tinyaiEstimatePrunedSize(const char *modelPath, float pruneRate, bool useCSR,
+bool hyperionEstimatePrunedSize(const char *modelPath, float pruneRate, bool useCSR,
                               size_t *originalSize, size_t *prunedSize);
 
 /**
@@ -138,11 +138,11 @@ bool tinyaiEstimatePrunedSize(const char *modelPath, float pruneRate, bool useCS
  * @param config Pruning configuration with retraining parameters
  * @return true on success, false on failure
  */
-bool tinyaiRetrainPrunedModel(const char *modelPath, const char *dataPath,
-                              const TinyAIPruneConfig *config);
+bool hyperionRetrainPrunedModel(const char *modelPath, const char *dataPath,
+                              const HyperionPruneConfig *config);
 
 #ifdef __cplusplus
-}
+} /* extern "C" */
 #endif
 
-#endif /* TINYAI_PRUNE_H */
+#endif /* HYPERION_PRUNE_H */

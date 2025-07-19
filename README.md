@@ -1,6 +1,6 @@
-# TinyAI - Ultra-Lightweight AI Framework
+# Hyperion - Ultra-Lightweight AI Framework
 
-TinyAI is an extremely memory-efficient AI framework designed to run on minimal hardware, including legacy systems. It uses 4-bit quantization for neural network weights, allowing models to run in as little as 50-100MB of RAM.
+Hyperion is an extremely memory-efficient AI framework designed to run on minimal hardware, including legacy systems. It uses 4-bit quantization for neural network weights, allowing models to run in as little as 50-100MB of RAM.
 
 ## Key Features
 
@@ -17,13 +17,13 @@ TinyAI is an extremely memory-efficient AI framework designed to run on minimal 
 
 ## Architecture
 
-TinyAI is built with a layered architecture:
+Hyperion is built with a layered architecture:
 
 1. **Core Layer**: Foundation components
    - Picol Interpreter: Extended Tcl interpreter
    - Runtime Environment: Module loading, resource management
    - Memory Management: Memory pools, 4-bit quantization
-   - I/O System: Cross-platform I/O abstractions
+   - I/O System: Cross-Platform I/O abstractions
    - Configuration: Flexible configuration system
 
 2. **Model Layer**: AI model components
@@ -43,7 +43,7 @@ TinyAI is built with a layered architecture:
    - Distributed Computation: Offload heavy processing when beneficial
    - Performance Monitoring: Compare execution times for local and remote operations
 
-## Building TinyAI
+## Building Hyperion
 
 ### Requirements
 
@@ -54,8 +54,8 @@ TinyAI is built with a layered architecture:
 
 ```bash
 # Clone the repository
-git clone https://github.com/TheLakeMan/tinyai.git
-cd tinyai
+git clone https://github.com/TheLakeMan/hyperion.git
+cd hyperion
 
 # Create a build directory
 mkdir build
@@ -81,29 +81,29 @@ cmake --build . --config Debug # Or Release
 
 **Current Status:** The project is feature-complete, including core components, multiple model types (text, image, audio, multimodal), hybrid execution, SIMD optimizations, and comprehensive testing. Recent work focused on optimizing memory usage. The framework is stable and ready for general use, with ongoing efforts focused on performance tuning and expanding model support.
 
-## Using TinyAI
+## Using Hyperion
 
 ### Command Line Interface
 
-The primary way to interact with TinyAI is through its command-line interface:
+The primary way to interact with Hyperion is through its command-line interface:
 
 ```bash
 # Run the shell
-./tinyai shell
+./hyperion shell
 
 # Generate text with a prompt
-./tinyai generate "Once upon a time" --max-tokens 100 --temperature 0.7
+./hyperion generate "Once upon a time" --max-tokens 100 --temperature 0.7
 
 # Load a custom model
-./tinyai -m model.bin -t tokenizer.txt generate "Hello, world!"
+./hyperion -m model.bin -t tokenizer.txt generate "Hello, world!"
 ```
 
 ### Interactive Shell
 
-TinyAI provides an interactive shell for experimenting with models:
+Hyperion provides an interactive shell for experimenting with models:
 
 ```
-TinyAI Shell v0.1.0
+Hyperion Shell v0.1.0
 Type 'help' for available commands, 'exit' to quit
 
 > help
@@ -126,7 +126,7 @@ The quick brown fox jumped over the lazy dog. The dog was not pleased with this 
 
 > mcp connect mock://localhost:8080
 Connecting to MCP server at mock://localhost:8080...
-Connected to MCP server: TinyAI-MCP (version 0.1.0)
+Connected to MCP server: Hyperion-MCP (version 0.1.0)
 
 > hybrid on
 Hybrid generation mode enabled.
@@ -142,11 +142,11 @@ The framework provides memory efficiency with 4-bit quantization, allowing it to
 
 ### Configuration
 
-TinyAI can be configured through a configuration file (`tinyai.conf`) or command-line options:
+Hyperion can be configured through a configuration file (`hyperion.conf`) or command-line options:
 
 ```ini
-# TinyAI Configuration File
-system.name = "TinyAI"
+# Hyperion Configuration File
+system.name = "Hyperion"
 system.version = "0.1.0"
 system.data_dir = "./data"
 system.model_dir = "./models"
@@ -166,54 +166,54 @@ model.top_p = 0.9
 
 ## API Usage
 
-TinyAI can be embedded in your application through its C API:
+Hyperion can be embedded in your application through its C API:
 
 ### Basic Usage
 
 ```c
-#include "tinyai.h"
+#include "hyperion.h"
 
 int main() {
-    // Initialize TinyAI
-    tinyaiIOInit();
-    tinyaiMemTrackInit();
-    tinyaiConfigInit();
+    // Initialize Hyperion
+    hyperionIOInit();
+    hyperionMemTrackInit();
+    hyperionConfigInit();
     
     // Load model and tokenizer
-    TinyAITokenizer *tokenizer = tinyaiCreateTokenizer();
-    tinyaiLoadVocabulary(tokenizer, "tokenizer.txt");
+    HyperionTokenizer *tokenizer = hyperionCreateTokenizer();
+    hyperionLoadVocabulary(tokenizer, "tokenizer.txt");
     
-    TinyAIModel *model = tinyaiLoadModel("model.bin", "weights.bin", "tokenizer.txt");
+    HyperionModel *model = hyperionLoadModel("model.bin", "weights.bin", "tokenizer.txt");
     
     // Set up generation parameters
-    TinyAIGenerationParams params;
+    HyperionGenerationParams params;
     params.maxTokens = 100;
-    params.samplingMethod = TINYAI_SAMPLING_TOP_P;
+    params.samplingMethod = HYPERION_SAMPLING_TOP_P;
     params.temperature = 0.7f;
     params.topP = 0.9f;
     params.seed = time(NULL);
     
     // Encode prompt
     int promptTokens[64];
-    int promptLength = tinyaiEncodeText(tokenizer, "Hello, world!", promptTokens, 64);
+    int promptLength = hyperionEncodeText(tokenizer, "Hello, world!", promptTokens, 64);
     params.promptTokens = promptTokens;
     params.promptLength = promptLength;
     
     // Generate text
     int outputTokens[1024];
-    int outputLength = tinyaiGenerateText(model, &params, outputTokens, 1024);
+    int outputLength = hyperionGenerateText(model, &params, outputTokens, 1024);
     
     // Decode output
     char output[4096];
-    tinyaiDecodeTokens(tokenizer, outputTokens, outputLength, output, 4096);
+    hyperionDecodeTokens(tokenizer, outputTokens, outputLength, output, 4096);
     printf("Generated: %s\n", output);
     
     // Clean up
-    tinyaiDestroyModel(model);
-    tinyaiDestroyTokenizer(tokenizer);
-    tinyaiConfigCleanup();
-    tinyaiIOCleanup();
-    tinyaiMemTrackCleanup();
+    hyperionDestroyModel(model);
+    hyperionDestroyTokenizer(tokenizer);
+    hyperionConfigCleanup();
+    hyperionIOCleanup();
+    hyperionMemTrackCleanup();
     
     return 0;
 }
@@ -222,60 +222,60 @@ int main() {
 ### Hybrid Execution Usage
 
 ```c
-#include "tinyai.h"
+#include "hyperion.h"
 #include "core/mcp/mcp_client.h"
 #include "models/text/hybrid_generate.h"
 
 int main() {
-    // Initialize TinyAI
-    tinyaiIOInit();
-    tinyaiMemTrackInit();
-    tinyaiConfigInit();
+    // Initialize Hyperion
+    hyperionIOInit();
+    hyperionMemTrackInit();
+    hyperionConfigInit();
     
     // Load model and tokenizer
-    TinyAITokenizer *tokenizer = tinyaiCreateTokenizer();
-    tinyaiLoadVocabulary(tokenizer, "tokenizer.txt");
+    HyperionTokenizer *tokenizer = hyperionCreateTokenizer();
+    hyperionLoadVocabulary(tokenizer, "tokenizer.txt");
     
-    TinyAIModel *model = tinyaiLoadModel("model.bin", "weights.bin", "tokenizer.txt");
+    HyperionModel *model = hyperionLoadModel("model.bin", "weights.bin", "tokenizer.txt");
     
     // Set up MCP client for hybrid execution
-    TinyAIMcpConfig mcpConfig;
-    tinyaiMcpGetDefaultConfig(&mcpConfig);
-    mcpConfig.execPreference = TINYAI_EXEC_PREFER_LOCAL; // Prefer local execution when possible
+    HyperionMcpConfig mcpConfig;
+    hyperionMcpGetDefaultConfig(&mcpConfig);
+    mcpConfig.execPreference = HYPERION_EXEC_PREFER_LOCAL; // Prefer local execution when possible
     
     // Create MCP client
-    TinyAIMcpClient *mcpClient = tinyaiMcpCreateClient(&mcpConfig);
+    HyperionMcpClient *mcpClient = hyperionMcpCreateClient(&mcpConfig);
     
     // Connect to MCP server
-    bool connected = tinyaiMcpConnect(mcpClient, "mcp-server.example.com");
+    bool connected = hyperionMcpConnect(mcpClient, "mcp-server.example.com");
     
     // Create hybrid generation context
-    TinyAIHybridGenerate *hybridGen = tinyaiCreateHybridGenerate(model, mcpClient);
+    HyperionHybridGenerate *hybridGen = hyperionCreateHybridGenerate(model, mcpClient);
     
     // Set up generation parameters
-    TinyAIGenerationParams params;
+    HyperionGenerationParams params;
     params.maxTokens = 100;
-    params.samplingMethod = TINYAI_SAMPLING_TOP_P;
+    params.samplingMethod = HYPERION_SAMPLING_TOP_P;
     params.temperature = 0.7f;
     params.topP = 0.9f;
     params.seed = time(NULL);
     
     // Encode prompt
     int promptTokens[64];
-    int promptLength = tinyaiEncodeText(tokenizer, "Hello, world!", promptTokens, 64);
+    int promptLength = hyperionEncodeText(tokenizer, "Hello, world!", promptTokens, 64);
     params.promptTokens = promptTokens;
     params.promptLength = promptLength;
     
     // Generate text with hybrid execution
     int outputTokens[1024];
-    int outputLength = tinyaiHybridGenerateText(hybridGen, &params, outputTokens, 1024);
+    int outputLength = hyperionHybridGenerateText(hybridGen, &params, outputTokens, 1024);
     
     // Get information about execution environment used
-    bool usedRemote = tinyaiHybridGenerateUsedRemote(hybridGen);
+    bool usedRemote = hyperionHybridGenerateUsedRemote(hybridGen);
     
     // Get performance statistics
     double localTime, remoteTime, tokensPerSec;
-    tinyaiHybridGenerateGetStats(hybridGen, &localTime, &remoteTime, &tokensPerSec);
+    hyperionHybridGenerateGetStats(hybridGen, &localTime, &remoteTime, &tokensPerSec);
     
     printf("Execution used: %s\n", usedRemote ? "Remote" : "Local");
     printf("Time taken: %.2f ms\n", usedRemote ? remoteTime : localTime);
@@ -283,18 +283,18 @@ int main() {
     
     // Decode output
     char output[4096];
-    tinyaiDecodeTokens(tokenizer, outputTokens, outputLength, output, 4096);
+    hyperionDecodeTokens(tokenizer, outputTokens, outputLength, output, 4096);
     printf("Generated: %s\n", output);
     
     // Clean up
-    tinyaiDestroyHybridGenerate(hybridGen);
-    tinyaiMcpDisconnect(mcpClient);
-    tinyaiMcpDestroyClient(mcpClient);
-    tinyaiDestroyModel(model);
-    tinyaiDestroyTokenizer(tokenizer);
-    tinyaiConfigCleanup();
-    tinyaiIOCleanup();
-    tinyaiMemTrackCleanup();
+    hyperionDestroyHybridGenerate(hybridGen);
+    hyperionMcpDisconnect(mcpClient);
+    hyperionMcpDestroyClient(mcpClient);
+    hyperionDestroyModel(model);
+    hyperionDestroyTokenizer(tokenizer);
+    hyperionConfigCleanup();
+    hyperionIOCleanup();
+    hyperionMemTrackCleanup();
     
     return 0;
 }
@@ -302,18 +302,18 @@ int main() {
 
 ## Creating a Custom Model
 
-To create a custom TinyAI model:
+To create a custom Hyperion model:
 
 1. Train a model using your preferred framework (PyTorch, TensorFlow, etc.)
-2. Convert the model to TinyAI format using the provided conversion tools
-3. Quantize the model to 4-bit precision using `tinyaiQuantizeModel`
-4. Save the model, weights, and tokenizer using the TinyAI format
+2. Convert the model to Hyperion format using the provided conversion tools
+3. Quantize the model to 4-bit precision using `hyperionQuantizeModel`
+4. Save the model, weights, and tokenizer using the Hyperion format
 
 ## Memory Usage
 
-TinyAI is designed to be extremely memory-efficient. Here's a comparison with other frameworks:
+Hyperion is designed to be extremely memory-efficient. Here's a comparison with other frameworks:
 
-| Model Size | TinyAI (4-bit) | ONNX (int8) | PyTorch (fp16) | TensorFlow (fp16) |
+| Model Size | Hyperion (4-bit) | ONNX (int8) | PyTorch (fp16) | TensorFlow (fp16) |
 |------------|----------------|-------------|----------------|-------------------|
 | 100M params | ~50MB        | ~100MB      | ~200MB         | ~200MB            |
 | 500M params | ~250MB       | ~500MB      | ~1GB           | ~1GB              |
@@ -321,8 +321,8 @@ TinyAI is designed to be extremely memory-efficient. Here's a comparison with ot
 
 ## Contributing
 
-Contributions to TinyAI are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+Contributions to Hyperion are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 ## License
 
-TinyAI is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+Hyperion is licensed under the MIT License. See [LICENSE](LICENSE) for details.

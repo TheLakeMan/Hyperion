@@ -2,7 +2,7 @@
  * @file main.c
  * @brief Main program for document processor example
  *
- * This example demonstrates how to use TinyAI's document processing capabilities
+ * This example demonstrates how to use Hyperion's document processing capabilities
  * for classification, summarization, and information extraction.
  */
 
@@ -137,7 +137,7 @@ int main(int argc, char *argv[])
     char                       *classes_path      = NULL;
     char                       *document_path     = NULL;
     char                       *extraction_prompt = NULL;
-    TinyAIDocumentProcessorMode mode              = TINYAI_DOC_MODE_CLASSIFY;
+    HyperionDocumentProcessorMode mode              = HYPERION_DOC_MODE_CLASSIFY;
     int                         max_input_length  = 1024;
     int                         max_output_length = 256;
     bool                        use_simd          = false;
@@ -178,15 +178,15 @@ int main(int argc, char *argv[])
             use_quantization = true;
         }
         else if (strcmp(argv[i], "classify") == 0) {
-            mode     = TINYAI_DOC_MODE_CLASSIFY;
+            mode     = HYPERION_DOC_MODE_CLASSIFY;
             mode_set = true;
         }
         else if (strcmp(argv[i], "summarize") == 0) {
-            mode     = TINYAI_DOC_MODE_SUMMARIZE;
+            mode     = HYPERION_DOC_MODE_SUMMARIZE;
             mode_set = true;
         }
         else if (strcmp(argv[i], "extract") == 0) {
-            mode     = TINYAI_DOC_MODE_EXTRACT_INFO;
+            mode     = HYPERION_DOC_MODE_EXTRACT_INFO;
             mode_set = true;
         }
         else if (argv[i][0] != '-' && !document_path) {
@@ -212,13 +212,13 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    if (mode == TINYAI_DOC_MODE_CLASSIFY && !classes_path) {
+    if (mode == HYPERION_DOC_MODE_CLASSIFY && !classes_path) {
         fprintf(stderr, "Error: Classes file is required for classification mode\n");
         print_usage(argv[0]);
         return 1;
     }
 
-    if (mode == TINYAI_DOC_MODE_EXTRACT_INFO && !extraction_prompt) {
+    if (mode == HYPERION_DOC_MODE_EXTRACT_INFO && !extraction_prompt) {
         fprintf(stderr, "Error: Extraction prompt is required for extraction mode\n");
         print_usage(argv[0]);
         return 1;
@@ -228,7 +228,7 @@ int main(int argc, char *argv[])
     char **class_labels = NULL;
     int    num_classes  = 0;
 
-    if (mode == TINYAI_DOC_MODE_CLASSIFY && classes_path) {
+    if (mode == HYPERION_DOC_MODE_CLASSIFY && classes_path) {
         class_labels = load_classes(classes_path, &num_classes);
         if (!class_labels) {
             return 1;
@@ -236,7 +236,7 @@ int main(int argc, char *argv[])
     }
 
     /* Initialize document processor configuration */
-    TinyAIDocumentProcessorConfig config;
+    HyperionDocumentProcessorConfig config;
     memset(&config, 0, sizeof(config));
     config.mode            = mode;
     config.modelPath       = model_path;
@@ -251,7 +251,7 @@ int main(int argc, char *argv[])
 
     /* Create document processor */
     printf("Initializing document processor...\n");
-    TinyAIDocumentProcessor *processor = tinyaiDocumentProcessorCreate(&config);
+    HyperionDocumentProcessor *processor = hyperionDocumentProcessorCreate(&config);
     if (!processor) {
         fprintf(stderr, "Error: Failed to create document processor\n");
         free_classes(class_labels, num_classes);
@@ -260,7 +260,7 @@ int main(int argc, char *argv[])
 
     /* Get memory usage statistics */
     size_t weight_memory, activation_memory;
-    if (tinyaiDocumentProcessorGetMemoryUsage(processor, &weight_memory, &activation_memory)) {
+    if (hyperionDocumentProcessorGetMemoryUsage(processor, &weight_memory, &activation_memory)) {
         printf("Memory usage:\n");
         printf("  Weights: %.2f MB\n", weight_memory / (1024.0 * 1024.0));
         printf("  Activations: %.2f MB\n", activation_memory / (1024.0 * 1024.0));
@@ -271,7 +271,7 @@ int main(int argc, char *argv[])
     char *output_buffer = (char *)malloc(MAX_OUTPUT_LENGTH * sizeof(char));
     if (!output_buffer) {
         fprintf(stderr, "Error: Failed to allocate output buffer\n");
-        tinyaiDocumentProcessorFree(processor);
+        hyperionDocumentProcessorFree(processor);
         free_classes(class_labels, num_classes);
         return 1;
     }
@@ -281,16 +281,16 @@ int main(int argc, char *argv[])
 
     /* Process the document based on the mode */
     bool success = false;
-    if (mode == TINYAI_DOC_MODE_EXTRACT_INFO) {
+    if (mode == HYPERION_DOC_MODE_EXTRACT_INFO) {
         printf("Extracting information from %s using prompt: \"%s\"\n", document_path,
                extraction_prompt);
         success =
-            tinyaiDocumentProcessFile(processor, document_path, output_buffer, MAX_OUTPUT_LENGTH);
+            hyperionDocumentProcessFile(processor, document_path, output_buffer, MAX_OUTPUT_LENGTH);
         if (!success) {
             /* If the main process file fails for extraction (as expected), try direct extraction */
             char *document_text = readTextFromFile(document_path);
             if (document_text) {
-                success = tinyaiDocumentExtractInfo(processor, document_text, extraction_prompt,
+                success = hyperionDocumentExtractInfo(processor, document_text, extraction_prompt,
                                                     output_buffer, MAX_OUTPUT_LENGTH);
                 free(document_text);
             }
@@ -299,7 +299,7 @@ int main(int argc, char *argv[])
     else {
         printf("Processing document: %s\n", document_path);
         success =
-            tinyaiDocumentProcessFile(processor, document_path, output_buffer, MAX_OUTPUT_LENGTH);
+            hyperionDocumentProcessFile(processor, document_path, output_buffer, MAX_OUTPUT_LENGTH);
     }
 
     /* Calculate processing time */
@@ -319,7 +319,7 @@ int main(int argc, char *argv[])
 
     /* Clean up */
     free(output_buffer);
-    tinyaiDocumentProcessorFree(processor);
+    hyperionDocumentProcessorFree(processor);
     free_classes(class_labels, num_classes);
 
     return success ? 0 : 1;

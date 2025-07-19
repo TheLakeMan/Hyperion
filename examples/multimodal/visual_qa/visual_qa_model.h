@@ -1,6 +1,6 @@
 /**
  * @file visual_qa_model.h
- * @brief Header for visual question answering using multimodal model in TinyAI
+ * @brief Header for visual question answering using multimodal model in Hyperion
  */
 
 #ifndef TINYAI_VISUAL_QA_MODEL_H
@@ -28,12 +28,12 @@ typedef struct {
     bool  useSIMD;           /* Whether to use SIMD acceleration */
     char *weightsFile;       /* Path to weights file */
     char *vocabFile;         /* Path to vocabulary file */
-} TinyAIVisualQAConfig;
+} HyperionVisualQAConfig;
 
 /**
  * Visual QA model handle
  */
-typedef struct TinyAIVisualQAModel TinyAIVisualQAModel;
+typedef struct HyperionVisualQAModel HyperionVisualQAModel;
 
 /**
  * Create a visual question answering model
@@ -41,14 +41,14 @@ typedef struct TinyAIVisualQAModel TinyAIVisualQAModel;
  * @param config Configuration for the model
  * @return Model handle, or NULL on failure
  */
-TinyAIVisualQAModel *tinyaiVisualQAModelCreate(const TinyAIVisualQAConfig *config);
+HyperionVisualQAModel *hyperionVisualQAModelCreate(const HyperionVisualQAConfig *config);
 
 /**
  * Free a visual question answering model
  *
  * @param model Model to free
  */
-void tinyaiVisualQAModelFree(TinyAIVisualQAModel *model);
+void hyperionVisualQAModelFree(HyperionVisualQAModel *model);
 
 /**
  * Answer a question about an image
@@ -60,7 +60,7 @@ void tinyaiVisualQAModelFree(TinyAIVisualQAModel *model);
  * @param maxLength Maximum length of the answer buffer
  * @return true on success, false on failure
  */
-bool tinyaiVisualQAGenerateAnswer(TinyAIVisualQAModel *model, const char *imagePath,
+bool hyperionVisualQAGenerateAnswer(HyperionVisualQAModel *model, const char *imagePath,
                                   const char *question, char *answer, int maxLength);
 
 /**
@@ -73,7 +73,7 @@ bool tinyaiVisualQAGenerateAnswer(TinyAIVisualQAModel *model, const char *imageP
  * @param maxLength Maximum length of the answer buffer
  * @return true on success, false on failure
  */
-bool tinyaiVisualQAGenerateAnswerFromImage(TinyAIVisualQAModel *model, const TinyAIImage *image,
+bool hyperionVisualQAGenerateAnswerFromImage(HyperionVisualQAModel *model, const HyperionImage *image,
                                            const char *question, char *answer, int maxLength);
 
 /**
@@ -84,7 +84,7 @@ bool tinyaiVisualQAGenerateAnswerFromImage(TinyAIVisualQAModel *model, const Tin
  * @param activationMemory Output parameter for activation memory (in bytes)
  * @return true on success, false on failure
  */
-bool tinyaiVisualQAModelGetMemoryUsage(const TinyAIVisualQAModel *model, size_t *weightMemory,
+bool hyperionVisualQAModelGetMemoryUsage(const HyperionVisualQAModel *model, size_t *weightMemory,
                                        size_t *activationMemory);
 
 /**
@@ -94,10 +94,10 @@ bool tinyaiVisualQAModelGetMemoryUsage(const TinyAIVisualQAModel *model, size_t 
  * @param enable Whether to enable SIMD
  * @return true on success, false on failure
  */
-bool tinyaiVisualQAModelEnableSIMD(TinyAIVisualQAModel *model, bool enable);
+bool hyperionVisualQAModelEnableSIMD(HyperionVisualQAModel *model, bool enable);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* TINYAI_VISUAL_QA_MODEL_H */
+#endif /* HYPERION_VISUAL_QA_MODEL_H */

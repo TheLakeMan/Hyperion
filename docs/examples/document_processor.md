@@ -1,10 +1,10 @@
 # Document Processor Example
 
-This document explains how to use and customize the TinyAI document processing example application.
+This document explains how to use and customize the Hyperion document processing example application.
 
 ## Overview
 
-The TinyAI document processor example demonstrates how to build document analysis tools using the TinyAI framework. The example includes:
+The Hyperion document processor example demonstrates how to build document analysis tools using the Hyperion framework. The example includes:
 
 - Text classification for document categorization
 - Document summarization capabilities
@@ -231,17 +231,17 @@ doc_classifier_free(classifier);
 doc_summarizer_free(summarizer);
 ```
 
-### Integration with Other TinyAI Components
+### Integration with Other Hyperion Components
 
-You can combine the document processor with other TinyAI capabilities:
+You can combine the document processor with other Hyperion capabilities:
 
 ```c
 // Example: Using document processor with multimodal capabilities
-#include "tinyai/models/multimodal.h"
+#include "hyperion/models/multimodal.h"
 
 // Initialize models
 DocumentClassifier* classifier = doc_classifier_init(classifier_model_path);
-TinyAIImageModel* img_model = tinyai_load_image_model(image_model_path);
+HyperionImageModel* img_model = hyperion_load_image_model(image_model_path);
 
 // Process a document with images
 DocumentWithImages doc;
@@ -253,7 +253,7 @@ ClassificationResult class_result = doc_classifier_classify(classifier, doc.text
 // Process embedded images
 for (int i = 0; i < doc.image_count; i++) {
     char image_description[512];
-    tinyai_describe_image(img_model, doc.images[i].data, doc.images[i].size, 
+    hyperion_describe_image(img_model, doc.images[i].data, doc.images[i].size, 
                           image_description, sizeof(image_description));
     
     // Add image descriptions to document metadata
@@ -265,7 +265,7 @@ save_document_with_metadata("processed_report.json", &doc, &class_result);
 
 // Clean up
 doc_classifier_free(classifier);
-tinyai_free_image_model(img_model);
+hyperion_free_image_model(img_model);
 ```
 
 ## Performance Considerations

@@ -1,8 +1,8 @@
 /**
  * @file visual_qa.h
- * @brief Header for visual question answering in TinyAI
+ * @brief Header for visual question answering in Hyperion
  *
- * This header defines the visual question answering API for TinyAI, which allows
+ * This header defines the visual question answering API for Hyperion, which allows
  * answering natural language questions about images.
  */
 
@@ -28,7 +28,7 @@ typedef enum {
     TINYAI_ANSWER_STYLE_FACTUAL,  /* Focus on factual information */
     TINYAI_ANSWER_STYLE_CASUAL,   /* Conversational, friendly style */
     TINYAI_ANSWER_STYLE_CUSTOM    /* Custom style with prompt template */
-} TinyAIAnswerStyle;
+} HyperionAnswerStyle;
 
 /**
  * Visual QA configuration
@@ -40,7 +40,7 @@ typedef struct {
     const char *tokenizerPath; /* Path to tokenizer vocabulary */
 
     /* QA parameters */
-    TinyAIAnswerStyle answerStyle;    /* Answer generation style */
+    HyperionAnswerStyle answerStyle;    /* Answer generation style */
     const char       *customTemplate; /* Custom prompt template (for CUSTOM style) */
     int               maxTokens;      /* Maximum tokens in answer */
 
@@ -49,12 +49,12 @@ typedef struct {
     bool useSIMD;         /* Whether to use SIMD acceleration */
     int  imageWidth;      /* Image width for model input */
     int  imageHeight;     /* Image height for model input */
-} TinyAIVisualQAConfig;
+} HyperionVisualQAConfig;
 
 /**
  * Visual QA handle
  */
-typedef struct TinyAIVisualQA TinyAIVisualQA;
+typedef struct HyperionVisualQA HyperionVisualQA;
 
 /**
  * Create a visual QA system
@@ -62,14 +62,14 @@ typedef struct TinyAIVisualQA TinyAIVisualQA;
  * @param config Configuration for the visual QA system
  * @return New visual QA system or NULL on error
  */
-TinyAIVisualQA *tinyaiVisualQACreate(const TinyAIVisualQAConfig *config);
+HyperionVisualQA *hyperionVisualQACreate(const HyperionVisualQAConfig *config);
 
 /**
  * Free a visual QA system
  *
  * @param vqa Visual QA system to free
  */
-void tinyaiVisualQAFree(TinyAIVisualQA *vqa);
+void hyperionVisualQAFree(HyperionVisualQA *vqa);
 
 /**
  * Answer a question about an image file
@@ -81,7 +81,7 @@ void tinyaiVisualQAFree(TinyAIVisualQA *vqa);
  * @param maxLength Maximum length of answer buffer
  * @return True on success, false on failure
  */
-bool tinyaiVisualQAAnswerQuestion(TinyAIVisualQA *vqa, const char *imagePath, const char *question,
+bool hyperionVisualQAAnswerQuestion(HyperionVisualQA *vqa, const char *imagePath, const char *question,
                                   char *answer, int maxLength);
 
 /**
@@ -94,7 +94,7 @@ bool tinyaiVisualQAAnswerQuestion(TinyAIVisualQA *vqa, const char *imagePath, co
  * @param maxLength Maximum length of answer buffer
  * @return True on success, false on failure
  */
-bool tinyaiVisualQAAnswerQuestionForImage(TinyAIVisualQA *vqa, const TinyAIImage *image,
+bool hyperionVisualQAAnswerQuestionForImage(HyperionVisualQA *vqa, const HyperionImage *image,
                                           const char *question, char *answer, int maxLength);
 
 /**
@@ -105,7 +105,7 @@ bool tinyaiVisualQAAnswerQuestionForImage(TinyAIVisualQA *vqa, const TinyAIImage
  * @param customTemplate Custom prompt template (for CUSTOM style)
  * @return True on success, false on failure
  */
-bool tinyaiVisualQASetStyle(TinyAIVisualQA *vqa, TinyAIAnswerStyle style,
+bool hyperionVisualQASetStyle(HyperionVisualQA *vqa, HyperionAnswerStyle style,
                             const char *customTemplate);
 
 /**
@@ -116,7 +116,7 @@ bool tinyaiVisualQASetStyle(TinyAIVisualQA *vqa, TinyAIAnswerStyle style,
  * @param activationMemory Output parameter for activation memory (in bytes)
  * @return True on success, false on failure
  */
-bool tinyaiVisualQAGetMemoryUsage(const TinyAIVisualQA *vqa, size_t *weightMemory,
+bool hyperionVisualQAGetMemoryUsage(const HyperionVisualQA *vqa, size_t *weightMemory,
                                   size_t *activationMemory);
 
 /**
@@ -126,10 +126,10 @@ bool tinyaiVisualQAGetMemoryUsage(const TinyAIVisualQA *vqa, size_t *weightMemor
  * @param enable Whether to enable SIMD
  * @return True on success, false on failure
  */
-bool tinyaiVisualQAEnableSIMD(TinyAIVisualQA *vqa, bool enable);
+bool hyperionVisualQAEnableSIMD(HyperionVisualQA *vqa, bool enable);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* TINYAI_VISUAL_QA_H */
+#endif /* HYPERION_VISUAL_QA_H */

@@ -1,7 +1,7 @@
 /**
- * TinyAI Configuration Implementation
+ * Hyperion Configuration Implementation
  * 
- * This file implements the configuration management system for TinyAI.
+ * This file implements the configuration management system for Hyperion.
  */
 
 #include <stdio.h>
@@ -20,7 +20,7 @@
 
 typedef struct {
     char key[MAX_KEY_LENGTH];
-    TinyAIConfigValue value;
+    HyperionConfigValue value;
     int active;  /* 1 if set, 0 if deleted or inactive */
 } ConfigEntry;
 
@@ -45,7 +45,7 @@ static int findConfigEntry(const char *key) {
 /**
  * Create a new configuration entry
  */
-static int createConfigEntry(const char *key, TinyAIConfigType type) {
+static int createConfigEntry(const char *key, HyperionConfigType type) {
     /* Check if key already exists */
     int index = findConfigEntry(key);
     if (index >= 0) {
@@ -53,8 +53,8 @@ static int createConfigEntry(const char *key, TinyAIConfigType type) {
         configEntries[index].value.type = type;
         
         /* Free string value if needed */
-        if (type != TINYAI_CONFIG_STRING && 
-            configEntries[index].value.type == TINYAI_CONFIG_STRING &&
+        if (type != HYPERION_CONFIG_STRING && 
+            configEntries[index].value.type == HYPERION_CONFIG_STRING &&
             configEntries[index].value.value.stringValue) {
             free(configEntries[index].value.value.stringValue);
             configEntries[index].value.value.stringValue = NULL;
@@ -75,7 +75,7 @@ static int createConfigEntry(const char *key, TinyAIConfigType type) {
                 configEntries[i].active = 1;
                 
                 /* Clean up possible string value */
-                if (configEntries[i].value.type == TINYAI_CONFIG_STRING &&
+                if (configEntries[i].value.type == HYPERION_CONFIG_STRING &&
                     configEntries[i].value.value.stringValue) {
                     free(configEntries[i].value.value.stringValue);
                     configEntries[i].value.value.stringValue = NULL;
@@ -97,7 +97,7 @@ static int createConfigEntry(const char *key, TinyAIConfigType type) {
     configEntries[index].active = 1;
     
     /* Initialize string value to NULL */
-    if (type == TINYAI_CONFIG_STRING) {
+    if (type == HYPERION_CONFIG_STRING) {
         configEntries[index].value.value.stringValue = NULL;
     }
     
@@ -163,27 +163,11 @@ static int parseConfigLine(char *line) {
         value[strlen(value) - 1] = '\0';  /* Remove trailing quote */
         value++;  /* Skip leading quote */
         
-        tinyaiConfigSetString(key, value);
-    } else if (strcmp(value, "true") == 0 || strcmp(value, "false") == 0) {
-        /* Boolean value */
-        tinyaiConfigSetBool(key, strcmp(value, "true") == 0);
-    } else {
-        /* Try to parse as a number */
-        char *endPtr;
-        float floatValue = strtof(value, &endPtr);
-        
-        if (*endPtr == '\0') {
-            /* Valid number */
-            if (floatValue == (int)floatValue) {
-                /* Integer */
-                tinyaiConfigSetInt(key, (int)floatValue);
-            } else {
-                /* Float */
-                tinyaiConfigSetFloat(key, floatValue);
-            }
-        } else {
-            /* Treat as string */
-            tinyaiConfigSetString(key, value);
+        hyperionConfigSetString(key, value);
+        hyperionConfigSetBool(key, strcmp(value, "true") == 0);
+                hyperionConfigSetInt(key, (int)floatValue);
+                hyperionConfigSetFloat(key, floatValue);
+            hyperionConfigSetString(key, value);
         }
     }
     
@@ -195,7 +179,7 @@ static int parseConfigLine(char *line) {
 /**
  * Initialize the configuration system
  */
-int tinyaiConfigInit() {
+int hyperionConfigInit() {
     if (configInitialized) {
         return 0;  /* Already initialized */
     }
@@ -211,11 +195,11 @@ int tinyaiConfigInit() {
 /**
  * Clean up the configuration system
  */
-void tinyaiConfigCleanup() {
+void hyperionConfigCleanup() {
     /* Clean up string values */
     for (int i = 0; i < configEntryCount; i++) {
         if (configEntries[i].active && 
-            configEntries[i].value.type == TINYAI_CONFIG_STRING &&
+            configEntries[i].value.type == HYPERION_CONFIG_STRING &&
             configEntries[i].value.value.stringValue) {
             free(configEntries[i].value.value.stringValue);
             configEntries[i].value.value.stringValue = NULL;
@@ -231,8 +215,8 @@ void tinyaiConfigCleanup() {
 /**
  * Load configuration from a file
  */
-int tinyaiConfigLoad(const char *path) {
-    TinyAIFile *file = tinyaiOpenFile(path, TINYAI_FILE_READ);
+int hyperionConfigLoad(const char *path) {
+    HyperionFile *file = hyperionOpenFile(path, HYPERION_FILE_READ);
     if (!file) {
         return -1;
     }
@@ -241,17 +225,18 @@ int tinyaiConfigLoad(const char *path) {
     int lineNum = 0;
     int errors = 0;
     
-    while (tinyaiReadLine(file, line, sizeof(line)) > 0) {
+    while (hyperionReadLine(file, line, sizeof(line)) > 0) {
         lineNum++;
         
         if (parseConfigLine(line) < 0) {
             /* Error parsing line */
-            fprintf(stderr, "Error parsing config line %d: %s\n", lineNum, line);
+            fprintf(stderr, "Error parsing config line %d: %s
+", lineNum, line);
             errors++;
         }
     }
     
-    tinyaiCloseFile(file);
+    hyperionCloseFile(file);
     
     return errors ? -1 : 0;
 }
@@ -259,16 +244,16 @@ int tinyaiConfigLoad(const char *path) {
 /**
  * Save configuration to a file
  */
-int tinyaiConfigSave(const char *path) {
-    TinyAIFile *file = tinyaiOpenFile(path, TINYAI_FILE_WRITE | TINYAI_FILE_CREATE);
+int hyperionConfigSave(const char *path) {
+    HyperionFile *file = hyperionOpenFile(path, HYPERION_FILE_WRITE | HYPERION_FILE_CREATE);
     if (!file) {
         return -1;
     }
     
     /* Write a header */
     char header[256];
-    sprintf(header, "# TinyAI Configuration File\n# Generated automatically\n\n");
-    tinyaiWriteFile(file, header, strlen(header));
+    sprintf(header, "# Hyperion Configuration File\n# Generated automatically\n\n");
+    hyperionWriteFile(file, header, strlen(header));
     
     /* Write each entry */
     for (int i = 0; i < configEntryCount; i++) {
@@ -279,32 +264,32 @@ int tinyaiConfigSave(const char *path) {
         char line[MAX_KEY_LENGTH + MAX_VALUE_LENGTH + 10];
         
         switch (configEntries[i].value.type) {
-            case TINYAI_CONFIG_INTEGER:
+            case HYPERION_CONFIG_INTEGER:
                 sprintf(line, "%s = %d\n", configEntries[i].key, 
                         configEntries[i].value.value.intValue);
                 break;
             
-            case TINYAI_CONFIG_FLOAT:
+            case HYPERION_CONFIG_FLOAT:
                 sprintf(line, "%s = %f\n", configEntries[i].key, 
                         configEntries[i].value.value.floatValue);
                 break;
             
-            case TINYAI_CONFIG_STRING:
+            case HYPERION_CONFIG_STRING:
                 sprintf(line, "%s = \"%s\"\n", configEntries[i].key, 
                         configEntries[i].value.value.stringValue ? 
                         configEntries[i].value.value.stringValue : "");
                 break;
             
-            case TINYAI_CONFIG_BOOLEAN:
+            case HYPERION_CONFIG_BOOLEAN:
                 sprintf(line, "%s = %s\n", configEntries[i].key, 
                         configEntries[i].value.value.boolValue ? "true" : "false");
                 break;
         }
         
-        tinyaiWriteFile(file, line, strlen(line));
+        hyperionWriteFile(file, line, strlen(line));
     }
     
-    tinyaiCloseFile(file);
+    hyperionCloseFile(file);
     
     return 0;
 }
@@ -312,14 +297,14 @@ int tinyaiConfigSave(const char *path) {
 /**
  * Set a configuration integer value
  */
-int tinyaiConfigSetInt(const char *key, int value) {
+int hyperionConfigSetInt(const char *key, int value) {
     if (!configInitialized) {
-        if (tinyaiConfigInit() != 0) {
+        if (hyperionConfigInit() != 0) {
             return -1;
         }
     }
     
-    int index = createConfigEntry(key, TINYAI_CONFIG_INTEGER);
+    int index = createConfigEntry(key, HYPERION_CONFIG_INTEGER);
     if (index < 0) {
         return -1;
     }
@@ -332,7 +317,7 @@ int tinyaiConfigSetInt(const char *key, int value) {
 /**
  * Get a configuration integer value
  */
-int tinyaiConfigGetInt(const char *key, int defaultValue) {
+int hyperionConfigGetInt(const char *key, int defaultValue) {
     if (!configInitialized) {
         return defaultValue;
     }
@@ -343,16 +328,16 @@ int tinyaiConfigGetInt(const char *key, int defaultValue) {
     }
     
     switch (configEntries[index].value.type) {
-        case TINYAI_CONFIG_INTEGER:
+        case HYPERION_CONFIG_INTEGER:
             return configEntries[index].value.value.intValue;
         
-        case TINYAI_CONFIG_FLOAT:
+        case HYPERION_CONFIG_FLOAT:
             return (int)configEntries[index].value.value.floatValue;
         
-        case TINYAI_CONFIG_BOOLEAN:
+        case HYPERION_CONFIG_BOOLEAN:
             return configEntries[index].value.value.boolValue ? 1 : 0;
         
-        case TINYAI_CONFIG_STRING:
+        case HYPERION_CONFIG_STRING:
             if (configEntries[index].value.value.stringValue) {
                 return atoi(configEntries[index].value.value.stringValue);
             }
@@ -365,14 +350,14 @@ int tinyaiConfigGetInt(const char *key, int defaultValue) {
 /**
  * Set a configuration float value
  */
-int tinyaiConfigSetFloat(const char *key, float value) {
+int hyperionConfigSetFloat(const char *key, float value) {
     if (!configInitialized) {
-        if (tinyaiConfigInit() != 0) {
+        if (hyperionConfigInit() != 0) {
             return -1;
         }
     }
     
-    int index = createConfigEntry(key, TINYAI_CONFIG_FLOAT);
+    int index = createConfigEntry(key, HYPERION_CONFIG_FLOAT);
     if (index < 0) {
         return -1;
     }
@@ -385,7 +370,7 @@ int tinyaiConfigSetFloat(const char *key, float value) {
 /**
  * Get a configuration float value
  */
-float tinyaiConfigGetFloat(const char *key, float defaultValue) {
+float hyperionConfigGetFloat(const char *key, float defaultValue) {
     if (!configInitialized) {
         return defaultValue;
     }
@@ -396,16 +381,16 @@ float tinyaiConfigGetFloat(const char *key, float defaultValue) {
     }
     
     switch (configEntries[index].value.type) {
-        case TINYAI_CONFIG_INTEGER:
+        case HYPERION_CONFIG_INTEGER:
             return (float)configEntries[index].value.value.intValue;
         
-        case TINYAI_CONFIG_FLOAT:
+        case HYPERION_CONFIG_FLOAT:
             return configEntries[index].value.value.floatValue;
         
-        case TINYAI_CONFIG_BOOLEAN:
+        case HYPERION_CONFIG_BOOLEAN:
             return configEntries[index].value.value.boolValue ? 1.0f : 0.0f;
         
-        case TINYAI_CONFIG_STRING:
+        case HYPERION_CONFIG_STRING:
             if (configEntries[index].value.value.stringValue) {
                 return atof(configEntries[index].value.value.stringValue);
             }
@@ -418,14 +403,14 @@ float tinyaiConfigGetFloat(const char *key, float defaultValue) {
 /**
  * Set a configuration string value
  */
-int tinyaiConfigSetString(const char *key, const char *value) {
+int hyperionConfigSetString(const char *key, const char *value) {
     if (!configInitialized) {
-        if (tinyaiConfigInit() != 0) {
+        if (hyperionConfigInit() != 0) {
             return -1;
         }
     }
     
-    int index = createConfigEntry(key, TINYAI_CONFIG_STRING);
+    int index = createConfigEntry(key, HYPERION_CONFIG_STRING);
     if (index < 0) {
         return -1;
     }
@@ -451,7 +436,7 @@ int tinyaiConfigSetString(const char *key, const char *value) {
 /**
  * Get a configuration string value
  */
-const char* tinyaiConfigGetString(const char *key, const char *defaultValue) {
+const char* hyperionConfigGetString(const char *key, const char *defaultValue) {
     if (!configInitialized) {
         return defaultValue;
     }
@@ -464,18 +449,18 @@ const char* tinyaiConfigGetString(const char *key, const char *defaultValue) {
     static char buffer[MAX_VALUE_LENGTH];
     
     switch (configEntries[index].value.type) {
-        case TINYAI_CONFIG_INTEGER:
+        case HYPERION_CONFIG_INTEGER:
             sprintf(buffer, "%d", configEntries[index].value.value.intValue);
             return buffer;
         
-        case TINYAI_CONFIG_FLOAT:
+        case HYPERION_CONFIG_FLOAT:
             sprintf(buffer, "%f", configEntries[index].value.value.floatValue);
             return buffer;
         
-        case TINYAI_CONFIG_BOOLEAN:
+        case HYPERION_CONFIG_BOOLEAN:
             return configEntries[index].value.value.boolValue ? "true" : "false";
         
-        case TINYAI_CONFIG_STRING:
+        case HYPERION_CONFIG_STRING:
             return configEntries[index].value.value.stringValue ? 
                    configEntries[index].value.value.stringValue : defaultValue;
     }
@@ -486,14 +471,14 @@ const char* tinyaiConfigGetString(const char *key, const char *defaultValue) {
 /**
  * Set a configuration boolean value
  */
-int tinyaiConfigSetBool(const char *key, int value) {
+int hyperionConfigSetBool(const char *key, int value) {
     if (!configInitialized) {
-        if (tinyaiConfigInit() != 0) {
+        if (hyperionConfigInit() != 0) {
             return -1;
         }
     }
     
-    int index = createConfigEntry(key, TINYAI_CONFIG_BOOLEAN);
+    int index = createConfigEntry(key, HYPERION_CONFIG_BOOLEAN);
     if (index < 0) {
         return -1;
     }
@@ -506,7 +491,7 @@ int tinyaiConfigSetBool(const char *key, int value) {
 /**
  * Get a configuration boolean value
  */
-int tinyaiConfigGetBool(const char *key, int defaultValue) {
+int hyperionConfigGetBool(const char *key, int defaultValue) {
     if (!configInitialized) {
         return defaultValue;
     }
@@ -517,16 +502,16 @@ int tinyaiConfigGetBool(const char *key, int defaultValue) {
     }
     
     switch (configEntries[index].value.type) {
-        case TINYAI_CONFIG_INTEGER:
+        case HYPERION_CONFIG_INTEGER:
             return configEntries[index].value.value.intValue != 0;
         
-        case TINYAI_CONFIG_FLOAT:
+        case HYPERION_CONFIG_FLOAT:
             return configEntries[index].value.value.floatValue != 0.0f;
         
-        case TINYAI_CONFIG_BOOLEAN:
+        case HYPERION_CONFIG_BOOLEAN:
             return configEntries[index].value.value.boolValue;
         
-        case TINYAI_CONFIG_STRING:
+        case HYPERION_CONFIG_STRING:
             if (configEntries[index].value.value.stringValue) {
                 return strcmp(configEntries[index].value.value.stringValue, "true") == 0 ||
                        strcmp(configEntries[index].value.value.stringValue, "1") == 0 ||
@@ -543,7 +528,7 @@ int tinyaiConfigGetBool(const char *key, int defaultValue) {
 /**
  * Check if a configuration key exists
  */
-int tinyaiConfigHasKey(const char *key) {
+int hyperionConfigHasKey(const char *key) {
     if (!configInitialized) {
         return 0;
     }
@@ -554,7 +539,7 @@ int tinyaiConfigHasKey(const char *key) {
 /**
  * Remove a configuration key
  */
-int tinyaiConfigRemoveKey(const char *key) {
+int hyperionConfigRemoveKey(const char *key) {
     if (!configInitialized) {
         return 0;
     }
@@ -565,7 +550,7 @@ int tinyaiConfigRemoveKey(const char *key) {
     }
     
     /* Free string value if needed */
-    if (configEntries[index].value.type == TINYAI_CONFIG_STRING &&
+    if (configEntries[index].value.type == HYPERION_CONFIG_STRING &&
         configEntries[index].value.value.stringValue) {
         free(configEntries[index].value.value.stringValue);
         configEntries[index].value.value.stringValue = NULL;
@@ -579,7 +564,7 @@ int tinyaiConfigRemoveKey(const char *key) {
 /**
  * Get all configuration keys
  */
-int tinyaiConfigGetKeys(char **keys, int maxKeys) {
+int hyperionConfigGetKeys(char **keys, int maxKeys) {
     if (!configInitialized || !keys || maxKeys <= 0) {
         return 0;
     }
@@ -598,38 +583,38 @@ int tinyaiConfigGetKeys(char **keys, int maxKeys) {
 /**
  * Set default configuration values
  */
-int tinyaiConfigSetDefaults() {
+int hyperionConfigSetDefaults() {
     if (!configInitialized) {
-        if (tinyaiConfigInit() != 0) {
+        if (hyperionConfigInit() != 0) {
             return -1;
         }
     }
     
     /* System settings */
-    tinyaiConfigSetString("system.name", "TinyAI");
-    tinyaiConfigSetString("system.version", "0.1.0");
-    tinyaiConfigSetString("system.data_dir", "./data");
-    tinyaiConfigSetString("system.model_dir", "./models");
+    hyperionConfigSetString("system.name", "Hyperion");
+    hyperionConfigSetString("system.version", "0.1.0");
+    hyperionConfigSetString("system.data_dir", "./data");
+    hyperionConfigSetString("system.model_dir", "./models");
     
     /* Memory settings */
-    tinyaiConfigSetInt("memory.pool_size", 1024 * 1024);  /* 1MB */
-    tinyaiConfigSetInt("memory.max_allocations", 10000);
-    tinyaiConfigSetBool("memory.track_leaks", 1);
+    hyperionConfigSetInt("memory.pool_size", 1024 * 1024);  /* 1MB */
+    hyperionConfigSetInt("memory.max_allocations", 10000);
+    hyperionConfigSetBool("memory.track_leaks", 1);
     
     /* Model settings */
-    tinyaiConfigSetInt("model.context_size", 512);
-    tinyaiConfigSetInt("model.hidden_size", 256);
-    tinyaiConfigSetFloat("model.temperature", 0.7f);
-    tinyaiConfigSetInt("model.top_k", 40);
-    tinyaiConfigSetFloat("model.top_p", 0.9f);
+    hyperionConfigSetInt("model.context_size", 512);
+    hyperionConfigSetInt("model.hidden_size", 256);
+    hyperionConfigSetFloat("model.temperature", 0.7f);
+    hyperionConfigSetInt("model.top_k", 40);
+    hyperionConfigSetFloat("model.top_p", 0.9f);
     
     /* Text generation settings */
-    tinyaiConfigSetInt("generate.max_tokens", 100);
-    tinyaiConfigSetBool("generate.add_bos", 1);
+    hyperionConfigSetInt("generate.max_tokens", 100);
+    hyperionConfigSetBool("generate.add_bos", 1);
     
     /* Tokenizer settings */
-    tinyaiConfigSetInt("tokenizer.vocab_size", 8192);
-    tinyaiConfigSetBool("tokenizer.case_sensitive", 0);
+    hyperionConfigSetInt("tokenizer.vocab_size", 8192);
+    hyperionConfigSetBool("tokenizer.case_sensitive", 0);
     
     return 0;
 }
@@ -637,7 +622,7 @@ int tinyaiConfigSetDefaults() {
 /**
  * Override a configuration value from command line
  */
-int tinyaiConfigOverride(const char *key, const char *value) {
+int hyperionConfigOverride(const char *key, const char *value) {
     if (!key || !value) {
         return -1;
     }
@@ -649,12 +634,12 @@ int tinyaiConfigOverride(const char *key, const char *value) {
         char *stringValue = _strdup(value + 1);
         stringValue[strlen(stringValue) - 1] = '\0';
         
-        int result = tinyaiConfigSetString(key, stringValue);
+        int result = hyperionConfigSetString(key, stringValue);
         free(stringValue);
         return result;
     } else if (strcmp(value, "true") == 0 || strcmp(value, "false") == 0) {
         /* Boolean value */
-        return tinyaiConfigSetBool(key, strcmp(value, "true") == 0);
+        return hyperionConfigSetBool(key, strcmp(value, "true") == 0);
     } else {
         /* Try to parse as a number */
         char *endPtr;
@@ -664,14 +649,14 @@ int tinyaiConfigOverride(const char *key, const char *value) {
             /* Valid number */
             if (floatValue == (int)floatValue) {
                 /* Integer */
-                return tinyaiConfigSetInt(key, (int)floatValue);
+                return hyperionConfigSetInt(key, (int)floatValue);
             } else {
                 /* Float */
-                return tinyaiConfigSetFloat(key, floatValue);
+                return hyperionConfigSetFloat(key, floatValue);
             }
         } else {
             /* Treat as string */
-            return tinyaiConfigSetString(key, value);
+            return hyperionConfigSetString(key, value);
         }
     }
 }
@@ -679,7 +664,7 @@ int tinyaiConfigOverride(const char *key, const char *value) {
 /**
  * Apply command line overrides
  */
-int tinyaiConfigApplyCommandLine(int argc, char **argv) {
+int hyperionConfigApplyCommandLine(int argc, char **argv) {
     for (int i = 1; i < argc; i++) {
         /* Look for --key=value or -key=value format */
         if ((argv[i][0] == '-' && argv[i][1] == '-') || 
@@ -695,13 +680,500 @@ int tinyaiConfigApplyCommandLine(int argc, char **argv) {
                 char *value = equalSign + 1;
                 
                 /* Override the configuration */
-                tinyaiConfigOverride(key, value);
+                hyperionConfigOverride(key, value);
                 
                 /* Restore the equal sign for display purposes */
                 *equalSign = '=';
             } else if (i + 1 < argc && argv[i + 1][0] != '-') {
                 /* Format: --key value or -key value */
-                tinyaiConfigOverride(key, argv[i + 1]);
+                hyperionConfigOverride(key, argv[i + 1]);
+                i++;  /* Skip the value */
+            }
+        }
+    }
+    
+    return 0;
+}
+ */
+int hyperionConfigInit() {
+    if (configInitialized) {
+        return 0;  /* Already initialized */
+    }
+    
+    /* Clear the config entries */
+    memset(configEntries, 0, sizeof(configEntries));
+    configEntryCount = 0;
+    configInitialized = 1;
+    
+    return 0;
+}
+
+/**
+ * Clean up the configuration system
+ */
+void hyperionConfigCleanup() {
+            configEntries[i].value.type == HYPERION_CONFIG_STRING &&
+            free(configEntries[i].value.value.stringValue);
+            configEntries[i].value.value.stringValue = NULL;
+        }
+    }
+    
+    /* Reset state */
+    memset(configEntries, 0, sizeof(configEntries));
+    configEntryCount = 0;
+    configInitialized = 0;
+}
+
+/**
+ * Load configuration from a file
+ */
+int hyperionConfigLoad(const char *path) {
+    HyperionFile *file = tinyaiOpenFile(path, TINYAI_FILE_READ);
+    while (tinyaiReadLine(file, line, sizeof(line)) > 0) {
+    tinyaiCloseFile(file);
+    
+    return errors ? -1 : 0;
+}
+
+/**
+ * Save configuration to a file
+ */
+int hyperionConfigSave(const char *path) {
+    HyperionFile *file = tinyaiOpenFile(path, TINYAI_FILE_WRITE | TINYAI_FILE_CREATE);
+    hyperionWriteFile(file, header, strlen(header));
+    
+    /* Write each entry */
+    for (int i = 0; i < configEntryCount; i++) {
+        if (!configEntries[i].active) {
+            continue;
+        }
+        
+        char line[MAX_KEY_LENGTH + MAX_VALUE_LENGTH + 10];
+        
+        switch (configEntries[i].value.type) {
+            case HYPERION_CONFIG_INTEGER:
+                sprintf(line, "%s = %d\n", configEntries[i].key, 
+                        configEntries[i].value.value.intValue);
+                break;
+            
+            case HYPERION_CONFIG_FLOAT:
+                sprintf(line, "%s = %f\n", configEntries[i].key, 
+                        configEntries[i].value.value.floatValue);
+                break;
+            
+            case HYPERION_CONFIG_STRING:
+                sprintf(line, "%s = \"%s\"\n", configEntries[i].key, 
+                        configEntries[i].value.value.stringValue ? 
+                        configEntries[i].value.value.stringValue : "");
+                break;
+            
+            case HYPERION_CONFIG_BOOLEAN:
+                sprintf(line, "%s = %s\n", configEntries[i].key, 
+                        configEntries[i].value.value.boolValue ? "true" : "false");
+                break;
+        }
+        
+        hyperionWriteFile(file, line, strlen(line));
+    }
+    
+    hyperionCloseFile(file);
+    
+    return 0;
+}
+
+/**
+ * Set a configuration integer value
+ */
+int hyperionConfigSetInt(const char *key, int value) {
+    if (!configInitialized) {
+        if (hyperionConfigInit() != 0) {
+            return -1;
+        }
+    }
+    
+    int index = createConfigEntry(key, HYPERION_CONFIG_INTEGER);
+    if (index < 0) {
+        return -1;
+    }
+    
+    configEntries[index].value.value.intValue = value;
+    
+    return 0;
+}
+
+/**
+ * Get a configuration integer value
+ */
+int hyperionConfigGetInt(const char *key, int defaultValue) {
+    if (!configInitialized) {
+        return defaultValue;
+    }
+    
+    int index = findConfigEntry(key);
+    if (index < 0) {
+        return defaultValue;
+    }
+    
+    switch (configEntries[index].value.type) {
+        case HYPERION_CONFIG_INTEGER:
+            return configEntries[index].value.value.intValue;
+        
+        case HYPERION_CONFIG_FLOAT:
+            return (int)configEntries[index].value.value.floatValue;
+        
+        case HYPERION_CONFIG_BOOLEAN:
+            return configEntries[index].value.value.boolValue ? 1 : 0;
+        
+        case HYPERION_CONFIG_STRING:
+            if (configEntries[index].value.value.stringValue) {
+                return atoi(configEntries[index].value.value.stringValue);
+            }
+            break;
+    }
+    
+    return defaultValue;
+}
+
+/**
+ * Set a configuration float value
+ */
+int hyperionConfigSetFloat(const char *key, float value) {
+    if (!configInitialized) {
+        if (hyperionConfigInit() != 0) {
+            return -1;
+        }
+    }
+    
+    int index = createConfigEntry(key, HYPERION_CONFIG_FLOAT);
+    if (index < 0) {
+        return -1;
+    }
+    
+    configEntries[index].value.value.floatValue = value;
+    
+    return 0;
+}
+
+/**
+ * Get a configuration float value
+ */
+float hyperionConfigGetFloat(const char *key, float defaultValue) {
+    if (!configInitialized) {
+        return defaultValue;
+    }
+    
+    int index = findConfigEntry(key);
+    if (index < 0) {
+        return defaultValue;
+    }
+    
+    switch (configEntries[index].value.type) {
+        case HYPERION_CONFIG_INTEGER:
+            return (float)configEntries[index].value.value.intValue;
+        
+        case HYPERION_CONFIG_FLOAT:
+            return configEntries[index].value.value.floatValue;
+        
+        case HYPERION_CONFIG_BOOLEAN:
+            return configEntries[index].value.value.boolValue ? 1.0f : 0.0f;
+        
+        case HYPERION_CONFIG_STRING:
+            if (configEntries[index].value.value.stringValue) {
+                return atof(configEntries[index].value.value.stringValue);
+            }
+            break;
+    }
+    
+    return defaultValue;
+}
+
+/**
+ * Set a configuration string value
+ */
+int hyperionConfigSetString(const char *key, const char *value) {
+    if (!configInitialized) {
+        if (hyperionConfigInit() != 0) {
+            return -1;
+        }
+    }
+    
+    int index = createConfigEntry(key, HYPERION_CONFIG_STRING);
+    if (index < 0) {
+        return -1;
+    }
+    
+    /* Free existing value if any */
+    if (configEntries[index].value.value.stringValue) {
+        free(configEntries[index].value.value.stringValue);
+    }
+    
+    /* Copy the new value */
+    if (value) {
+        configEntries[index].value.value.stringValue = _strdup(value);
+        if (!configEntries[index].value.value.stringValue) {
+            return -1;
+        }
+    } else {
+        configEntries[index].value.value.stringValue = NULL;
+    }
+    
+    return 0;
+}
+
+/**
+ * Get a configuration string value
+ */
+const char* hyperionConfigGetString(const char *key, const char *defaultValue) {
+    if (!configInitialized) {
+        return defaultValue;
+    }
+    
+    int index = findConfigEntry(key);
+    if (index < 0) {
+        return defaultValue;
+    }
+    
+    static char buffer[MAX_VALUE_LENGTH];
+    
+    switch (configEntries[index].value.type) {
+        case HYPERION_CONFIG_INTEGER:
+            sprintf(buffer, "%d", configEntries[index].value.value.intValue);
+            return buffer;
+        
+        case HYPERION_CONFIG_FLOAT:
+            sprintf(buffer, "%f", configEntries[index].value.value.floatValue);
+            return buffer;
+        
+        case HYPERION_CONFIG_BOOLEAN:
+            return configEntries[index].value.value.boolValue ? "true" : "false";
+        
+        case HYPERION_CONFIG_STRING:
+            return configEntries[index].value.value.stringValue ? 
+                   configEntries[index].value.value.stringValue : defaultValue;
+    }
+    
+    return defaultValue;
+}
+
+/**
+ * Set a configuration boolean value
+ */
+int hyperionConfigSetBool(const char *key, int value) {
+    if (!configInitialized) {
+        if (hyperionConfigInit() != 0) {
+            return -1;
+        }
+    }
+    
+    int index = createConfigEntry(key, HYPERION_CONFIG_BOOLEAN);
+    if (index < 0) {
+        return -1;
+    }
+    
+    configEntries[index].value.value.boolValue = value ? 1 : 0;
+    
+    return 0;
+}
+
+/**
+ * Get a configuration boolean value
+ */
+int hyperionConfigGetBool(const char *key, int defaultValue) {
+    if (!configInitialized) {
+        return defaultValue;
+    }
+    
+    int index = findConfigEntry(key);
+    if (index < 0) {
+        return defaultValue;
+    }
+    
+    switch (configEntries[index].value.type) {
+        case HYPERION_CONFIG_INTEGER:
+            return configEntries[index].value.value.intValue != 0;
+        
+        case HYPERION_CONFIG_FLOAT:
+            return configEntries[index].value.value.floatValue != 0.0f;
+        
+        case HYPERION_CONFIG_BOOLEAN:
+            return configEntries[index].value.value.boolValue;
+        
+        case HYPERION_CONFIG_STRING:
+            if (configEntries[index].value.value.stringValue) {
+                return strcmp(configEntries[index].value.value.stringValue, "true") == 0 ||
+                       strcmp(configEntries[index].value.value.stringValue, "1") == 0 ||
+                       strcmp(configEntries[index].value.value.stringValue, "yes") == 0 ||
+                       strcmp(configEntries[index].value.value.stringValue, "y") == 0 ||
+                       strcmp(configEntries[index].value.value.stringValue, "on") == 0;
+            }
+            break;
+    }
+    
+    return defaultValue;
+}
+
+/**
+ * Check if a configuration key exists
+ */
+int hyperionConfigHasKey(const char *key) {
+    if (!configInitialized) {
+        return 0;
+    }
+    
+    return findConfigEntry(key) >= 0;
+}
+
+/**
+ * Remove a configuration key
+ */
+int hyperionConfigRemoveKey(const char *key) {
+    if (!configInitialized) {
+        return 0;
+    }
+    
+    int index = findConfigEntry(key);
+    if (index < 0) {
+        return 0;
+    }
+    
+    /* Free string value if needed */
+    if (configEntries[index].value.type == HYPERION_CONFIG_STRING &&
+        configEntries[index].value.value.stringValue) {
+        free(configEntries[index].value.value.stringValue);
+        configEntries[index].value.value.stringValue = NULL;
+    }
+    
+    configEntries[index].active = 0;
+    
+    return 1;
+}
+
+/**
+ * Get all configuration keys
+ */
+int hyperionConfigGetKeys(char **keys, int maxKeys) {
+    if (!configInitialized || !keys || maxKeys <= 0) {
+        return 0;
+    }
+    
+    int count = 0;
+    
+    for (int i = 0; i < configEntryCount && count < maxKeys; i++) {
+        if (configEntries[i].active) {
+            keys[count++] = configEntries[i].key;
+        }
+    }
+    
+    return count;
+}
+
+/**
+ * Set default configuration values
+ */
+int hyperionConfigSetDefaults() {
+    if (!configInitialized) {
+        if (hyperionConfigInit() != 0) {
+            return -1;
+        }
+    }
+    
+    /* System settings */
+    hyperionConfigSetString("system.name", "Hyperion");
+    hyperionConfigSetString("system.version", "0.1.0");
+    hyperionConfigSetString("system.data_dir", "./data");
+    hyperionConfigSetString("system.model_dir", "./models");
+    
+    /* Memory settings */
+    hyperionConfigSetInt("memory.pool_size", 1024 * 1024);  /* 1MB */
+    hyperionConfigSetInt("memory.max_allocations", 10000);
+    hyperionConfigSetBool("memory.track_leaks", 1);
+    
+    /* Model settings */
+    hyperionConfigSetInt("model.context_size", 512);
+    hyperionConfigSetInt("model.hidden_size", 256);
+    hyperionConfigSetFloat("model.temperature", 0.7f);
+    hyperionConfigSetInt("model.top_k", 40);
+    hyperionConfigSetFloat("model.top_p", 0.9f);
+    
+    /* Text generation settings */
+    hyperionConfigSetInt("generate.max_tokens", 100);
+    hyperionConfigSetBool("generate.add_bos", 1);
+    
+    /* Tokenizer settings */
+    hyperionConfigSetInt("tokenizer.vocab_size", 8192);
+    hyperionConfigSetBool("tokenizer.case_sensitive", 0);
+    
+    return 0;
+}
+
+/**
+ * Override a configuration value from command line
+ */
+int hyperionConfigOverride(const char *key, const char *value) {
+    if (!key || !value) {
+        return -1;
+    }
+    
+    /* Parse the value based on type */
+    if ((value[0] == '"' && value[strlen(value) - 1] == '"') ||
+        (value[0] == '\'' && value[strlen(value) - 1] == '\'')) {
+        /* String value */
+        char *stringValue = _strdup(value + 1);
+        stringValue[strlen(stringValue) - 1] = '\0';
+        
+        int result = hyperionConfigSetString(key, stringValue);
+        free(stringValue);
+        return result;
+    } else if (strcmp(value, "true") == 0 || strcmp(value, "false") == 0) {
+        /* Boolean value */
+        return hyperionConfigSetBool(key, strcmp(value, "true") == 0);
+    } else {
+        /* Try to parse as a number */
+        char *endPtr;
+        float floatValue = strtof(value, &endPtr);
+        
+        if (*endPtr == '\0') {
+            /* Valid number */
+            if (floatValue == (int)floatValue) {
+                /* Integer */
+                return hyperionConfigSetInt(key, (int)floatValue);
+            } else {
+                /* Float */
+                return hyperionConfigSetFloat(key, floatValue);
+            }
+        } else {
+            /* Treat as string */
+            return hyperionConfigSetString(key, value);
+        }
+    }
+}
+
+/**
+ * Apply command line overrides
+ */
+int hyperionConfigApplyCommandLine(int argc, char **argv) {
+    for (int i = 1; i < argc; i++) {
+        /* Look for --key=value or -key=value format */
+        if ((argv[i][0] == '-' && argv[i][1] == '-') || 
+            (argv[i][0] == '-')) {
+            /* Get the key (skip leading dashes) */
+            char *key = argv[i] + (argv[i][1] == '-' ? 2 : 1);
+            
+            /* Find the equal sign */
+            char *equalSign = strchr(key, '=');
+            if (equalSign) {
+                /* Split the string at the equal sign */
+                *equalSign = '\0';
+                char *value = equalSign + 1;
+                
+                /* Override the configuration */
+                hyperionConfigOverride(key, value);
+                
+                /* Restore the equal sign for display purposes */
+                *equalSign = '=';
+            } else if (i + 1 < argc && argv[i + 1][0] != '-') {
+                /* Format: --key value or -key value */
+                hyperionConfigOverride(key, argv[i + 1]);
                 i++;  /* Skip the value */
             }
         }

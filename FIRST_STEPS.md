@@ -1,16 +1,16 @@
-# TinyAI: First Steps with Visual Studio 2022
+# Hyperion: First Steps with Visual Studio 2022
 
-This document outlines the immediate steps to take when first opening the TinyAI solution in Visual Studio 2022.
+This document outlines the immediate steps to take when first opening the Hyperion solution in Visual Studio 2022.
 
 ## First Session Checklist
 
 1. **Open the solution**:
    - Launch Visual Studio 2022
-   - Open `C:\Users\verme\OneDrive\Desktop\TinyAI\vs2022\TinyAI.sln`
+   - Open `C:\Users\verme\OneDrive\Desktop\Hyperion\vs2022\Hyperion.sln`
 
 2. **Examine the solution structure**:
    - Expand the solution in Solution Explorer
-   - Note the main project (tinyai) and test project (tinyai_tests)
+   - Note the main project (hyperion) and test project (hyperion_tests)
    - Examine CMake-generated projects (ALL_BUILD, ZERO_CHECK, etc.)
 
 3. **Attempt a build to identify issues**:
@@ -74,7 +74,7 @@ After resolving build issues, start implementing:
 
 Once the build issues are fixed:
 
-1. Set `tinyai` as the startup project
+1. Set `hyperion` as the startup project
 2. Run in debug mode (F5)
 3. Verify basic functionality works
 4. Run the test suite to confirm components work correctly
@@ -102,7 +102,7 @@ If you encounter persistent build issues:
 2. Check Visual Studio version compatibility
 3. Try building from command line to isolate Visual Studio-specific issues:
    ```
-   cd C:\Users\verme\OneDrive\Desktop\TinyAI\vs2022
+   cd C:\Users\verme\OneDrive\Desktop\Hyperion\vs2022
    cmake --build . --config Debug
    ```
 

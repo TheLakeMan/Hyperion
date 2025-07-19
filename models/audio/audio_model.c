@@ -1,6 +1,6 @@
 /**
  * @file audio_model.c
- * @brief Implementation of audio model functionality for TinyAI
+ * @brief Implementation of audio model functionality for Hyperion
  */
 
 #include "audio_model.h"
@@ -16,9 +16,9 @@
 /**
  * Audio model structure definition
  */
-struct TinyAIAudioModel {
+struct HyperionAudioModel {
     /* Configuration */
-    TinyAIAudioModelConfig config;
+    HyperionAudioModelConfig config;
 
     /* Model parameters */
     float   *weights;          /* Weights for the model (non-quantized) */
@@ -45,7 +45,7 @@ struct TinyAIAudioModel {
  * @param config Configuration for the audio model
  * @return New audio model, or NULL on failure
  */
-TinyAIAudioModel *tinyaiAudioModelCreate(const TinyAIAudioModelConfig *config)
+HyperionAudioModel *hyperionAudioModelCreate(const HyperionAudioModelConfig *config)
 {
     if (!config) {
         fprintf(stderr, "Audio model config is NULL\n");
@@ -53,17 +53,17 @@ TinyAIAudioModel *tinyaiAudioModelCreate(const TinyAIAudioModelConfig *config)
     }
 
     /* Allocate model structure */
-    TinyAIAudioModel *model = (TinyAIAudioModel *)malloc(sizeof(TinyAIAudioModel));
+    HyperionAudioModel *model = (HyperionAudioModel *)malloc(sizeof(HyperionAudioModel));
     if (!model) {
         fprintf(stderr, "Failed to allocate audio model structure\n");
         return NULL;
     }
 
     /* Initialize to zeros */
-    memset(model, 0, sizeof(TinyAIAudioModel));
+    memset(model, 0, sizeof(HyperionAudioModel));
 
     /* Copy configuration */
-    memcpy(&model->config, config, sizeof(TinyAIAudioModelConfig));
+    memcpy(&model->config, config, sizeof(HyperionAudioModelConfig));
 
     /* Set model architecture parameters */
     model->hiddenSize      = config->hiddenSize;
@@ -74,7 +74,7 @@ TinyAIAudioModel *tinyaiAudioModelCreate(const TinyAIAudioModelConfig *config)
 
     /* Calculate input dimension based on feature type */
     switch (config->featuresConfig.type) {
-    case TINYAI_AUDIO_FEATURES_MFCC:
+    case HYPERION_AUDIO_FEATURES_MFCC:
         model->inputDim = config->featuresConfig.numCoefficients;
         if (config->featuresConfig.includeDelta) {
             model->inputDim *= 2;
@@ -84,16 +84,16 @@ TinyAIAudioModel *tinyaiAudioModelCreate(const TinyAIAudioModelConfig *config)
         }
         break;
 
-    case TINYAI_AUDIO_FEATURES_MEL:
+    case HYPERION_AUDIO_FEATURES_MEL:
         model->inputDim = config->featuresConfig.numFilters;
         break;
 
-    case TINYAI_AUDIO_FEATURES_SPECTROGRAM:
+    case HYPERION_AUDIO_FEATURES_SPECTROGRAM:
         /* For spectrogram, input dimension is typically fftSize/2+1 */
         model->inputDim = 512; /* Default to 1024-point FFT */
         break;
 
-    case TINYAI_AUDIO_FEATURES_RAW:
+    case HYPERION_AUDIO_FEATURES_RAW:
         /* For raw audio, input dimension is the frame length */
         model->inputDim = config->featuresConfig.frameLength;
         break;
@@ -187,7 +187,7 @@ TinyAIAudioModel *tinyaiAudioModelCreate(const TinyAIAudioModelConfig *config)
             }
 
             /* Quantize */
-            tinyaiQuantizeWeights(tempWeights, model->quantizedWeights, weightBytes / sizeof(float),
+            hyperionQuantizeWeights(tempWeights, model->quantizedWeights, weightBytes / sizeof(float),
                                   4);
 
             /* Clean up */
@@ -224,7 +224,7 @@ TinyAIAudioModel *tinyaiAudioModelCreate(const TinyAIAudioModelConfig *config)
             }
 
             /* Quantize */
-            tinyaiQuantizeWeights(tempWeights, model->quantizedWeights, weightBytes / sizeof(float),
+            hyperionQuantizeWeights(tempWeights, model->quantizedWeights, weightBytes / sizeof(float),
                                   4);
 
             /* Clean up */
@@ -242,7 +242,7 @@ TinyAIAudioModel *tinyaiAudioModelCreate(const TinyAIAudioModelConfig *config)
  * Free an audio model
  * @param model The model to free
  */
-void tinyaiAudioModelFree(TinyAIAudioModel *model)
+void hyperionAudioModelFree(HyperionAudioModel *model)
 {
     if (!model) {
         return;
@@ -275,45 +275,45 @@ void tinyaiAudioModelFree(TinyAIAudioModel *model)
  * @param output The output structure to fill
  * @return true on success, false on failure
  */
-bool tinyaiAudioModelProcess(TinyAIAudioModel *model, const TinyAIAudioData *audio,
-                             TinyAIAudioModelOutput *output)
+bool hyperionAudioModelProcess(HyperionAudioModel *model, const HyperionAudioData *audio,
+                             HyperionAudioModelOutput *output)
 {
     if (!model || !audio || !output) {
         return false;
     }
 
     /* Extract features from audio */
-    TinyAIAudioFeatures features;
-    memset(&features, 0, sizeof(TinyAIAudioFeatures));
+    HyperionAudioFeatures features;
+    memset(&features, 0, sizeof(HyperionAudioFeatures));
 
     /* Extract features based on configuration */
     switch (model->config.featuresConfig.type) {
-    case TINYAI_AUDIO_FEATURES_MFCC:
-        if (!tinyaiAudioExtractMFCC(audio, &model->config.featuresConfig, NULL, &features)) {
+    case HYPERION_AUDIO_FEATURES_MFCC:
+        if (!hyperionAudioExtractMFCC(audio, &model->config.featuresConfig, NULL, &features)) {
             fprintf(stderr, "Failed to extract MFCC features\n");
             return false;
         }
         break;
 
-    case TINYAI_AUDIO_FEATURES_MEL:
-        if (!tinyaiAudioExtractMelSpectrogram(audio, &model->config.featuresConfig, NULL,
+    case HYPERION_AUDIO_FEATURES_MEL:
+        if (!hyperionAudioExtractMelSpectrogram(audio, &model->config.featuresConfig, NULL,
                                               &features)) {
             fprintf(stderr, "Failed to extract Mel spectrogram features\n");
             return false;
         }
         break;
 
-    case TINYAI_AUDIO_FEATURES_SPECTROGRAM:
-        if (!tinyaiAudioExtractSpectrogram(audio, &model->config.featuresConfig, NULL, &features)) {
+    case HYPERION_AUDIO_FEATURES_SPECTROGRAM:
+        if (!hyperionAudioExtractSpectrogram(audio, &model->config.featuresConfig, NULL, &features)) {
             fprintf(stderr, "Failed to extract spectrogram features\n");
             return false;
         }
         break;
 
-    case TINYAI_AUDIO_FEATURES_RAW:
+    case HYPERION_AUDIO_FEATURES_RAW:
         /* For raw audio, just convert samples to float and reshape */
         fprintf(stderr, "Raw audio features not yet implemented\n");
-        tinyaiAudioFeaturesFree(&features);
+        hyperionAudioFeaturesFree(&features);
         return false;
 
     default:
@@ -323,9 +323,9 @@ bool tinyaiAudioModelProcess(TinyAIAudioModel *model, const TinyAIAudioData *aud
 
     /* Initialize output if not already initialized */
     if (!output->logits || !output->probabilities) {
-        if (!tinyaiAudioModelOutputInit(output, model->numClasses)) {
+        if (!hyperionAudioModelOutputInit(output, model->numClasses)) {
             fprintf(stderr, "Failed to initialize audio model output\n");
-            tinyaiAudioFeaturesFree(&features);
+            hyperionAudioFeaturesFree(&features);
             return false;
         }
     }
@@ -334,7 +334,7 @@ bool tinyaiAudioModelProcess(TinyAIAudioModel *model, const TinyAIAudioData *aud
     if (features.numFeatures != model->inputDim) {
         fprintf(stderr, "Feature dimension mismatch: got %d, expected %d\n", features.numFeatures,
                 model->inputDim);
-        tinyaiAudioFeaturesFree(&features);
+        hyperionAudioFeaturesFree(&features);
         return false;
     }
 
@@ -343,7 +343,7 @@ bool tinyaiAudioModelProcess(TinyAIAudioModel *model, const TinyAIAudioData *aud
     float *avgFeatures = (float *)malloc(model->inputDim * sizeof(float));
     if (!avgFeatures) {
         fprintf(stderr, "Failed to allocate average features\n");
-        tinyaiAudioFeaturesFree(&features);
+        hyperionAudioFeaturesFree(&features);
         return false;
     }
 
@@ -410,7 +410,7 @@ bool tinyaiAudioModelProcess(TinyAIAudioModel *model, const TinyAIAudioData *aud
 
     /* Clean up */
     free(avgFeatures);
-    tinyaiAudioFeaturesFree(&features);
+    hyperionAudioFeaturesFree(&features);
 
     return true;
 }
@@ -421,14 +421,14 @@ bool tinyaiAudioModelProcess(TinyAIAudioModel *model, const TinyAIAudioData *aud
  * @param numClasses Number of output classes
  * @return true on success, false on failure
  */
-bool tinyaiAudioModelOutputInit(TinyAIAudioModelOutput *output, int numClasses)
+bool hyperionAudioModelOutputInit(HyperionAudioModelOutput *output, int numClasses)
 {
     if (!output || numClasses <= 0) {
         return false;
     }
 
     /* Clear the structure */
-    memset(output, 0, sizeof(TinyAIAudioModelOutput));
+    memset(output, 0, sizeof(HyperionAudioModelOutput));
 
     /* Allocate logits */
     output->logits = (float *)malloc(numClasses * sizeof(float));
@@ -453,7 +453,7 @@ bool tinyaiAudioModelOutputInit(TinyAIAudioModelOutput *output, int numClasses)
  * Free audio model output
  * @param output The output to free
  */
-void tinyaiAudioModelOutputFree(TinyAIAudioModelOutput *output)
+void hyperionAudioModelOutputFree(HyperionAudioModelOutput *output)
 {
     if (!output) {
         return;
@@ -482,7 +482,7 @@ void tinyaiAudioModelOutputFree(TinyAIAudioModelOutput *output)
  * @param enable Whether to enable SIMD
  * @return true on success, false on failure
  */
-bool tinyaiAudioModelEnableSIMD(TinyAIAudioModel *model, bool enable)
+bool hyperionAudioModelEnableSIMD(HyperionAudioModel *model, bool enable)
 {
     if (!model) {
         return false;

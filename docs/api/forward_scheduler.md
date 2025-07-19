@@ -1,6 +1,6 @@
 # Forward Pass Scheduler API
 
-This document provides detailed reference for TinyAI's Forward Pass Scheduler API, which enables layer-wise computation with automatic memory management.
+This document provides detailed reference for Hyperion's Forward Pass Scheduler API, which enables layer-wise computation with automatic memory management.
 
 ## Overview
 
@@ -10,50 +10,50 @@ The Forward Pass Scheduler API allows for execution of neural network layers wit
 
 ### Types
 
-#### `TinyAIExecutionMode`
+#### `HyperionExecutionMode`
 
 Enum defining forward pass execution modes.
 
 ```c
 typedef enum {
-    TINYAI_EXEC_NORMAL,     /* Standard execution - all layers loaded at once */
-    TINYAI_EXEC_MEMORY_OPT, /* Memory optimized - only load weights when needed */
-    TINYAI_EXEC_STREAMING,  /* Streaming - process inputs in chunks */
-    TINYAI_EXEC_ADAPTIVE    /* Adaptive - automatically choose best strategy */
-} TinyAIExecutionMode;
+    HYPERION_EXEC_NORMAL,     /* Standard execution - all layers loaded at once */
+    HYPERION_EXEC_MEMORY_OPT, /* Memory optimized - only load weights when needed */
+    HYPERION_EXEC_STREAMING,  /* Streaming - process inputs in chunks */
+    HYPERION_EXEC_ADAPTIVE    /* Adaptive - automatically choose best strategy */
+} HyperionExecutionMode;
 ```
 
-#### `TinyAIDependencyType`
+#### `HyperionDependencyType`
 
 Enum defining layer dependency types.
 
 ```c
 typedef enum {
-    TINYAI_DEP_NONE,       /* No dependency (parallel execution possible) */
-    TINYAI_DEP_SEQUENTIAL, /* Must execute after previous layer */
-    TINYAI_DEP_RESIDUAL,   /* Residual connection (depends on earlier layer) */
-    TINYAI_DEP_ATTENTION   /* Attention dependency (complex pattern) */
-} TinyAIDependencyType;
+    HYPERION_DEP_NONE,       /* No dependency (parallel execution possible) */
+    HYPERION_DEP_SEQUENTIAL, /* Must execute after previous layer */
+    HYPERION_DEP_RESIDUAL,   /* Residual connection (depends on earlier layer) */
+    HYPERION_DEP_ATTENTION   /* Attention dependency (complex pattern) */
+} HyperionDependencyType;
 ```
 
-#### `TinyAIExecLayer`
+#### `HyperionExecLayer`
 
 Structure describing a layer in the execution schedule.
 
 ```c
 typedef struct {
     int                  layerIndex;     /* Index of the layer in the model */
-    TinyAIDependencyType depType;        /* Dependency type */
+    HyperionDependencyType depType;        /* Dependency type */
     int                  dependsOnLayer; /* Index of layer this depends on (-1 for none) */
     bool                 executed;       /* Whether this layer has been executed */
     bool                 outputNeeded;   /* Whether this layer's output is still needed */
     float                memoryUsage;    /* Memory usage of this layer's activation */
     void                *outputPtr;      /* Pointer to layer's output activation */
     size_t               outputSize;     /* Size of output activation in bytes */
-} TinyAIExecLayer;
+} HyperionExecLayer;
 ```
 
-#### `TinyAIForwardScheduler`
+#### `HyperionForwardScheduler`
 
 Opaque structure representing a forward pass scheduler.
 
@@ -63,72 +63,72 @@ Opaque structure representing a forward pass scheduler.
 
 ```c
 // Create a new forward pass scheduler
-TinyAIForwardScheduler *tinyaiCreateForwardScheduler(
-    TinyAIMappedModel *model, 
-    TinyAIExecutionMode mode, 
+HyperionForwardScheduler *hyperionCreateForwardScheduler(
+    HyperionMappedModel *model, 
+    HyperionExecutionMode mode, 
     size_t maxMemory);
 
 // Destroy a forward pass scheduler
-void tinyaiDestroyForwardScheduler(TinyAIForwardScheduler *scheduler);
+void hyperionDestroyForwardScheduler(HyperionForwardScheduler *scheduler);
 ```
 
 #### Layer Scheduling
 
 ```c
 // Add a layer to the execution schedule
-bool tinyaiAddLayerToSchedule(
-    TinyAIForwardScheduler *scheduler, 
+bool hyperionAddLayerToSchedule(
+    HyperionForwardScheduler *scheduler, 
     int layerIndex, 
     int dependsOnLayer, 
-    TinyAIDependencyType depType, 
+    HyperionDependencyType depType, 
     size_t outputSize);
 
 // Prepare for forward pass execution
-bool tinyaiPrepareForwardPass(TinyAIForwardScheduler *scheduler);
+bool hyperionPrepareForwardPass(HyperionForwardScheduler *scheduler);
 ```
 
 #### Execution
 
 ```c
 // Execute the next layer in the schedule
-bool tinyaiExecuteNextLayer(
-    TinyAIForwardScheduler *scheduler, 
+bool hyperionExecuteNextLayer(
+    HyperionForwardScheduler *scheduler, 
     const void *input, 
     void *output, 
     int *layerIndex);
 
 // Reset the scheduler for a new forward pass
-void tinyaiResetScheduler(TinyAIForwardScheduler *scheduler);
+void hyperionResetScheduler(HyperionForwardScheduler *scheduler);
 ```
 
 #### Memory Management
 
 ```c
 // Calculate the optimal batch size based on available memory
-int tinyaiCalculateOptimalBatchSize(
-    TinyAIForwardScheduler *scheduler,
+int hyperionCalculateOptimalBatchSize(
+    HyperionForwardScheduler *scheduler,
     size_t inputSize,
     size_t outputSize,
     int maxBatchSize);
 
 // Get the current memory usage of the scheduler
-size_t tinyaiGetSchedulerMemoryUsage(const TinyAIForwardScheduler *scheduler);
+size_t hyperionGetSchedulerMemoryUsage(const HyperionForwardScheduler *scheduler);
 
 // Get the maximum memory usage during execution
-size_t tinyaiGetSchedulerPeakMemoryUsage(const TinyAIForwardScheduler *scheduler);
+size_t hyperionGetSchedulerPeakMemoryUsage(const HyperionForwardScheduler *scheduler);
 
 // Mark a layer's output as no longer needed (allows memory to be freed)
-void tinyaiMarkLayerOutputUnneeded(TinyAIForwardScheduler *scheduler, int layerIndex);
+void hyperionMarkLayerOutputUnneeded(HyperionForwardScheduler *scheduler, int layerIndex);
 ```
 
 #### Layer State
 
 ```c
 // Get the execution status of a layer
-bool tinyaiIsLayerExecuted(const TinyAIForwardScheduler *scheduler, int layerIndex);
+bool hyperionIsLayerExecuted(const HyperionForwardScheduler *scheduler, int layerIndex);
 
 // Get the output of a layer
-void *tinyaiGetLayerOutput(const TinyAIForwardScheduler *scheduler, int layerIndex);
+void *hyperionGetLayerOutput(const HyperionForwardScheduler *scheduler, int layerIndex);
 ```
 
 ## Usage Example
@@ -136,79 +136,79 @@ void *tinyaiGetLayerOutput(const TinyAIForwardScheduler *scheduler, int layerInd
 This example demonstrates how to use the Forward Pass Scheduler to run a neural network with minimal memory usage:
 
 ```c
-#include <tinyai/utils/mmap_loader.h>
-#include <tinyai/utils/forward_scheduler.h>
+#include <hyperion/utils/mmap_loader.h>
+#include <hyperion/utils/forward_scheduler.h>
 #include <stdio.h>
 
 int main() {
     // Open model with memory mapping
-    TinyAIMmapConfig mmapConfig = tinyaiCreateDefaultMmapConfig();
+    HyperionMmapConfig mmapConfig = hyperionCreateDefaultMmapConfig();
     mmapConfig.maxCacheSize = 50 * 1024 * 1024; // 50MB cache
     
-    TinyAIMappedModel* model = tinyaiOpenMappedModel("large_model.tmai", &mmapConfig);
+    HyperionMappedModel* model = hyperionOpenMappedModel("large_model.tmai", &mmapConfig);
     if (!model) {
         printf("Failed to open model\n");
         return 1;
     }
     
     // Create scheduler with memory limit
-    TinyAIForwardScheduler* scheduler = tinyaiCreateForwardScheduler(
-        model, TINYAI_EXEC_MEMORY_OPT, 100 * 1024 * 1024); // 100MB limit
+    HyperionForwardScheduler* scheduler = hyperionCreateForwardScheduler(
+        model, HYPERION_EXEC_MEMORY_OPT, 100 * 1024 * 1024); // 100MB limit
     
     if (!scheduler) {
         printf("Failed to create scheduler\n");
-        tinyaiCloseMappedModel(model);
+        hyperionCloseMappedModel(model);
         return 1;
     }
     
     // Get layer count from the model
-    int layerCount = tinyaiGetMappedLayerCount(model);
+    int layerCount = hyperionGetMappedLayerCount(model);
     
     // Add layers to the schedule (sequential network example)
     for (int i = 0; i < layerCount; i++) {
         int dependsOn = (i > 0) ? i - 1 : -1;
-        TinyAIDependencyType depType = (i > 0) ? TINYAI_DEP_SEQUENTIAL : TINYAI_DEP_NONE;
+        HyperionDependencyType depType = (i > 0) ? HYPERION_DEP_SEQUENTIAL : HYPERION_DEP_NONE;
         
         // Each layer produces activations of this size (for example)
         size_t outputSize = 1024 * 1024; // 1MB per layer
         
-        if (!tinyaiAddLayerToSchedule(scheduler, i, dependsOn, depType, outputSize)) {
+        if (!hyperionAddLayerToSchedule(scheduler, i, dependsOn, depType, outputSize)) {
             printf("Failed to add layer %d to schedule\n", i);
-            tinyaiDestroyForwardScheduler(scheduler);
-            tinyaiCloseMappedModel(model);
+            hyperionDestroyForwardScheduler(scheduler);
+            hyperionCloseMappedModel(model);
             return 1;
         }
     }
     
     // Prepare for execution
-    if (!tinyaiPrepareForwardPass(scheduler)) {
+    if (!hyperionPrepareForwardPass(scheduler)) {
         printf("Failed to prepare forward pass\n");
-        tinyaiDestroyForwardScheduler(scheduler);
-        tinyaiCloseMappedModel(model);
+        hyperionDestroyForwardScheduler(scheduler);
+        hyperionCloseMappedModel(model);
         return 1;
     }
     
     // Execute the network layer by layer
     int layerIndex;
-    while (tinyaiExecuteNextLayer(scheduler, NULL, NULL, &layerIndex)) {
+    while (hyperionExecuteNextLayer(scheduler, NULL, NULL, &layerIndex)) {
         printf("Executed layer %d\n", layerIndex);
         printf("Current memory usage: %.2f MB\n", 
-               tinyaiGetSchedulerMemoryUsage(scheduler) / (1024.0 * 1024.0));
+               hyperionGetSchedulerMemoryUsage(scheduler) / (1024.0 * 1024.0));
         
         // If this was the last layer that needed a previous layer's output,
         // mark that previous layer's output as no longer needed
         if (layerIndex > 0 && !isOutputNeededByFutureLayers(layerIndex - 1)) {
-            tinyaiMarkLayerOutputUnneeded(scheduler, layerIndex - 1);
+            hyperionMarkLayerOutputUnneeded(scheduler, layerIndex - 1);
         }
     }
     
     // Print peak memory usage
     printf("Peak memory usage: %.2f MB\n", 
-           tinyaiGetSchedulerPeakMemoryUsage(scheduler) / (1024.0 * 1024.0));
+           hyperionGetSchedulerPeakMemoryUsage(scheduler) / (1024.0 * 1024.0));
     
     // Clean up
-    tinyaiDestroyForwardScheduler(scheduler);
-    tinyaiCloseMappedModel(model);
+    hyperionDestroyForwardScheduler(scheduler);
+    hyperionCloseMappedModel(model);
     
     return 0;
 }
@@ -229,16 +229,16 @@ This example demonstrates how to schedule a network with residual connections:
 
 ```c
 // Main branch
-tinyaiAddLayerToSchedule(scheduler, 0, -1, TINYAI_DEP_NONE, size0);     // Input layer
-tinyaiAddLayerToSchedule(scheduler, 1, 0, TINYAI_DEP_SEQUENTIAL, size1); // Conv1
-tinyaiAddLayerToSchedule(scheduler, 2, 1, TINYAI_DEP_SEQUENTIAL, size2); // Conv2
+hyperionAddLayerToSchedule(scheduler, 0, -1, HYPERION_DEP_NONE, size0);     // Input layer
+hyperionAddLayerToSchedule(scheduler, 1, 0, HYPERION_DEP_SEQUENTIAL, size1); // Conv1
+hyperionAddLayerToSchedule(scheduler, 2, 1, HYPERION_DEP_SEQUENTIAL, size2); // Conv2
 
 // Residual connection (depends on input layer)
-tinyaiAddLayerToSchedule(scheduler, 3, 0, TINYAI_DEP_RESIDUAL, size3);   // Residual
+hyperionAddLayerToSchedule(scheduler, 3, 0, HYPERION_DEP_RESIDUAL, size3);   // Residual
 
 // Output layer (depends on both Conv2 and Residual)
-tinyaiAddLayerToSchedule(scheduler, 4, 2, TINYAI_DEP_SEQUENTIAL, size4); // Output
-tinyaiAddLayerToSchedule(scheduler, 4, 3, TINYAI_DEP_SEQUENTIAL, size4); // Output (same layer)
+hyperionAddLayerToSchedule(scheduler, 4, 2, HYPERION_DEP_SEQUENTIAL, size4); // Output
+hyperionAddLayerToSchedule(scheduler, 4, 3, HYPERION_DEP_SEQUENTIAL, size4); // Output (same layer)
 ```
 
 ### Example with Attention Mechanism
@@ -247,28 +247,28 @@ This example demonstrates how to schedule a transformer-like network with attent
 
 ```c
 // Input embedding
-tinyaiAddLayerToSchedule(scheduler, 0, -1, TINYAI_DEP_NONE, embedSize);
+hyperionAddLayerToSchedule(scheduler, 0, -1, HYPERION_DEP_NONE, embedSize);
 
 // Self-attention layers
-tinyaiAddLayerToSchedule(scheduler, 1, 0, TINYAI_DEP_SEQUENTIAL, qSize);  // Query
-tinyaiAddLayerToSchedule(scheduler, 2, 0, TINYAI_DEP_SEQUENTIAL, kSize);  // Key
-tinyaiAddLayerToSchedule(scheduler, 3, 0, TINYAI_DEP_SEQUENTIAL, vSize);  // Value
+hyperionAddLayerToSchedule(scheduler, 1, 0, HYPERION_DEP_SEQUENTIAL, qSize);  // Query
+hyperionAddLayerToSchedule(scheduler, 2, 0, HYPERION_DEP_SEQUENTIAL, kSize);  // Key
+hyperionAddLayerToSchedule(scheduler, 3, 0, HYPERION_DEP_SEQUENTIAL, vSize);  // Value
 
 // Attention mechanism (depends on Q, K, V)
-tinyaiAddLayerToSchedule(scheduler, 4, 1, TINYAI_DEP_ATTENTION, attSize); // Attention
-tinyaiAddLayerToSchedule(scheduler, 4, 2, TINYAI_DEP_ATTENTION, attSize); // (same layer)
-tinyaiAddLayerToSchedule(scheduler, 4, 3, TINYAI_DEP_ATTENTION, attSize); // (same layer)
+hyperionAddLayerToSchedule(scheduler, 4, 1, HYPERION_DEP_ATTENTION, attSize); // Attention
+hyperionAddLayerToSchedule(scheduler, 4, 2, HYPERION_DEP_ATTENTION, attSize); // (same layer)
+hyperionAddLayerToSchedule(scheduler, 4, 3, HYPERION_DEP_ATTENTION, attSize); // (same layer)
 
 // Residual connection and layer norm (depends on input and attention)
-tinyaiAddLayerToSchedule(scheduler, 5, 0, TINYAI_DEP_RESIDUAL, normSize);  // Residual
-tinyaiAddLayerToSchedule(scheduler, 5, 4, TINYAI_DEP_SEQUENTIAL, normSize); // (same layer)
+hyperionAddLayerToSchedule(scheduler, 5, 0, HYPERION_DEP_RESIDUAL, normSize);  // Residual
+hyperionAddLayerToSchedule(scheduler, 5, 4, HYPERION_DEP_SEQUENTIAL, normSize); // (same layer)
 
 // Feed-forward network
-tinyaiAddLayerToSchedule(scheduler, 6, 5, TINYAI_DEP_SEQUENTIAL, ffnSize);  // FFN
+hyperionAddLayerToSchedule(scheduler, 6, 5, HYPERION_DEP_SEQUENTIAL, ffnSize);  // FFN
 
 // Final residual and layer norm
-tinyaiAddLayerToSchedule(scheduler, 7, 5, TINYAI_DEP_RESIDUAL, outSize);    // Output
-tinyaiAddLayerToSchedule(scheduler, 7, 6, TINYAI_DEP_SEQUENTIAL, outSize);  // (same layer)
+hyperionAddLayerToSchedule(scheduler, 7, 5, HYPERION_DEP_RESIDUAL, outSize);    // Output
+hyperionAddLayerToSchedule(scheduler, 7, 6, HYPERION_DEP_SEQUENTIAL, outSize);  // (same layer)
 ```
 
 ## Best Practices

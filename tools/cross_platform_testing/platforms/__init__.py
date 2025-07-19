@@ -1,5 +1,5 @@
 """
-TinyAI Platform-Specific Testing Modules
+Hyperion Platform-Specific Testing Modules
 
 This package provides platform-specific testing implementations for the TinyAI framework.
 Each module implements the testing logic for a specific platform or device type.

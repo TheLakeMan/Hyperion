@@ -1,5 +1,5 @@
 /**
- * TinyAI Memory Management Tests
+ * Hyperion Memory Management Tests
  */
 
 #include "../core/memory.h" // Include the header for the functions being tested
@@ -17,35 +17,35 @@
     } while (0)
 
 void test_basic_alloc_free() {
-    printf("  Testing basic tinyaiAlloc/tinyaiFree...\n");
-    void *ptr = tinyaiAlloc(100);
-    ASSERT(ptr != NULL, "tinyaiAlloc(100) should return non-NULL");
+    printf("  Testing basic hyperionAlloc/hyperionFree...\n");
+    void *ptr = hyperionAlloc(100);
+    ASSERT(ptr != NULL, "hyperionAlloc(100) should return non-NULL");
     // Optional: Try writing to the memory
     memset(ptr, 0xAA, 100); 
-    tinyaiFree(ptr);
+    hyperionFree(ptr);
     printf("    PASS\n");
 
-    printf("  Testing tinyaiAlloc(0)...\n");
+    printf("  Testing hyperionAlloc(0)...\n");
     // Standard malloc(0) behavior is implementation-defined (can return NULL or unique ptr)
     // Let's assume it might return non-NULL but shouldn't be used.
-    ptr = tinyaiAlloc(0);
-    // ASSERT(ptr == NULL, "tinyaiAlloc(0) should return NULL"); // Or assert non-null depending on desired behavior
+    ptr = hyperionAlloc(0);
+    // ASSERT(ptr == NULL, "hyperionAlloc(0) should return NULL"); // Or assert non-null depending on desired behavior
     if (ptr != NULL) {
-        tinyaiFree(ptr); // Free it if non-NULL
+        hyperionFree(ptr); // Free it if non-NULL
     }
     printf("    PASS (behavior check)\n");
     
-    printf("  Testing tinyaiFree(NULL)...\n");
-    tinyaiFree(NULL); // Should be a no-op and not crash
+    printf("  Testing hyperionFree(NULL)...\n");
+    hyperionFree(NULL); // Should be a no-op and not crash
     printf("    PASS (no crash)\n");
 }
 
 void test_calloc() {
-     printf("  Testing tinyaiCalloc...\n");
+     printf("  Testing hyperionCalloc...\n");
      size_t count = 10;
      size_t size = sizeof(int);
-     int *ptr = (int*)tinyaiCalloc(count, size);
-     ASSERT(ptr != NULL, "tinyaiCalloc should return non-NULL");
+     int *ptr = (int*)hyperionCalloc(count, size);
+     ASSERT(ptr != NULL, "hyperionCalloc should return non-NULL");
      
      // Verify memory is zeroed
      int zeroed = 1;
@@ -55,23 +55,23 @@ void test_calloc() {
              break;
          }
      }
-     ASSERT(zeroed, "tinyaiCalloc memory should be zero-initialized");
+     ASSERT(zeroed, "hyperionCalloc memory should be zero-initialized");
      
-     tinyaiFree(ptr);
+     hyperionFree(ptr);
      printf("    PASS\n");
 }
 
 void test_realloc() {
-    printf("  Testing tinyaiRealloc...\n");
+    printf("  Testing hyperionRealloc...\n");
     
     // Realloc from NULL (should behave like malloc)
-    void *ptr = tinyaiRealloc(NULL, 50);
-    ASSERT(ptr != NULL, "tinyaiRealloc(NULL, 50) should return non-NULL");
+    void *ptr = hyperionRealloc(NULL, 50);
+    ASSERT(ptr != NULL, "hyperionRealloc(NULL, 50) should return non-NULL");
     memset(ptr, 0xBB, 50);
 
     // Realloc to larger size
-    void *ptr_larger = tinyaiRealloc(ptr, 150);
-    ASSERT(ptr_larger != NULL, "tinyaiRealloc to larger size should return non-NULL");
+    void *ptr_larger = hyperionRealloc(ptr, 150);
+    ASSERT(ptr_larger != NULL, "hyperionRealloc to larger size should return non-NULL");
     // Check if original content is preserved (up to the old size)
     unsigned char* check_ptr = (unsigned char*)ptr_larger;
     int preserved = 1;
@@ -82,8 +82,8 @@ void test_realloc() {
     memset((char*)ptr_larger + 50, 0xCC, 100); // Write to new part
 
     // Realloc to smaller size
-    void *ptr_smaller = tinyaiRealloc(ptr_larger, 20);
-     ASSERT(ptr_smaller != NULL, "tinyaiRealloc to smaller size should return non-NULL");
+    void *ptr_smaller = hyperionRealloc(ptr_larger, 20);
+     ASSERT(ptr_smaller != NULL, "hyperionRealloc to smaller size should return non-NULL");
      // Check if original content is preserved (up to the new size)
      check_ptr = (unsigned char*)ptr_smaller;
      preserved = 1;
@@ -95,12 +95,12 @@ void test_realloc() {
      // ASSERT(preserved, "Content should be preserved after realloc to smaller size"); // This might be fragile
 
     // Realloc to zero size (should behave like free)
-    void *ptr_zero = tinyaiRealloc(ptr_smaller, 0);
+    void *ptr_zero = hyperionRealloc(ptr_smaller, 0);
     // Standard realloc(ptr, 0) behavior is implementation-defined (can return NULL or unique ptr)
     // Let's assume it frees and might return NULL.
-    // ASSERT(ptr_zero == NULL, "tinyaiRealloc(ptr, 0) should return NULL"); 
+    // ASSERT(ptr_zero == NULL, "hyperionRealloc(ptr, 0) should return NULL"); 
     if (ptr_zero != NULL) {
-        tinyaiFree(ptr_zero); // Free it if non-NULL
+        hyperionFree(ptr_zero); // Free it if non-NULL
     }
 
     printf("    PASS\n");

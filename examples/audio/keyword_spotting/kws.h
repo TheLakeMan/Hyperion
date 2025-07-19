@@ -1,14 +1,14 @@
 /**
  * @file kws.h
- * @brief Keyword Spotting for TinyAI
+ * @brief Keyword Spotting for Hyperion
  *
  * This header defines the keyword spotting functionality
- * for TinyAI, providing a lightweight implementation for
+ * for Hyperion, providing a lightweight implementation for
  * detecting specific keywords in audio.
  */
 
-#ifndef TINYAI_KWS_H
-#define TINYAI_KWS_H
+#ifndef HYPERION_KWS_H
+#define HYPERION_KWS_H
 
 #include "../../../models/audio/audio_features.h"
 #include "../../../models/audio/audio_model.h"
@@ -23,26 +23,26 @@ extern "C" {
 /**
  * Maximum number of supported keywords
  */
-#define TINYAI_KWS_MAX_KEYWORDS 10
+#define HYPERION_KWS_MAX_KEYWORDS 10
 
 /**
  * Maximum keyword length in characters
  */
-#define TINYAI_KWS_MAX_KEYWORD_LENGTH 32
+#define HYPERION_KWS_MAX_KEYWORD_LENGTH 32
 
 /**
  * Default detection threshold
  */
-#define TINYAI_KWS_DEFAULT_THRESHOLD 0.5f
+#define HYPERION_KWS_DEFAULT_THRESHOLD 0.5f
 
 /**
  * Keyword information structure
  */
 typedef struct {
-    char  word[TINYAI_KWS_MAX_KEYWORD_LENGTH]; /* Keyword text */
+    char  word[HYPERION_KWS_MAX_KEYWORD_LENGTH]; /* Keyword text */
     float threshold;                           /* Detection threshold */
     int   modelIndex;                          /* Index in the model for this keyword */
-} TinyAIKWSKeyword;
+} HyperionKWSKeyword;
 
 /**
  * Keyword detection result
@@ -54,7 +54,7 @@ typedef struct {
     int   endFrame;     /* End frame of detection */
     float startTime;    /* Start time in seconds */
     float endTime;      /* End time in seconds */
-} TinyAIKWSDetection;
+} HyperionKWSDetection;
 
 /**
  * Keyword spotting configuration
@@ -69,25 +69,25 @@ typedef struct {
     bool  smoothDetections;     /* Whether to apply smoothing to detections */
     int   minDetectionDuration; /* Minimum detection duration in milliseconds */
     float noiseAdaptationRate;  /* Noise adaptation rate (0.0-1.0) */
-} TinyAIKWSConfig;
+} HyperionKWSConfig;
 
 /**
  * Keyword spotting model
  */
-typedef struct TinyAIKWSModel TinyAIKWSModel;
+typedef struct HyperionKWSModel HyperionKWSModel;
 
 /**
  * Keyword spotting state
  */
 typedef struct {
-    TinyAIKWSConfig  config;                            /* Configuration */
-    TinyAIKWSModel  *model;                             /* Model */
+    HyperionKWSConfig  config;                            /* Configuration */
+    HyperionKWSModel  *model;                             /* Model */
     int              numKeywords;                       /* Number of keywords */
-    TinyAIKWSKeyword keywords[TINYAI_KWS_MAX_KEYWORDS]; /* Keywords */
+    HyperionKWSKeyword keywords[HYPERION_KWS_MAX_KEYWORDS]; /* Keywords */
 
     /* Feature extraction */
-    TinyAIAudioFeaturesConfig featuresConfig;     /* Feature extraction configuration */
-    TinyAIAudioFeatures      *features;           /* Extracted features */
+    HyperionAudioFeaturesConfig featuresConfig;     /* Feature extraction configuration */
+    HyperionAudioFeatures      *features;           /* Extracted features */
     float                    *featureBuffer;      /* Buffer for features */
     int                       featureBufferSize;  /* Size of feature buffer */
     int                       featureBufferIndex; /* Current index in feature buffer */
@@ -100,16 +100,16 @@ typedef struct {
     float  noiseLevel;       /* Current noise level estimate */
 
     /* Results */
-    TinyAIKWSDetection *detections;     /* Detection results */
+    HyperionKWSDetection *detections;     /* Detection results */
     int                 detectionsSize; /* Size of detections buffer */
     int                 numDetections;  /* Number of detections */
-} TinyAIKWSState;
+} HyperionKWSState;
 
 /**
  * Initialize the default keyword spotting configuration
  * @param config Configuration structure to initialize
  */
-void tinyaiKWSInitConfig(TinyAIKWSConfig *config);
+void hyperionKWSInitConfig(HyperionKWSConfig *config);
 
 /**
  * Create a new keyword spotting state
@@ -117,20 +117,20 @@ void tinyaiKWSInitConfig(TinyAIKWSConfig *config);
  * @param modelPath Path to model file
  * @return New keyword spotting state, or NULL on failure
  */
-TinyAIKWSState *tinyaiKWSCreate(const TinyAIKWSConfig *config, const char *modelPath);
+HyperionKWSState *hyperionKWSCreate(const HyperionKWSConfig *config, const char *modelPath);
 
 /**
  * Free keyword spotting state
  * @param state State to free
  */
-void tinyaiKWSFree(TinyAIKWSState *state);
+void hyperionKWSFree(HyperionKWSState *state);
 
 /**
  * Reset keyword spotting state
  * @param state State to reset
  * @return true on success, false on failure
  */
-bool tinyaiKWSReset(TinyAIKWSState *state);
+bool hyperionKWSReset(HyperionKWSState *state);
 
 /**
  * Add a keyword to detect
@@ -139,7 +139,7 @@ bool tinyaiKWSReset(TinyAIKWSState *state);
  * @param threshold Detection threshold (0.0-1.0), or negative to use default
  * @return true on success, false on failure
  */
-bool tinyaiKWSAddKeyword(TinyAIKWSState *state, const char *keyword, float threshold);
+bool hyperionKWSAddKeyword(HyperionKWSState *state, const char *keyword, float threshold);
 
 /**
  * Process audio frame for keyword detection
@@ -148,7 +148,7 @@ bool tinyaiKWSAddKeyword(TinyAIKWSState *state, const char *keyword, float thres
  * @param frameSize Number of samples in frame
  * @return true on success, false on failure
  */
-bool tinyaiKWSProcessFrame(TinyAIKWSState *state, const float *frame, int frameSize);
+bool hyperionKWSProcessFrame(HyperionKWSState *state, const float *frame, int frameSize);
 
 /**
  * Process full audio buffer for keyword detection
@@ -158,8 +158,8 @@ bool tinyaiKWSProcessFrame(TinyAIKWSState *state, const float *frame, int frameS
  * @param numDetections Output number of detections
  * @return true on success, false on failure
  */
-bool tinyaiKWSProcessAudio(TinyAIKWSState *state, const TinyAIAudioData *audio,
-                           TinyAIKWSDetection **detections, int *numDetections);
+bool hyperionKWSProcessAudio(HyperionKWSState *state, const HyperionAudioData *audio,
+                           HyperionKWSDetection **detections, int *numDetections);
 
 /**
  * Get current detection results
@@ -169,7 +169,7 @@ bool tinyaiKWSProcessAudio(TinyAIKWSState *state, const TinyAIAudioData *audio,
  * @param numDetections Output number of detections
  * @return true on success, false on failure
  */
-bool tinyaiKWSGetDetections(TinyAIKWSState *state, TinyAIKWSDetection *detections,
+bool hyperionKWSGetDetections(HyperionKWSState *state, HyperionKWSDetection *detections,
                             int maxDetections, int *numDetections);
 
 /**
@@ -180,7 +180,7 @@ bool tinyaiKWSGetDetections(TinyAIKWSState *state, TinyAIKWSDetection *detection
  * @param numKeywords Output number of keywords
  * @return true on success, false on failure
  */
-bool tinyaiKWSGetAvailableKeywords(TinyAIKWSState *state, char **keywords, int maxKeywords,
+bool hyperionKWSGetAvailableKeywords(HyperionKWSState *state, char **keywords, int maxKeywords,
                                    int *numKeywords);
 
 /**
@@ -191,12 +191,12 @@ bool tinyaiKWSGetAvailableKeywords(TinyAIKWSState *state, char **keywords, int m
  * @param numDetections Number of detections
  * @param width Width of visualization in characters
  */
-void tinyaiKWSVisualizeDetections(TinyAIKWSState *state, const TinyAIAudioData *audio,
-                                  const TinyAIKWSDetection *detections, int numDetections,
+void hyperionKWSVisualizeDetections(HyperionKWSState *state, const HyperionAudioData *audio,
+                                  const HyperionKWSDetection *detections, int numDetections,
                                   int width);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* TINYAI_KWS_H */
+#endif /* HYPERION_KWS_H */

@@ -1,20 +1,20 @@
-# Working with TinyAI in Visual Studio 2022
+# Working with Hyperion in Visual Studio 2022
 
-This guide provides instructions for working with the TinyAI project in Visual Studio 2022.
+This guide provides instructions for working with the Hyperion project in Visual Studio 2022.
 
 ## Opening the Project
 
 1. Launch Visual Studio 2022
 2. Select "Open a project or solution"
-3. Navigate to `C:\Users\verme\OneDrive\Desktop\TinyAI\vs2022`
-4. Select `TinyAI.sln` and click "Open"
+3. Navigate to `C:\Users\verme\OneDrive\Desktop\Hyperion\vs2022`
+4. Select `Hyperion.sln` and click "Open"
 
 ## Solution Structure
 
 The solution contains several projects:
 
-- **tinyai**: The main executable project
-- **tinyai_tests**: The test suite project
+- **hyperion**: The main executable project
+- **hyperion_tests**: The test suite project
 - **ALL_BUILD**: Builds both the main executable and tests
 - **ZERO_CHECK**: Checks if CMake configuration has changed
 - **INSTALL**: For installing the built binaries
@@ -34,12 +34,12 @@ The solution contains several projects:
    - Right-click on the solution in Solution Explorer and select "Build Solution"
 
 3. **Build individual projects**:
-   - Right-click on a specific project (e.g., "tinyai") and select "Build"
+   - Right-click on a specific project (e.g., "hyperion") and select "Build"
 
 ## Running the Project
 
 1. **Set the startup project**:
-   - Right-click on "tinyai" in Solution Explorer
+   - Right-click on "hyperion" in Solution Explorer
    - Select "Set as Startup Project"
 
 2. **Run without debugging**:
@@ -169,6 +169,6 @@ If Visual Studio shows errors opening the solution file:
 1. Delete the `vs2022` directory
 2. Regenerate it with:
    ```
-   cmake -G "Visual Studio 17 2022" -S C:\Users\verme\OneDrive\Desktop\TinyAI -B C:\Users\verme\OneDrive\Desktop\TinyAI\vs2022
+   cmake -G "Visual Studio 17 2022" -S C:\Users\verme\OneDrive\Desktop\Hyperion -B C:\Users\verme\OneDrive\Desktop\Hyperion\vs2022
    ```
 3. Make sure you are using the correct version of Visual Studio (2022)

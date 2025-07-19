@@ -28,7 +28,7 @@ static bool forwardActivation(int activationType, float *data, int size, bool us
  * @param output Output tensor (will contain the classification results)
  * @return true on success, false on failure
  */
-bool tinyaiImageModelForwardPass(const TinyAIImageModel *model, const float *input, float *output)
+bool hyperionImageModelForwardPass(const HyperionImageModel *model, const float *input, float *output)
 {
     if (!model || !input || !output) {
         fprintf(stderr, "Invalid parameters for forward pass\n");
@@ -154,7 +154,7 @@ static bool forwardConv(const Layer *layer, const float *input, float *output, b
     /* Check if we are using SIMD and quantized weights */
     if (useSIMD && layer->weights) {
         /* Use our newly implemented SIMD-accelerated convolution */
-        tinyaiSimdConv2d4Bit(output,                /* Output feature map */
+        hyperionSimdConv2d4Bit(output,                /* Output feature map */
                              input,                 /* Input feature map */
                              layer->weights,        /* 4-bit quantized weights */
                              layer->biases,         /* Biases */
@@ -198,7 +198,7 @@ static bool forwardDepthwise(const Layer *layer, const float *input, float *outp
     /* Check if we are using SIMD and quantized weights */
     if (useSIMD && layer->weights) {
         /* Use our newly implemented SIMD-accelerated depthwise convolution */
-        tinyaiSimdDepthwiseConv2d4Bit(output,         /* Output feature map */
+        hyperionSimdDepthwiseConv2d4Bit(output,         /* Output feature map */
                                       input,          /* Input feature map */
                                       layer->weights, /* 4-bit quantized weights */
                                       layer->biases,  /* Biases */
@@ -254,15 +254,15 @@ static bool forwardPooling(const Layer *layer, const float *input, float *output
     }
 
     /* Get cache-friendly block sizes for tiling */
-    TinyAICacheOptConfig config = tinyai_cache_opt_init_default();
+    HyperionCacheOptConfig config = hyperion_cache_opt_init_default();
 
     /* Height-width-channel order is more cache-friendly for convolutional networks */
     size_t blockSizes[3];
-    tinyai_cache_opt_calculate_block_sizes(sizeof(float), 0, 3, blockSizes);
+    hyperion_cache_opt_calculate_block_sizes(sizeof(float), 0, 3, blockSizes);
 
     /* Use tiling to improve cache locality */
     size_t oh, ow, oc;
-    TINYAI_LOOP_TILING_3D(
+    HYPERION_LOOP_TILING_3D(
         oh, 0, layer->outputHeight, ow, 0, layer->outputWidth, oc, 0, layer->outputChannels,
         blockSizes[0], blockSizes[1], blockSizes[2], {
             /* Calculate input position corresponding to this output position */
@@ -345,7 +345,7 @@ static bool forwardDense(const Layer *layer, const float *input, float *output, 
     /* Check if we are using SIMD and quantized weights */
     if (useSIMD && layer->weights) {
         /* Use SIMD-accelerated matrix-vector multiplication for 4-bit weights */
-        tinyaiSimdMatMul4Bit(output,         /* Output vector */
+        hyperionSimdMatMul4Bit(output,         /* Output vector */
                              layer->weights, /* 4-bit quantized weights */
                              input,          /* Input vector */
                              outputSize,     /* Number of rows (output size) */
@@ -371,8 +371,8 @@ static bool forwardDense(const Layer *layer, const float *input, float *output, 
         memset(output, 0, outputSize * sizeof(float));
 
         /* Get cache-friendly block sizes for tiling the matrix-vector multiply */
-        TinyAICacheOptConfig config = tinyai_cache_opt_init_default();
-        tinyai_cache_opt_matrix_multiply(outputSize, 1, inputSize, &config);
+        HyperionCacheOptConfig config = hyperion_cache_opt_init_default();
+        hyperion_cache_opt_matrix_multiply(outputSize, 1, inputSize, &config);
 
         /* Temporarily dequantize weights if needed */
         float *dequantizedWeights = NULL;
@@ -382,7 +382,7 @@ static bool forwardDense(const Layer *layer, const float *input, float *output, 
 
         /* Use blocked matrix-vector multiplication for better cache usage */
         size_t i, k;
-        TINYAI_LOOP_TILING_2D(i, 0, outputSize, k, 0, inputSize, config.blockSizeX,
+        HYPERION_LOOP_TILING_2D(i, 0, outputSize, k, 0, inputSize, config.blockSizeX,
                               config.blockSizeY, {
                                   /* Prefetch the next cache line if we're not at the end */
                                   if (k + 8 < inputSize) {
@@ -470,7 +470,7 @@ static bool forwardActivation(int activationType, float *data, int size, bool us
         }
 
         /* Use SIMD-accelerated activation */
-        tinyaiSimdActivate(data, size, simdActivationType);
+        hyperionSimdActivate(data, size, simdActivationType);
         return true;
     }
     else {

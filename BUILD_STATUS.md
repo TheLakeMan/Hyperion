@@ -1,4 +1,4 @@
-# TinyAI Build Status Report
+# Hyperion Build Status Report
 
 ## Current Environment Setup
 
@@ -52,9 +52,9 @@ The project now builds successfully and produces working executables. However, f
    - Add comprehensive unit tests for each component
    - Add integration tests for the full pipeline
 
-## Using VS Code for TinyAI Development
+## Using VS Code for Hyperion Development
 
-To work on the TinyAI project using VS Code:
+To work on the Hyperion project using VS Code:
 
 1. **Build the Project**:
    - Use VS Code tasks: `Ctrl+Shift+P` → "Tasks: Run Task" → "Build Debug"
@@ -62,12 +62,12 @@ To work on the TinyAI project using VS Code:
 
 2. **Run Tests**:
    - Use VS Code tasks: `Ctrl+Shift+P` → "Tasks: Run Task" → "Run Tests"
-   - Or run in terminal: `build\Debug\tinyai_tests.exe`
+   - Or run in terminal: `build\Debug\hyperion_tests.exe`
 
 3. **Debug the Project**:
    - Set breakpoints in code files
    - Use Run and Debug sidebar: `Ctrl+Shift+D`
-   - Select "Debug TinyAI" or "Debug Tests" configuration
+   - Select "Debug Hyperion" or "Debug Tests" configuration
 
 4. **Implement Missing Functionality**:
    - Use the Problems panel (`Ctrl+Shift+M`) to view compiler warnings
@@ -84,4 +84,4 @@ The VS Code environment has been set up to provide a seamless development experi
 - ✅ Fixed function signature mismatches and return type issues
 - ✅ Successfully built both the main application and tests
 
-These changes have made significant progress toward a fully functional TinyAI implementation. The core interpreter is now working correctly, and we can move on to implementing the model components.
+These changes have made significant progress toward a fully functional Hyperion implementation. The core interpreter is now working correctly, and we can move on to implementing the model components.

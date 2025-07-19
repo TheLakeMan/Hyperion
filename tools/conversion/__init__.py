@@ -1,5 +1,5 @@
 """
-TinyAI Model Conversion Package
+Hyperion Model Conversion Package
 
 This package provides tools for converting models from popular deep learning frameworks to TinyAI format.
 Supported input formats:

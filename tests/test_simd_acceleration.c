@@ -1,6 +1,6 @@
 /**
  * @file test_simd_acceleration.c
- * @brief SIMD acceleration tests for TinyAI
+ * @brief SIMD acceleration tests for Hyperion
  */
 
 #include "../utils/simd_ops.h"
@@ -65,7 +65,7 @@ static void test_vector_addition()
     printf("  Running SIMD implementation...\n");
     clock_t start_simd = clock();
 
-    bool success = tinyaiVectorAdd(a, b, c_simd, size);
+    bool success = hyperionVectorAdd(a, b, c_simd, size);
     ASSERT(success, "SIMD vector addition failed");
 
     clock_t end_simd  = clock();
@@ -131,7 +131,7 @@ static void test_matrix_multiplication()
     printf("  Running SIMD implementation...\n");
     clock_t start_simd = clock();
 
-    bool success = tinyaiMatrixMultiply(a, b, c_simd, m, k, n);
+    bool success = hyperionMatrixMultiply(a, b, c_simd, m, k, n);
     ASSERT(success, "SIMD matrix multiplication failed");
 
     clock_t end_simd  = clock();
@@ -225,7 +225,7 @@ static void test_convolution()
     printf("  Running SIMD convolution...\n");
     clock_t start_simd = clock();
 
-    bool success = tinyaiConv2D(input, kernels, bias, output_simd, height, width, channels,
+    bool success = hyperionConv2D(input, kernels, bias, output_simd, height, width, channels,
                                 kernel_size, num_filters);
     ASSERT(success, "SIMD convolution failed");
 
@@ -282,7 +282,7 @@ static void test_activation_functions()
 
     // SIMD ReLU
     clock_t start_simd   = clock();
-    bool    relu_success = tinyaiApplyReLU(input, output_relu_simd, size);
+    bool    relu_success = hyperionApplyReLU(input, output_relu_simd, size);
     ASSERT(relu_success, "SIMD ReLU failed");
     clock_t end_simd       = clock();
     double  time_relu_simd = (double)(end_simd - start_simd) / CLOCKS_PER_SEC;
@@ -312,7 +312,7 @@ static void test_activation_functions()
 
     // SIMD Sigmoid
     start_simd           = clock();
-    bool sigmoid_success = tinyaiApplySigmoid(input, output_sigmoid_simd, size);
+    bool sigmoid_success = hyperionApplySigmoid(input, output_sigmoid_simd, size);
     ASSERT(sigmoid_success, "SIMD Sigmoid failed");
     end_simd                 = clock();
     double time_sigmoid_simd = (double)(end_simd - start_simd) / CLOCKS_PER_SEC;
@@ -346,7 +346,7 @@ static void test_activation_functions()
 
     // SIMD Tanh
     start_simd        = clock();
-    bool tanh_success = tinyaiApplyTanh(input, output_tanh_simd, size);
+    bool tanh_success = hyperionApplyTanh(input, output_tanh_simd, size);
     ASSERT(tanh_success, "SIMD Tanh failed");
     end_simd              = clock();
     double time_tanh_simd = (double)(end_simd - start_simd) / CLOCKS_PER_SEC;
@@ -385,16 +385,16 @@ static void test_simd_detection()
     printf("Testing SIMD detection...\n");
 
     // Detect supported instruction sets
-    bool has_sse2 = tinyaiHasSSE2();
-    bool has_avx  = tinyaiHasAVX();
-    bool has_avx2 = tinyaiHasAVX2();
+    bool has_sse2 = hyperionHasSSE2();
+    bool has_avx  = hyperionHasAVX();
+    bool has_avx2 = hyperionHasAVX2();
 
     printf("  SSE2 support: %s\n", has_sse2 ? "Yes" : "No");
     printf("  AVX support: %s\n", has_avx ? "Yes" : "No");
     printf("  AVX2 support: %s\n", has_avx2 ? "Yes" : "No");
 
     // Verify that the right implementation is selected based on CPU capabilities
-    const char *simd_impl = tinyaiGetSIMDImplementation();
+    const char *simd_impl = hyperionGetSIMDImplementation();
     printf("  Selected SIMD implementation: %s\n", simd_impl);
 
     if (has_avx2) {

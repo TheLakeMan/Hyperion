@@ -1,14 +1,14 @@
-# TinyAI Technical Documentation
+# Hyperion Technical Documentation
 
 ## Overview
 
-TinyAI is an ultra-lightweight AI model system designed to run on minimal hardware, including legacy systems as old as Windows 95. The implementation focuses on extreme efficiency through 4-bit quantization, minimal memory footprint, and CPU-only execution.
+Hyperion is an ultra-lightweight AI model system designed to run on minimal hardware, including legacy systems as old as Windows 95. The implementation focuses on extreme efficiency through 4-bit quantization, minimal memory footprint, and CPU-only execution.
 
 ## System Architecture
 
 ### Component Structure
 ```
-TinyAI
+Hyperion
 ├── Core Layer - Foundation components
 │   ├── Picol Interpreter - Extended Tcl interpreter
 │   ├── Runtime Environment - Module loading, resource management
@@ -230,7 +230,7 @@ To stay within the $5.00 API cost budget:
  * @param inputDims Input dimensions
  * @return Baseline memory usage statistics
  */
-TinyAIMemoryStats tinyaiEstablishMemoryBaseline(const TinyAIModel* model, const int* inputDims);
+hyperionMemoryStats hyperionEstablishMemoryBaseline(const hyperionModel* model, const int* inputDims);
 
 /**
  * Compare current memory usage with baseline
@@ -239,9 +239,9 @@ TinyAIMemoryStats tinyaiEstablishMemoryBaseline(const TinyAIModel* model, const 
  * @param currentStats Current memory statistics
  * @return Comparison results
  */
-TinyAIMemoryComparison tinyaiCompareWithBaseline(const TinyAIModel* model,
-                                                 const TinyAIMemoryStats* baseline,
-                                                 const TinyAIMemoryStats* currentStats);
+hyperionMemoryComparison hyperionCompareWithBaseline(const hyperionModel* model,
+                                                 const hyperionMemoryStats* baseline,
+                                                 const hyperionMemoryStats* currentStats);
 
 /**
  * Generate memory optimization report
@@ -249,6 +249,6 @@ TinyAIMemoryComparison tinyaiCompareWithBaseline(const TinyAIModel* model,
  * @param outputFile Path to output file
  * @return Success status
  */
-bool tinyaiGenerateOptimizationReport(const TinyAIMemoryComparison* comparison,
+bool hyperionGenerateOptimizationReport(const hyperionMemoryComparison* comparison,
                                       const char* outputFile);
-``` 
+```

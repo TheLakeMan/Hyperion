@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-ONNX to TinyAI Model Converter
+ONNX to Hyperion Model Converter
 
 This module converts ONNX models to TinyAI format.
 It handles:

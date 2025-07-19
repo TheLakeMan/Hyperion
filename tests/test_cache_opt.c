@@ -99,8 +99,8 @@ void test_matrix_multiply(void)
         memset(c_blocked, 0, size * size * sizeof(float));
 
         /* Configure cache optimization */
-        TinyAICacheOptConfig config = tinyai_cache_opt_init_default();
-        tinyai_cache_opt_matrix_multiply(size, size, size, &config);
+        HyperionCacheOptConfig config = hyperion_cache_opt_init_default();
+        hyperion_cache_opt_matrix_multiply(size, size, size, &config);
 
         printf("Cache optimization config:\n");
         printf("  Block size X: %zu\n", config.blockSizeX);
@@ -146,7 +146,7 @@ void test_matrix_multiply(void)
                             for (size_t j = j_block; j < j_end; j++) {
                                 /* Prefetch */
                                 if (config.enablePrefetch && i + config.prefetchDistance < size) {
-                                    tinyai_prefetch(&a[(i + config.prefetchDistance) * size], 0, 2);
+                                    hyperion_prefetch(&a[(i + config.prefetchDistance) * size], 0, 2);
                                 }
 
                                 float sum = c_blocked[i * size + j];
@@ -249,7 +249,7 @@ void test_transpose(void)
         start_time = get_time_ms();
 
         for (int iter = 0; iter < NUM_ITERATIONS; iter++) {
-            tinyai_transpose_blocked(dst_blocked, src, size, size, sizeof(float));
+            hyperion_transpose_blocked(dst_blocked, src, size, size, sizeof(float));
         }
 
         end_time            = get_time_ms();
@@ -288,7 +288,7 @@ void test_cache_info(void)
 {
     printf("\n=== Testing Cache Information Detection ===\n");
 
-    TinyAICacheInfo cacheInfo = tinyai_get_cache_info();
+    HyperionCacheInfo cacheInfo = hyperion_get_cache_info();
 
     printf("L1 Data Cache Size: %zu bytes (%.2f KB)\n", cacheInfo.l1dCacheSize,
            cacheInfo.l1dCacheSize / 1024.0);
@@ -323,7 +323,7 @@ void test_cache_info(void)
  */
 int main(void)
 {
-    printf("=== TinyAI Cache Optimization Tests ===\n");
+    printf("=== Hyperion Cache Optimization Tests ===\n");
 
     /* Test cache info detection */
     test_cache_info();

@@ -1,7 +1,7 @@
 /**
- * TinyAI Quantization Utilities Implementation
+ * Hyperion Quantization Utilities Implementation
  * 
- * This file implements the quantization utilities for TinyAI.
+ * This file implements the quantization utilities for Hyperion.
  */
 
 #include <stdio.h>
@@ -31,8 +31,8 @@ static float *activationTableGELU = NULL;
 /**
  * Create a 4-bit quantized matrix
  */
-TinyAIMatrix4bit* tinyaiCreateMatrix4bit(uint32_t rows, uint32_t cols) {
-    TinyAIMatrix4bit *matrix = (TinyAIMatrix4bit*)TINYAI_MALLOC(sizeof(TinyAIMatrix4bit));
+HyperionMatrix4bit* hyperionCreateMatrix4bit(uint32_t rows, uint32_t cols) {
+    HyperionMatrix4bit *matrix = (HyperionMatrix4bit*)HYPERION_MALLOC(sizeof(HyperionMatrix4bit));
     if (!matrix) {
         return NULL;
     }
@@ -40,9 +40,9 @@ TinyAIMatrix4bit* tinyaiCreateMatrix4bit(uint32_t rows, uint32_t cols) {
     /* Calculate data size (4-bit values, 2 per byte) */
     size_t dataSize = (rows * cols + 1) / 2; /* Ceiling division */
     
-    matrix->data = (uint8_t*)TINYAI_MALLOC(dataSize);
+    matrix->data = (uint8_t*)HYPERION_MALLOC(dataSize);
     if (!matrix->data) {
-        TINYAI_FREE(matrix);
+        HYPERION_FREE(matrix);
         return NULL;
     }
     
@@ -59,30 +59,30 @@ TinyAIMatrix4bit* tinyaiCreateMatrix4bit(uint32_t rows, uint32_t cols) {
 /**
  * Destroy a 4-bit quantized matrix
  */
-void tinyaiDestroyMatrix4bit(TinyAIMatrix4bit *matrix) {
+void hyperionDestroyMatrix4bit(HyperionMatrix4bit *matrix) {
     if (!matrix) {
         return;
     }
     
     if (matrix->data) {
-        TINYAI_FREE(matrix->data);
+        HYPERION_FREE(matrix->data);
     }
     
-    TINYAI_FREE(matrix);
+    HYPERION_FREE(matrix);
 }
 
 /**
  * Create an 8-bit quantized matrix
  */
-TinyAIMatrix8bit* tinyaiCreateMatrix8bit(uint32_t rows, uint32_t cols) {
-    TinyAIMatrix8bit *matrix = (TinyAIMatrix8bit*)TINYAI_MALLOC(sizeof(TinyAIMatrix8bit));
+HyperionMatrix8bit* hyperionCreateMatrix8bit(uint32_t rows, uint32_t cols) {
+    HyperionMatrix8bit *matrix = (HyperionMatrix8bit*)HYPERION_MALLOC(sizeof(HyperionMatrix8bit));
     if (!matrix) {
         return NULL;
     }
     
-    matrix->data = (int8_t*)TINYAI_MALLOC(rows * cols);
+    matrix->data = (int8_t*)HYPERION_MALLOC(rows * cols);
     if (!matrix->data) {
-        TINYAI_FREE(matrix);
+        HYPERION_FREE(matrix);
         return NULL;
     }
     
@@ -99,30 +99,30 @@ TinyAIMatrix8bit* tinyaiCreateMatrix8bit(uint32_t rows, uint32_t cols) {
 /**
  * Destroy an 8-bit quantized matrix
  */
-void tinyaiDestroyMatrix8bit(TinyAIMatrix8bit *matrix) {
+void hyperionDestroyMatrix8bit(HyperionMatrix8bit *matrix) {
     if (!matrix) {
         return;
     }
     
     if (matrix->data) {
-        TINYAI_FREE(matrix->data);
+        HYPERION_FREE(matrix->data);
     }
     
-    TINYAI_FREE(matrix);
+    HYPERION_FREE(matrix);
 }
 
 /**
  * Create a FP32 matrix
  */
-TinyAIMatrixFP32* tinyaiCreateMatrixFP32(uint32_t rows, uint32_t cols) {
-    TinyAIMatrixFP32 *matrix = (TinyAIMatrixFP32*)TINYAI_MALLOC(sizeof(TinyAIMatrixFP32));
+HyperionMatrixFP32* hyperionCreateMatrixFP32(uint32_t rows, uint32_t cols) {
+    HyperionMatrixFP32 *matrix = (HyperionMatrixFP32*)HYPERION_MALLOC(sizeof(HyperionMatrixFP32));
     if (!matrix) {
         return NULL;
     }
     
-    matrix->data = (float*)TINYAI_MALLOC(rows * cols * sizeof(float));
+    matrix->data = (float*)HYPERION_MALLOC(rows * cols * sizeof(float));
     if (!matrix->data) {
-        TINYAI_FREE(matrix);
+        HYPERION_FREE(matrix);
         return NULL;
     }
     
@@ -137,16 +137,16 @@ TinyAIMatrixFP32* tinyaiCreateMatrixFP32(uint32_t rows, uint32_t cols) {
 /**
  * Destroy a FP32 matrix
  */
-void tinyaiDestroyMatrixFP32(TinyAIMatrixFP32 *matrix) {
+void hyperionDestroyMatrixFP32(HyperionMatrixFP32 *matrix) {
     if (!matrix) {
         return;
     }
     
     if (matrix->data) {
-        TINYAI_FREE(matrix->data);
+        HYPERION_FREE(matrix->data);
     }
     
-    TINYAI_FREE(matrix);
+    HYPERION_FREE(matrix);
 }
 
 /* ----------------- Quantization and Dequantization ----------------- */
@@ -154,12 +154,12 @@ void tinyaiDestroyMatrixFP32(TinyAIMatrixFP32 *matrix) {
 /**
  * Quantize a FP32 matrix to 4-bit
  */
-TinyAIMatrix4bit* tinyaiQuantizeFP32To4bit(const TinyAIMatrixFP32 *input) {
+HyperionMatrix4bit* hyperionQuantizeFP32To4bit(const HyperionMatrixFP32 *input) {
     if (!input || !input->data) {
         return NULL;
     }
     
-    TinyAIMatrix4bit *output = tinyaiCreateMatrix4bit(input->rows, input->cols);
+    HyperionMatrix4bit *output = hyperionCreateMatrix4bit(input->rows, input->cols);
     if (!output) {
         return NULL;
     }
@@ -208,12 +208,12 @@ TinyAIMatrix4bit* tinyaiQuantizeFP32To4bit(const TinyAIMatrixFP32 *input) {
 /**
  * Quantize a FP32 matrix to 8-bit
  */
-TinyAIMatrix8bit* tinyaiQuantizeFP32To8bit(const TinyAIMatrixFP32 *input) {
+HyperionMatrix8bit* hyperionQuantizeFP32To8bit(const HyperionMatrixFP32 *input) {
     if (!input || !input->data) {
         return NULL;
     }
     
-    TinyAIMatrix8bit *output = tinyaiCreateMatrix8bit(input->rows, input->cols);
+    HyperionMatrix8bit *output = hyperionCreateMatrix8bit(input->rows, input->cols);
     if (!output) {
         return NULL;
     }
@@ -252,12 +252,12 @@ TinyAIMatrix8bit* tinyaiQuantizeFP32To8bit(const TinyAIMatrixFP32 *input) {
 /**
  * Dequantize a 4-bit matrix to FP32
  */
-TinyAIMatrixFP32* tinyaiDequantize4bitToFP32(const TinyAIMatrix4bit *input) {
+HyperionMatrixFP32* hyperionDequantize4bitToFP32(const HyperionMatrix4bit *input) {
     if (!input || !input->data) {
         return NULL;
     }
     
-    TinyAIMatrixFP32 *output = tinyaiCreateMatrixFP32(input->rows, input->cols);
+    HyperionMatrixFP32 *output = hyperionCreateMatrixFP32(input->rows, input->cols);
     if (!output) {
         return NULL;
     }
@@ -281,12 +281,12 @@ TinyAIMatrixFP32* tinyaiDequantize4bitToFP32(const TinyAIMatrix4bit *input) {
 /**
  * Dequantize an 8-bit matrix to FP32
  */
-TinyAIMatrixFP32* tinyaiDequantize8bitToFP32(const TinyAIMatrix8bit *input) {
+HyperionMatrixFP32* hyperionDequantize8bitToFP32(const HyperionMatrix8bit *input) {
     if (!input || !input->data) {
         return NULL;
     }
     
-    TinyAIMatrixFP32 *output = tinyaiCreateMatrixFP32(input->rows, input->cols);
+    HyperionMatrixFP32 *output = hyperionCreateMatrixFP32(input->rows, input->cols);
     if (!output) {
         return NULL;
     }
@@ -304,13 +304,13 @@ TinyAIMatrixFP32* tinyaiDequantize8bitToFP32(const TinyAIMatrix8bit *input) {
 /**
  * Matrix multiplication: C = A * B
  */
-int tinyaiMatrixMultiply(const void *a, const void *b, void *c, TinyAIPrecision precision) {
+int hyperionMatrixMultiply(const void *a, const void *b, void *c, HyperionPrecision precision) {
     /* Implementation varies based on precision */
     switch (precision) {
-        case TINYAI_PRECISION_FP32: {
-            const TinyAIMatrixFP32 *A = (const TinyAIMatrixFP32 *)a;
-            const TinyAIMatrixFP32 *B = (const TinyAIMatrixFP32 *)b;
-            TinyAIMatrixFP32 *C = (TinyAIMatrixFP32 *)c;
+        case HYPERION_PRECISION_FP32: {
+            const HyperionMatrixFP32 *A = (const HyperionMatrixFP32 *)a;
+            const HyperionMatrixFP32 *B = (const HyperionMatrixFP32 *)b;
+            HyperionMatrixFP32 *C = (HyperionMatrixFP32 *)c;
             
             if (!A || !B || !C || !A->data || !B->data || !C->data) {
                 return -1;
@@ -334,12 +334,12 @@ int tinyaiMatrixMultiply(const void *a, const void *b, void *c, TinyAIPrecision 
             return 0;
         }
         
-        case TINYAI_PRECISION_INT8: {
+        case HYPERION_PRECISION_INT8: {
             /* Simplified implementation for 8-bit quantized matrices */
             /* For a real implementation, we would use SIMD instructions and optimized code */
-            const TinyAIMatrix8bit *A = (const TinyAIMatrix8bit *)a;
-            const TinyAIMatrix8bit *B = (const TinyAIMatrix8bit *)b;
-            TinyAIMatrix8bit *C = (TinyAIMatrix8bit *)c;
+            const HyperionMatrix8bit *A = (const HyperionMatrix8bit *)a;
+            const HyperionMatrix8bit *B = (const HyperionMatrix8bit *)b;
+            HyperionMatrix8bit *C = (HyperionMatrix8bit *)c;
             
             if (!A || !B || !C || !A->data || !B->data || !C->data) {
                 return -1;
@@ -372,12 +372,12 @@ int tinyaiMatrixMultiply(const void *a, const void *b, void *c, TinyAIPrecision 
             return 0;
         }
         
-        case TINYAI_PRECISION_INT4: {
+        case HYPERION_PRECISION_INT4: {
             /* Simplified implementation for 4-bit quantized matrices */
             /* This is a naive implementation for demonstration purposes */
-            const TinyAIMatrix4bit *A = (const TinyAIMatrix4bit *)a;
-            const TinyAIMatrix4bit *B = (const TinyAIMatrix4bit *)b;
-            TinyAIMatrix4bit *C = (TinyAIMatrix4bit *)c;
+            const HyperionMatrix4bit *A = (const HyperionMatrix4bit *)a;
+            const HyperionMatrix4bit *B = (const HyperionMatrix4bit *)b;
+            HyperionMatrix4bit *C = (HyperionMatrix4bit *)c;
             
             if (!A || !B || !C || !A->data || !B->data || !C->data) {
                 return -1;
@@ -391,26 +391,26 @@ int tinyaiMatrixMultiply(const void *a, const void *b, void *c, TinyAIPrecision 
             /* This is too complex for this simplified version */
             
             /* Instead, we'll just dequantize to FP32, compute, and requantize */
-            TinyAIMatrixFP32 *Afp32 = tinyaiDequantize4bitToFP32(A);
-            TinyAIMatrixFP32 *Bfp32 = tinyaiDequantize4bitToFP32(B);
-            TinyAIMatrixFP32 *Cfp32 = tinyaiCreateMatrixFP32(C->rows, C->cols);
+            HyperionMatrixFP32 *Afp32 = hyperionDequantize4bitToFP32(A);
+            HyperionMatrixFP32 *Bfp32 = hyperionDequantize4bitToFP32(B);
+            HyperionMatrixFP32 *Cfp32 = hyperionCreateMatrixFP32(C->rows, C->cols);
             
             if (!Afp32 || !Bfp32 || !Cfp32) {
-                if (Afp32) tinyaiDestroyMatrixFP32(Afp32);
-                if (Bfp32) tinyaiDestroyMatrixFP32(Bfp32);
-                if (Cfp32) tinyaiDestroyMatrixFP32(Cfp32);
+                if (Afp32) hyperionDestroyMatrixFP32(Afp32);
+                if (Bfp32) hyperionDestroyMatrixFP32(Bfp32);
+                if (Cfp32) hyperionDestroyMatrixFP32(Cfp32);
                 return -1;
             }
             
             /* Compute in FP32 */
-            tinyaiMatrixMultiply(Afp32, Bfp32, Cfp32, TINYAI_PRECISION_FP32);
+            hyperionMatrixMultiply(Afp32, Bfp32, Cfp32, HYPERION_PRECISION_FP32);
             
             /* Requantize */
-            TinyAIMatrix4bit *Cnew = tinyaiQuantizeFP32To4bit(Cfp32);
+            HyperionMatrix4bit *Cnew = hyperionQuantizeFP32To4bit(Cfp32);
             if (!Cnew) {
-                tinyaiDestroyMatrixFP32(Afp32);
-                tinyaiDestroyMatrixFP32(Bfp32);
-                tinyaiDestroyMatrixFP32(Cfp32);
+                hyperionDestroyMatrixFP32(Afp32);
+                hyperionDestroyMatrixFP32(Bfp32);
+                hyperionDestroyMatrixFP32(Cfp32);
                 return -1;
             }
             
@@ -421,10 +421,10 @@ int tinyaiMatrixMultiply(const void *a, const void *b, void *c, TinyAIPrecision 
             C->zeroPoint = Cnew->zeroPoint;
             
             /* Clean up */
-            tinyaiDestroyMatrixFP32(Afp32);
-            tinyaiDestroyMatrixFP32(Bfp32);
-            tinyaiDestroyMatrixFP32(Cfp32);
-            tinyaiDestroyMatrix4bit(Cnew);
+            hyperionDestroyMatrixFP32(Afp32);
+            hyperionDestroyMatrixFP32(Bfp32);
+            hyperionDestroyMatrixFP32(Cfp32);
+            hyperionDestroyMatrix4bit(Cnew);
             
             return 0;
         }
@@ -437,13 +437,13 @@ int tinyaiMatrixMultiply(const void *a, const void *b, void *c, TinyAIPrecision 
 /**
  * Matrix addition: C = A + B
  */
-int tinyaiMatrixAdd(const void *a, const void *b, void *c, TinyAIPrecision precision) {
+int hyperionMatrixAdd(const void *a, const void *b, void *c, HyperionPrecision precision) {
     /* Implementation varies based on precision */
     switch (precision) {
-        case TINYAI_PRECISION_FP32: {
-            const TinyAIMatrixFP32 *A = (const TinyAIMatrixFP32 *)a;
-            const TinyAIMatrixFP32 *B = (const TinyAIMatrixFP32 *)b;
-            TinyAIMatrixFP32 *C = (TinyAIMatrixFP32 *)c;
+        case HYPERION_PRECISION_FP32: {
+            const HyperionMatrixFP32 *A = (const HyperionMatrixFP32 *)a;
+            const HyperionMatrixFP32 *B = (const HyperionMatrixFP32 *)b;
+            HyperionMatrixFP32 *C = (HyperionMatrixFP32 *)c;
             
             if (!A || !B || !C || !A->data || !B->data || !C->data) {
                 return -1;
@@ -474,12 +474,12 @@ int tinyaiMatrixAdd(const void *a, const void *b, void *c, TinyAIPrecision preci
 /**
  * Apply activation function to matrix
  */
-int tinyaiMatrixActivation(const void *input, void *output, int activation, TinyAIPrecision precision) {
+int hyperionMatrixActivation(const void *input, void *output, int activation, HyperionPrecision precision) {
     /* Implementation varies based on precision */
     switch (precision) {
-        case TINYAI_PRECISION_FP32: {
-            const TinyAIMatrixFP32 *in = (const TinyAIMatrixFP32 *)input;
-            TinyAIMatrixFP32 *out = (TinyAIMatrixFP32 *)output;
+        case HYPERION_PRECISION_FP32: {
+            const HyperionMatrixFP32 *in = (const HyperionMatrixFP32 *)input;
+            HyperionMatrixFP32 *out = (HyperionMatrixFP32 *)output;
             
             if (!in || !out || !in->data || !out->data) {
                 return -1;
@@ -498,25 +498,25 @@ int tinyaiMatrixActivation(const void *input, void *output, int activation, Tiny
                 
                 case 1:  /* ReLU */
                     for (size_t i = 0; i < size; i++) {
-                        out->data[i] = tinyaiActivationReLU(in->data[i]);
+                        out->data[i] = hyperionActivationReLU(in->data[i]);
                     }
                     break;
                 
                 case 2:  /* Sigmoid */
                     for (size_t i = 0; i < size; i++) {
-                        out->data[i] = tinyaiActivationSigmoid(in->data[i]);
+                        out->data[i] = hyperionActivationSigmoid(in->data[i]);
                     }
                     break;
                 
                 case 3:  /* Tanh */
                     for (size_t i = 0; i < size; i++) {
-                        out->data[i] = tinyaiActivationTanh(in->data[i]);
+                        out->data[i] = hyperionActivationTanh(in->data[i]);
                     }
                     break;
                 
                 case 4:  /* GELU */
                     for (size_t i = 0; i < size; i++) {
-                        out->data[i] = tinyaiActivationGELU(in->data[i]);
+                        out->data[i] = hyperionActivationGELU(in->data[i]);
                     }
                     break;
                 
@@ -540,10 +540,10 @@ int tinyaiMatrixActivation(const void *input, void *output, int activation, Tiny
 /**
  * Vector dot product
  */
-float tinyaiVectorDot(const void *a, const void *b, uint32_t length, TinyAIPrecision precision) {
+float hyperionVectorDot(const void *a, const void *b, uint32_t length, HyperionPrecision precision) {
     /* Implementation varies based on precision */
     switch (precision) {
-        case TINYAI_PRECISION_FP32: {
+        case HYPERION_PRECISION_FP32: {
             const float *A = (const float *)a;
             const float *B = (const float *)b;
             
@@ -571,10 +571,10 @@ float tinyaiVectorDot(const void *a, const void *b, uint32_t length, TinyAIPreci
 /**
  * Vector L2 norm (Euclidean distance)
  */
-float tinyaiVectorL2Norm(const void *a, uint32_t length, TinyAIPrecision precision) {
+float hyperionVectorL2Norm(const void *a, uint32_t length, HyperionPrecision precision) {
     /* Implementation varies based on precision */
     switch (precision) {
-        case TINYAI_PRECISION_FP32: {
+        case HYPERION_PRECISION_FP32: {
             const float *A = (const float *)a;
             
             if (!A) {
@@ -601,10 +601,10 @@ float tinyaiVectorL2Norm(const void *a, uint32_t length, TinyAIPrecision precisi
 /**
  * Vector cosine similarity
  */
-float tinyaiVectorCosineSimilarity(const void *a, const void *b, uint32_t length, TinyAIPrecision precision) {
+float hyperionVectorCosineSimilarity(const void *a, const void *b, uint32_t length, HyperionPrecision precision) {
     /* Implementation varies based on precision */
     switch (precision) {
-        case TINYAI_PRECISION_FP32: {
+        case HYPERION_PRECISION_FP32: {
             const float *A = (const float *)a;
             const float *B = (const float *)b;
             
@@ -613,9 +613,9 @@ float tinyaiVectorCosineSimilarity(const void *a, const void *b, uint32_t length
             }
             
             /* Compute cosine similarity */
-            float dot = tinyaiVectorDot(A, B, length, precision);
-            float normA = tinyaiVectorL2Norm(A, length, precision);
-            float normB = tinyaiVectorL2Norm(B, length, precision);
+            float dot = hyperionVectorDot(A, B, length, precision);
+            float normA = hyperionVectorL2Norm(A, length, precision);
+            float normB = hyperionVectorL2Norm(B, length, precision);
             
             if (normA == 0.0f || normB == 0.0f) {
                 return 0.0f;
@@ -637,14 +637,14 @@ float tinyaiVectorCosineSimilarity(const void *a, const void *b, uint32_t length
 /**
  * ReLU activation function
  */
-float tinyaiActivationReLU(float x) {
+float hyperionActivationReLU(float x) {
     return x > 0.0f ? x : 0.0f;
 }
 
 /**
  * Sigmoid activation function
  */
-float tinyaiActivationSigmoid(float x) {
+float hyperionActivationSigmoid(float x) {
     /* Check for lookup table */
     if (activationTableSigmoid) {
         /* Convert x to table index */
@@ -664,7 +664,7 @@ float tinyaiActivationSigmoid(float x) {
 /**
  * Tanh activation function
  */
-float tinyaiActivationTanh(float x) {
+float hyperionActivationTanh(float x) {
     /* Check for lookup table */
     if (activationTableTanh) {
         /* Convert x to table index */
@@ -686,7 +686,7 @@ float tinyaiActivationTanh(float x) {
 /**
  * GELU activation function
  */
-float tinyaiActivationGELU(float x) {
+float hyperionActivationGELU(float x) {
     /* Check for lookup table */
     if (activationTableGELU) {
         /* Convert x to table index */
@@ -698,22 +698,22 @@ float tinyaiActivationGELU(float x) {
     }
     
     /* Compute directly (approximate) */
-    return 0.5f * x * (1.0f + tinyaiActivationTanh(0.7978845608f * (x + 0.044715f * x * x * x)));
+    return 0.5f * x * (1.0f + hyperionActivationTanh(0.7978845608f * (x + 0.044715f * x * x * x)));
 }
 
 /**
  * Initialize activation function lookup tables
  */
-int tinyaiInitActivationTables() {
+int hyperionInitActivationTables() {
     /* Allocate tables */
-    activationTableReLU = (float*)TINYAI_MALLOC(ACTIVATION_TABLE_SIZE * sizeof(float));
-    activationTableSigmoid = (float*)TINYAI_MALLOC(ACTIVATION_TABLE_SIZE * sizeof(float));
-    activationTableTanh = (float*)TINYAI_MALLOC(ACTIVATION_TABLE_SIZE * sizeof(float));
-    activationTableGELU = (float*)TINYAI_MALLOC(ACTIVATION_TABLE_SIZE * sizeof(float));
+    activationTableReLU = (float*)HYPERION_MALLOC(ACTIVATION_TABLE_SIZE * sizeof(float));
+    activationTableSigmoid = (float*)HYPERION_MALLOC(ACTIVATION_TABLE_SIZE * sizeof(float));
+    activationTableTanh = (float*)HYPERION_MALLOC(ACTIVATION_TABLE_SIZE * sizeof(float));
+    activationTableGELU = (float*)HYPERION_MALLOC(ACTIVATION_TABLE_SIZE * sizeof(float));
     
     if (!activationTableReLU || !activationTableSigmoid ||
         !activationTableTanh || !activationTableGELU) {
-        tinyaiCleanupActivationTables();
+        hyperionCleanupActivationTables();
         return -1;
     }
     
@@ -744,24 +744,24 @@ int tinyaiInitActivationTables() {
 /**
  * Clean up activation function lookup tables
  */
-void tinyaiCleanupActivationTables() {
+void hyperionCleanupActivationTables() {
     if (activationTableReLU) {
-        TINYAI_FREE(activationTableReLU);
+        HYPERION_FREE(activationTableReLU);
         activationTableReLU = NULL;
     }
     
     if (activationTableSigmoid) {
-        TINYAI_FREE(activationTableSigmoid);
+        HYPERION_FREE(activationTableSigmoid);
         activationTableSigmoid = NULL;
     }
     
     if (activationTableTanh) {
-        TINYAI_FREE(activationTableTanh);
+        HYPERION_FREE(activationTableTanh);
         activationTableTanh = NULL;
     }
     
     if (activationTableGELU) {
-        TINYAI_FREE(activationTableGELU);
+        HYPERION_FREE(activationTableGELU);
         activationTableGELU = NULL;
     }
 }
@@ -771,7 +771,7 @@ void tinyaiCleanupActivationTables() {
 /**
  * Find minimum and maximum values in FP32 array
  */
-void tinyaiFindMinMax(const float *data, size_t size, float *min, float *max) {
+void hyperionFindMinMax(const float *data, size_t size, float *min, float *max) {
     if (!data || !min || !max || size == 0) {
         return;
     }
@@ -791,94 +791,94 @@ void tinyaiFindMinMax(const float *data, size_t size, float *min, float *max) {
 /**
  * Save a quantized matrix to a file
  */
-int tinyaiSaveQuantizedMatrix(const void *matrix, const char *path, TinyAIPrecision precision) {
+int hyperionSaveQuantizedMatrix(const void *matrix, const char *path, HyperionPrecision precision) {
     if (!matrix || !path) {
         return -1;
     }
     
-    TinyAIFile *file = tinyaiOpenFile(path, TINYAI_FILE_WRITE | TINYAI_FILE_BINARY | TINYAI_FILE_CREATE);
+    HyperionFile *file = hyperionOpenFile(path, HYPERION_FILE_WRITE | HYPERION_FILE_BINARY | HYPERION_FILE_CREATE);
     if (!file) {
         return -1;
     }
     
     /* Write header with magic number, precision, and dimensions */
-    uint32_t magic = 0x4D51544E; /* "TQNM" - TinyAI Quantized Matrix */
-    tinyaiWriteFile(file, &magic, sizeof(magic));
-    tinyaiWriteFile(file, &precision, sizeof(precision));
+    uint32_t magic = 0x4D51544E; /* "TQNM" - Hyperion Quantized Matrix */
+    hyperionWriteFile(file, &magic, sizeof(magic));
+    hyperionWriteFile(file, &precision, sizeof(precision));
     
     switch (precision) {
-        case TINYAI_PRECISION_FP32: {
-            const TinyAIMatrixFP32 *mat = (const TinyAIMatrixFP32 *)matrix;
-            tinyaiWriteFile(file, &mat->rows, sizeof(mat->rows));
-            tinyaiWriteFile(file, &mat->cols, sizeof(mat->cols));
+        case HYPERION_PRECISION_FP32: {
+            const HyperionMatrixFP32 *mat = (const HyperionMatrixFP32 *)matrix;
+            hyperionWriteFile(file, &mat->rows, sizeof(mat->rows));
+            hyperionWriteFile(file, &mat->cols, sizeof(mat->cols));
             
             /* Write the data */
             size_t dataSize = mat->rows * mat->cols * sizeof(float);
-            tinyaiWriteFile(file, mat->data, dataSize);
+            hyperionWriteFile(file, mat->data, dataSize);
             break;
         }
         
-        case TINYAI_PRECISION_INT8: {
-            const TinyAIMatrix8bit *mat = (const TinyAIMatrix8bit *)matrix;
-            tinyaiWriteFile(file, &mat->rows, sizeof(mat->rows));
-            tinyaiWriteFile(file, &mat->cols, sizeof(mat->cols));
-            tinyaiWriteFile(file, &mat->scale, sizeof(mat->scale));
-            tinyaiWriteFile(file, &mat->zeroPoint, sizeof(mat->zeroPoint));
+        case HYPERION_PRECISION_INT8: {
+            const HyperionMatrix8bit *mat = (const HyperionMatrix8bit *)matrix;
+            hyperionWriteFile(file, &mat->rows, sizeof(mat->rows));
+            hyperionWriteFile(file, &mat->cols, sizeof(mat->cols));
+            hyperionWriteFile(file, &mat->scale, sizeof(mat->scale));
+            hyperionWriteFile(file, &mat->zeroPoint, sizeof(mat->zeroPoint));
             
             /* Write the data */
             size_t dataSize = mat->rows * mat->cols;
-            tinyaiWriteFile(file, mat->data, dataSize);
+            hyperionWriteFile(file, mat->data, dataSize);
             break;
         }
         
-        case TINYAI_PRECISION_INT4: {
-            const TinyAIMatrix4bit *mat = (const TinyAIMatrix4bit *)matrix;
-            tinyaiWriteFile(file, &mat->rows, sizeof(mat->rows));
-            tinyaiWriteFile(file, &mat->cols, sizeof(mat->cols));
-            tinyaiWriteFile(file, &mat->scale, sizeof(mat->scale));
-            tinyaiWriteFile(file, &mat->zeroPoint, sizeof(mat->zeroPoint));
+        case HYPERION_PRECISION_INT4: {
+            const HyperionMatrix4bit *mat = (const HyperionMatrix4bit *)matrix;
+            hyperionWriteFile(file, &mat->rows, sizeof(mat->rows));
+            hyperionWriteFile(file, &mat->cols, sizeof(mat->cols));
+            hyperionWriteFile(file, &mat->scale, sizeof(mat->scale));
+            hyperionWriteFile(file, &mat->zeroPoint, sizeof(mat->zeroPoint));
             
             /* Write the data (4-bit packed, 2 values per byte) */
             size_t dataSize = (mat->rows * mat->cols + 1) / 2;
-            tinyaiWriteFile(file, mat->data, dataSize);
+            hyperionWriteFile(file, mat->data, dataSize);
             break;
         }
         
         default:
-            tinyaiCloseFile(file);
+            hyperionCloseFile(file);
             return -1;  /* Unknown precision */
     }
     
-    tinyaiCloseFile(file);
+    hyperionCloseFile(file);
     return 0;
 }
 
 /**
  * Load a quantized matrix from a file
  */
-void* tinyaiLoadQuantizedMatrix(const char *path, TinyAIPrecision precision) {
+void* hyperionLoadQuantizedMatrix(const char *path, HyperionPrecision precision) {
     if (!path) {
         return NULL;
     }
     
-    TinyAIFile *file = tinyaiOpenFile(path, TINYAI_FILE_READ | TINYAI_FILE_BINARY);
+    HyperionFile *file = hyperionOpenFile(path, HYPERION_FILE_READ | HYPERION_FILE_BINARY);
     if (!file) {
         return NULL;
     }
     
     /* Read and verify header */
     uint32_t magic;
-    TinyAIPrecision filePrecision;
+    HyperionPrecision filePrecision;
     
-    if (tinyaiReadFile(file, &magic, sizeof(magic)) != sizeof(magic) ||
+    if (hyperionReadFile(file, &magic, sizeof(magic)) != sizeof(magic) ||
         magic != 0x4D51544E) {
-        tinyaiCloseFile(file);
+        hyperionCloseFile(file);
         return NULL;  /* Invalid magic number */
     }
     
-    if (tinyaiReadFile(file, &filePrecision, sizeof(filePrecision)) != sizeof(filePrecision) ||
+    if (hyperionReadFile(file, &filePrecision, sizeof(filePrecision)) != sizeof(filePrecision) ||
         filePrecision != precision) {
-        tinyaiCloseFile(file);
+        hyperionCloseFile(file);
         return NULL;  /* Precision mismatch */
     }
     
@@ -886,26 +886,26 @@ void* tinyaiLoadQuantizedMatrix(const char *path, TinyAIPrecision precision) {
     void *result = NULL;
     
     switch (precision) {
-        case TINYAI_PRECISION_FP32: {
+        case HYPERION_PRECISION_FP32: {
             uint32_t rows, cols;
             
-            if (tinyaiReadFile(file, &rows, sizeof(rows)) != sizeof(rows) ||
-                tinyaiReadFile(file, &cols, sizeof(cols)) != sizeof(cols)) {
-                tinyaiCloseFile(file);
+            if (hyperionReadFile(file, &rows, sizeof(rows)) != sizeof(rows) ||
+                hyperionReadFile(file, &cols, sizeof(cols)) != sizeof(cols)) {
+                hyperionCloseFile(file);
                 return NULL;
             }
             
-            TinyAIMatrixFP32 *mat = tinyaiCreateMatrixFP32(rows, cols);
+            HyperionMatrixFP32 *mat = hyperionCreateMatrixFP32(rows, cols);
             if (!mat) {
-                tinyaiCloseFile(file);
+                hyperionCloseFile(file);
                 return NULL;
             }
             
             /* Read the data */
             size_t dataSize = rows * cols * sizeof(float);
-            if (tinyaiReadFile(file, mat->data, dataSize) != dataSize) {
-                tinyaiDestroyMatrixFP32(mat);
-                tinyaiCloseFile(file);
+            if (hyperionReadFile(file, mat->data, dataSize) != dataSize) {
+                hyperionDestroyMatrixFP32(mat);
+                hyperionCloseFile(file);
                 return NULL;
             }
             
@@ -913,21 +913,21 @@ void* tinyaiLoadQuantizedMatrix(const char *path, TinyAIPrecision precision) {
             break;
         }
         
-        case TINYAI_PRECISION_INT8: {
+        case HYPERION_PRECISION_INT8: {
             uint32_t rows, cols;
             float scale, zeroPoint;
             
-            if (tinyaiReadFile(file, &rows, sizeof(rows)) != sizeof(rows) ||
-                tinyaiReadFile(file, &cols, sizeof(cols)) != sizeof(cols) ||
-                tinyaiReadFile(file, &scale, sizeof(scale)) != sizeof(scale) ||
-                tinyaiReadFile(file, &zeroPoint, sizeof(zeroPoint)) != sizeof(zeroPoint)) {
-                tinyaiCloseFile(file);
+            if (hyperionReadFile(file, &rows, sizeof(rows)) != sizeof(rows) ||
+                hyperionReadFile(file, &cols, sizeof(cols)) != sizeof(cols) ||
+                hyperionReadFile(file, &scale, sizeof(scale)) != sizeof(scale) ||
+                hyperionReadFile(file, &zeroPoint, sizeof(zeroPoint)) != sizeof(zeroPoint)) {
+                hyperionCloseFile(file);
                 return NULL;
             }
             
-            TinyAIMatrix8bit *mat = tinyaiCreateMatrix8bit(rows, cols);
+            HyperionMatrix8bit *mat = hyperionCreateMatrix8bit(rows, cols);
             if (!mat) {
-                tinyaiCloseFile(file);
+                hyperionCloseFile(file);
                 return NULL;
             }
             
@@ -936,9 +936,9 @@ void* tinyaiLoadQuantizedMatrix(const char *path, TinyAIPrecision precision) {
             
             /* Read the data */
             size_t dataSize = rows * cols;
-            if (tinyaiReadFile(file, mat->data, dataSize) != dataSize) {
-                tinyaiDestroyMatrix8bit(mat);
-                tinyaiCloseFile(file);
+            if (hyperionReadFile(file, mat->data, dataSize) != dataSize) {
+                hyperionDestroyMatrix8bit(mat);
+                hyperionCloseFile(file);
                 return NULL;
             }
             
@@ -946,21 +946,21 @@ void* tinyaiLoadQuantizedMatrix(const char *path, TinyAIPrecision precision) {
             break;
         }
         
-        case TINYAI_PRECISION_INT4: {
+        case HYPERION_PRECISION_INT4: {
             uint32_t rows, cols;
             float scale, zeroPoint;
             
-            if (tinyaiReadFile(file, &rows, sizeof(rows)) != sizeof(rows) ||
-                tinyaiReadFile(file, &cols, sizeof(cols)) != sizeof(cols) ||
-                tinyaiReadFile(file, &scale, sizeof(scale)) != sizeof(scale) ||
-                tinyaiReadFile(file, &zeroPoint, sizeof(zeroPoint)) != sizeof(zeroPoint)) {
-                tinyaiCloseFile(file);
+            if (hyperionReadFile(file, &rows, sizeof(rows)) != sizeof(rows) ||
+                hyperionReadFile(file, &cols, sizeof(cols)) != sizeof(cols) ||
+                hyperionReadFile(file, &scale, sizeof(scale)) != sizeof(scale) ||
+                hyperionReadFile(file, &zeroPoint, sizeof(zeroPoint)) != sizeof(zeroPoint)) {
+                hyperionCloseFile(file);
                 return NULL;
             }
             
-            TinyAIMatrix4bit *mat = tinyaiCreateMatrix4bit(rows, cols);
+            HyperionMatrix4bit *mat = hyperionCreateMatrix4bit(rows, cols);
             if (!mat) {
-                tinyaiCloseFile(file);
+                hyperionCloseFile(file);
                 return NULL;
             }
             
@@ -969,9 +969,9 @@ void* tinyaiLoadQuantizedMatrix(const char *path, TinyAIPrecision precision) {
             
             /* Read the data */
             size_t dataSize = (rows * cols + 1) / 2;
-            if (tinyaiReadFile(file, mat->data, dataSize) != dataSize) {
-                tinyaiDestroyMatrix4bit(mat);
-                tinyaiCloseFile(file);
+            if (hyperionReadFile(file, mat->data, dataSize) != dataSize) {
+                hyperionDestroyMatrix4bit(mat);
+                hyperionCloseFile(file);
                 return NULL;
             }
             
@@ -983,6 +983,6 @@ void* tinyaiLoadQuantizedMatrix(const char *path, TinyAIPrecision precision) {
             break;  /* Unknown precision */
     }
     
-    tinyaiCloseFile(file);
+    hyperionCloseFile(file);
     return result;
 }

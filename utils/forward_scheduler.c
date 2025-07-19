@@ -13,16 +13,16 @@
 #define MAX_EXEC_LAYERS 256
 
 /* Forward scheduler structure definition */
-struct TinyAIForwardScheduler {
+struct HyperionForwardScheduler {
     /* Model reference */
-    TinyAIMappedModel *model;
+    HyperionMappedModel *model;
 
     /* Execution configuration */
-    TinyAIExecutionMode mode;
+    HyperionExecutionMode mode;
     size_t              maxMemory;
 
     /* Layer execution schedule */
-    TinyAIExecLayer layers[MAX_EXEC_LAYERS];
+    HyperionExecLayer layers[MAX_EXEC_LAYERS];
     int             layerCount;
 
     /* Execution state */
@@ -36,7 +36,7 @@ struct TinyAIForwardScheduler {
 };
 
 /* Find the next executable layer based on dependencies */
-static int findNextExecutableLayer(TinyAIForwardScheduler *scheduler)
+static int findNextExecutableLayer(HyperionForwardScheduler *scheduler)
 {
     /* First pass: find all layers that have all dependencies satisfied */
     for (int i = 0; i < scheduler->layerCount; i++) {
@@ -47,19 +47,19 @@ static int findNextExecutableLayer(TinyAIForwardScheduler *scheduler)
 
         /* Check dependencies based on type */
         switch (scheduler->layers[i].depType) {
-        case TINYAI_DEP_NONE:
+        case HYPERION_DEP_NONE:
             /* No dependencies, can always execute */
             return i;
 
-        case TINYAI_DEP_SEQUENTIAL:
+        case HYPERION_DEP_SEQUENTIAL:
             /* Must execute after previous layer */
             if (i == 0 || scheduler->layers[i - 1].executed) {
                 return i;
             }
             break;
 
-        case TINYAI_DEP_RESIDUAL:
-        case TINYAI_DEP_ATTENTION:
+        case HYPERION_DEP_RESIDUAL:
+        case HYPERION_DEP_ATTENTION:
             /* Depends on specific layer */
             if (scheduler->layers[i].dependsOnLayer < 0 ||
                 scheduler->layers[scheduler->layers[i].dependsOnLayer].executed) {
@@ -74,7 +74,7 @@ static int findNextExecutableLayer(TinyAIForwardScheduler *scheduler)
 }
 
 /* Check if a layer's output is needed by any future layers */
-static bool isOutputNeededByFutureLayers(TinyAIForwardScheduler *scheduler, int layerIndex)
+static bool isOutputNeededByFutureLayers(HyperionForwardScheduler *scheduler, int layerIndex)
 {
     for (int i = 0; i < scheduler->layerCount; i++) {
         /* Skip already executed layers */
@@ -83,14 +83,14 @@ static bool isOutputNeededByFutureLayers(TinyAIForwardScheduler *scheduler, int 
         }
 
         /* Check if this layer depends on the specified layer */
-        if ((scheduler->layers[i].depType == TINYAI_DEP_RESIDUAL ||
-             scheduler->layers[i].depType == TINYAI_DEP_ATTENTION) &&
+        if ((scheduler->layers[i].depType == HYPERION_DEP_RESIDUAL ||
+             scheduler->layers[i].depType == HYPERION_DEP_ATTENTION) &&
             scheduler->layers[i].dependsOnLayer == layerIndex) {
             return true;
         }
 
         /* For sequential dependencies, check if it's the next layer */
-        if (scheduler->layers[i].depType == TINYAI_DEP_SEQUENTIAL && i > 0 && i - 1 == layerIndex &&
+        if (scheduler->layers[i].depType == HYPERION_DEP_SEQUENTIAL && i > 0 && i - 1 == layerIndex &&
             !scheduler->layers[i - 1].executed) {
             return true;
         }
@@ -100,7 +100,7 @@ static bool isOutputNeededByFutureLayers(TinyAIForwardScheduler *scheduler, int 
 }
 
 /* Free memory for unnecessary layer outputs */
-static void freeUnneededOutputs(TinyAIForwardScheduler *scheduler)
+static void freeUnneededOutputs(HyperionForwardScheduler *scheduler)
 {
     for (int i = 0; i < scheduler->layerCount; i++) {
         /* Skip unexecuted layers and those already marked as unneeded */
@@ -125,8 +125,8 @@ static void freeUnneededOutputs(TinyAIForwardScheduler *scheduler)
 
 /* Implementation of public API */
 
-TinyAIForwardScheduler *tinyaiCreateForwardScheduler(TinyAIMappedModel  *model,
-                                                     TinyAIExecutionMode mode, size_t maxMemory)
+HyperionForwardScheduler *hyperionCreateForwardScheduler(HyperionMappedModel  *model,
+                                                     HyperionExecutionMode mode, size_t maxMemory)
 {
 
     if (!model) {
@@ -134,14 +134,14 @@ TinyAIForwardScheduler *tinyaiCreateForwardScheduler(TinyAIMappedModel  *model,
     }
 
     /* Allocate scheduler */
-    TinyAIForwardScheduler *scheduler =
-        (TinyAIForwardScheduler *)malloc(sizeof(TinyAIForwardScheduler));
+    HyperionForwardScheduler *scheduler =
+        (HyperionForwardScheduler *)malloc(sizeof(HyperionForwardScheduler));
     if (!scheduler) {
         return NULL;
     }
 
     /* Initialize fields */
-    memset(scheduler, 0, sizeof(TinyAIForwardScheduler));
+    memset(scheduler, 0, sizeof(HyperionForwardScheduler));
     scheduler->model              = model;
     scheduler->mode               = mode;
     scheduler->maxMemory          = maxMemory;
@@ -153,7 +153,7 @@ TinyAIForwardScheduler *tinyaiCreateForwardScheduler(TinyAIMappedModel  *model,
     return scheduler;
 }
 
-void tinyaiDestroyForwardScheduler(TinyAIForwardScheduler *scheduler)
+void hyperionDestroyForwardScheduler(HyperionForwardScheduler *scheduler)
 {
     if (!scheduler) {
         return;
@@ -171,8 +171,8 @@ void tinyaiDestroyForwardScheduler(TinyAIForwardScheduler *scheduler)
     free(scheduler);
 }
 
-bool tinyaiAddLayerToSchedule(TinyAIForwardScheduler *scheduler, int layerIndex, int dependsOnLayer,
-                              TinyAIDependencyType depType, size_t outputSize)
+bool hyperionAddLayerToSchedule(HyperionForwardScheduler *scheduler, int layerIndex, int dependsOnLayer,
+                              HyperionDependencyType depType, size_t outputSize)
 {
 
     if (!scheduler || layerIndex < 0 || scheduler->layerCount >= MAX_EXEC_LAYERS) {
@@ -180,7 +180,7 @@ bool tinyaiAddLayerToSchedule(TinyAIForwardScheduler *scheduler, int layerIndex,
     }
 
     /* Validate dependency */
-    if ((depType == TINYAI_DEP_RESIDUAL || depType == TINYAI_DEP_ATTENTION) &&
+    if ((depType == HYPERION_DEP_RESIDUAL || depType == HYPERION_DEP_ATTENTION) &&
         (dependsOnLayer < 0 || dependsOnLayer >= scheduler->layerCount)) {
         return false;
     }
@@ -199,7 +199,7 @@ bool tinyaiAddLayerToSchedule(TinyAIForwardScheduler *scheduler, int layerIndex,
     return true;
 }
 
-bool tinyaiPrepareForwardPass(TinyAIForwardScheduler *scheduler)
+bool hyperionPrepareForwardPass(HyperionForwardScheduler *scheduler)
 {
     if (!scheduler) {
         return false;
@@ -224,7 +224,7 @@ bool tinyaiPrepareForwardPass(TinyAIForwardScheduler *scheduler)
     return true;
 }
 
-bool tinyaiExecuteNextLayer(TinyAIForwardScheduler *scheduler, const void *input, void *output,
+bool hyperionExecuteNextLayer(HyperionForwardScheduler *scheduler, const void *input, void *output,
                             int *layerIndex)
 {
 
@@ -243,13 +243,13 @@ bool tinyaiExecuteNextLayer(TinyAIForwardScheduler *scheduler, const void *input
     scheduler->currentLayer = nextLayer;
 
     /* Get layer descriptor */
-    TinyAIExecLayer *layer = &scheduler->layers[nextLayer];
+    HyperionExecLayer *layer = &scheduler->layers[nextLayer];
 
     /* Get model layer weights */
     void *weights = NULL;
-    if (scheduler->mode == TINYAI_EXEC_MEMORY_OPT || scheduler->mode == TINYAI_EXEC_ADAPTIVE) {
+    if (scheduler->mode == HYPERION_EXEC_MEMORY_OPT || scheduler->mode == HYPERION_EXEC_ADAPTIVE) {
         /* Only load weights when needed in memory optimized mode */
-        weights = tinyaiGetLayerWeights(scheduler->model, layer->layerIndex);
+        weights = hyperionGetLayerWeights(scheduler->model, layer->layerIndex);
         if (!weights) {
             return false;
         }
@@ -273,13 +273,13 @@ bool tinyaiExecuteNextLayer(TinyAIForwardScheduler *scheduler, const void *input
     layer->executed = true;
 
     /* Free memory for outputs that are no longer needed */
-    if (scheduler->mode == TINYAI_EXEC_MEMORY_OPT || scheduler->mode == TINYAI_EXEC_ADAPTIVE) {
+    if (scheduler->mode == HYPERION_EXEC_MEMORY_OPT || scheduler->mode == HYPERION_EXEC_ADAPTIVE) {
         freeUnneededOutputs(scheduler);
     }
 
     /* Release layer weights if in memory optimized mode */
-    if (scheduler->mode == TINYAI_EXEC_MEMORY_OPT) {
-        tinyaiReleaseLayerWeights(scheduler->model, layer->layerIndex);
+    if (scheduler->mode == HYPERION_EXEC_MEMORY_OPT) {
+        hyperionReleaseLayerWeights(scheduler->model, layer->layerIndex);
     }
 
     /* Return layer index if requested */
@@ -295,7 +295,7 @@ bool tinyaiExecuteNextLayer(TinyAIForwardScheduler *scheduler, const void *input
     return true;
 }
 
-int tinyaiCalculateOptimalBatchSize(TinyAIForwardScheduler *scheduler, size_t inputSize,
+int hyperionCalculateOptimalBatchSize(HyperionForwardScheduler *scheduler, size_t inputSize,
                                     size_t outputSize, int maxBatchSize)
 {
 
@@ -318,7 +318,7 @@ int tinyaiCalculateOptimalBatchSize(TinyAIForwardScheduler *scheduler, size_t in
     }
 
     /* Calculate model weights memory (fixed, doesn't scale with batch) */
-    size_t weightsMemory = tinyaiGetMappedModelMemoryUsage(scheduler->model);
+    size_t weightsMemory = hyperionGetMappedModelMemoryUsage(scheduler->model);
 
     /* Calculate batch memory requirements */
     size_t availableForBatch = 0;
@@ -342,7 +342,7 @@ int tinyaiCalculateOptimalBatchSize(TinyAIForwardScheduler *scheduler, size_t in
     return batchSize;
 }
 
-size_t tinyaiGetSchedulerMemoryUsage(const TinyAIForwardScheduler *scheduler)
+size_t hyperionGetSchedulerMemoryUsage(const HyperionForwardScheduler *scheduler)
 {
     if (!scheduler) {
         return 0;
@@ -351,7 +351,7 @@ size_t tinyaiGetSchedulerMemoryUsage(const TinyAIForwardScheduler *scheduler)
     return scheduler->currentMemoryUsage;
 }
 
-size_t tinyaiGetSchedulerPeakMemoryUsage(const TinyAIForwardScheduler *scheduler)
+size_t hyperionGetSchedulerPeakMemoryUsage(const HyperionForwardScheduler *scheduler)
 {
     if (!scheduler) {
         return 0;
@@ -360,7 +360,7 @@ size_t tinyaiGetSchedulerPeakMemoryUsage(const TinyAIForwardScheduler *scheduler
     return scheduler->peakMemoryUsage;
 }
 
-void tinyaiResetScheduler(TinyAIForwardScheduler *scheduler)
+void hyperionResetScheduler(HyperionForwardScheduler *scheduler)
 {
     if (!scheduler) {
         return;
@@ -376,7 +376,7 @@ void tinyaiResetScheduler(TinyAIForwardScheduler *scheduler)
     scheduler->peakMemoryUsage = scheduler->currentMemoryUsage;
 }
 
-bool tinyaiIsLayerExecuted(const TinyAIForwardScheduler *scheduler, int layerIndex)
+bool hyperionIsLayerExecuted(const HyperionForwardScheduler *scheduler, int layerIndex)
 {
     if (!scheduler || layerIndex < 0 || layerIndex >= scheduler->layerCount) {
         return false;
@@ -385,7 +385,7 @@ bool tinyaiIsLayerExecuted(const TinyAIForwardScheduler *scheduler, int layerInd
     return scheduler->layers[layerIndex].executed;
 }
 
-void *tinyaiGetLayerOutput(const TinyAIForwardScheduler *scheduler, int layerIndex)
+void *hyperionGetLayerOutput(const HyperionForwardScheduler *scheduler, int layerIndex)
 {
     if (!scheduler || layerIndex < 0 || layerIndex >= scheduler->layerCount) {
         return NULL;
@@ -399,13 +399,13 @@ void *tinyaiGetLayerOutput(const TinyAIForwardScheduler *scheduler, int layerInd
     return scheduler->layers[layerIndex].outputPtr;
 }
 
-void tinyaiMarkLayerOutputUnneeded(TinyAIForwardScheduler *scheduler, int layerIndex)
+void hyperionMarkLayerOutputUnneeded(HyperionForwardScheduler *scheduler, int layerIndex)
 {
     if (!scheduler || layerIndex < 0 || layerIndex >= scheduler->layerCount) {
         return;
     }
 
-    TinyAIExecLayer *layer = &scheduler->layers[layerIndex];
+    HyperionExecLayer *layer = &scheduler->layers[layerIndex];
 
     /* Free output buffer if allocated */
     if (layer->outputPtr) {

@@ -1,6 +1,6 @@
 /**
  * @file mmap_loader.c
- * @brief Implementation of memory-mapped model loading utilities for TinyAI
+ * @brief Implementation of memory-mapped model loading utilities for Hyperion
  */
 
 #include "mmap_loader.h"
@@ -31,13 +31,13 @@ typedef pthread_t ThreadHandle;
 #endif
 
 /* Model header magic number */
-#define TINYAI_MODEL_MAGIC 0x544D4149 /* "TMAI" in ASCII */
+#define HYPERION_MODEL_MAGIC 0x544D4149 /* "TMAI" in ASCII */
 
 /* Maximum number of layers in a model */
 #define MAX_LAYERS 256
 
 /* Memory-mapped model structure */
-struct TinyAIMappedModel {
+struct HyperionMappedModel {
     /* File mapping info */
 #ifdef _WIN32
     HANDLE fileHandle;
@@ -54,10 +54,10 @@ struct TinyAIMappedModel {
     uint32_t version;
 
     /* Layer descriptors */
-    TinyAILayerDescriptor layers[MAX_LAYERS];
+    HyperionLayerDescriptor layers[MAX_LAYERS];
 
     /* Caching info */
-    TinyAIMmapConfig config;
+    HyperionMmapConfig config;
     size_t           currentCacheSize;
 
     /* Prefetching */
@@ -89,7 +89,7 @@ static uint64_t getCurrentTimestamp()
 }
 
 /* Lock the model for thread safety */
-static void lockModel(TinyAIMappedModel *model)
+static void lockModel(HyperionMappedModel *model)
 {
 #ifdef _WIN32
     EnterCriticalSection(&model->lock);
@@ -99,7 +99,7 @@ static void lockModel(TinyAIMappedModel *model)
 }
 
 /* Unlock the model */
-static void unlockModel(TinyAIMappedModel *model)
+static void unlockModel(HyperionMappedModel *model)
 {
 #ifdef _WIN32
     LeaveCriticalSection(&model->lock);
@@ -109,7 +109,7 @@ static void unlockModel(TinyAIMappedModel *model)
 }
 
 /* Calculate priority score for a layer (for cache eviction decision) */
-static float calculatePriorityScore(const TinyAILayerDescriptor *layer, uint64_t currentTime)
+static float calculatePriorityScore(const HyperionLayerDescriptor *layer, uint64_t currentTime)
 {
     /* Blend of priority, recency and frequency */
     float recencyScore   = 1.0f / (1.0f + (currentTime - layer->lastAccessed) / 1000.0f);
@@ -120,7 +120,7 @@ static float calculatePriorityScore(const TinyAILayerDescriptor *layer, uint64_t
 }
 
 /* Find the least important layer for cache eviction */
-static int findLayerToEvict(TinyAIMappedModel *model)
+static int findLayerToEvict(HyperionMappedModel *model)
 {
     int      worstLayerIndex = -1;
     float    worstScore      = 3.402823466e+38f; /* Approximately FLT_MAX */
@@ -140,13 +140,13 @@ static int findLayerToEvict(TinyAIMappedModel *model)
 }
 
 /* Free memory allocated for a layer's cached weights */
-static void freeLayerCache(TinyAIMappedModel *model, int layerIndex)
+static void freeLayerCache(HyperionMappedModel *model, int layerIndex)
 {
     if (layerIndex < 0 || layerIndex >= model->layerCount) {
         return;
     }
 
-    TinyAILayerDescriptor *layer = &model->layers[layerIndex];
+    HyperionLayerDescriptor *layer = &model->layers[layerIndex];
     if (layer->cachedWeights) {
         free(layer->cachedWeights);
         layer->cachedWeights = NULL;
@@ -156,7 +156,7 @@ static void freeLayerCache(TinyAIMappedModel *model, int layerIndex)
 }
 
 /* Make space in the cache for a new layer */
-static bool ensureCacheSpace(TinyAIMappedModel *model, size_t requiredSize)
+static bool ensureCacheSpace(HyperionMappedModel *model, size_t requiredSize)
 {
     /* If we have enough space, just return */
     if (model->currentCacheSize + requiredSize <= model->config.maxCacheSize) {
@@ -178,13 +178,13 @@ static bool ensureCacheSpace(TinyAIMappedModel *model, size_t requiredSize)
 }
 
 /* Load a layer's weights into memory */
-static bool loadLayerWeights(TinyAIMappedModel *model, int layerIndex)
+static bool loadLayerWeights(HyperionMappedModel *model, int layerIndex)
 {
     if (layerIndex < 0 || layerIndex >= model->layerCount) {
         return false;
     }
 
-    TinyAILayerDescriptor *layer = &model->layers[layerIndex];
+    HyperionLayerDescriptor *layer = &model->layers[layerIndex];
 
     /* Check if already cached */
     if (layer->cachedWeights) {
@@ -226,7 +226,7 @@ static unsigned __stdcall prefetchThreadFunc(void *param)
 static void *prefetchThreadFunc(void *param)
 {
 #endif
-    TinyAIMappedModel *model = (TinyAIMappedModel *)param;
+    HyperionMappedModel *model = (HyperionMappedModel *)param;
 
     while (model->prefetchRunning) {
         /* Lock the model */
@@ -273,7 +273,7 @@ static void *prefetchThreadFunc(void *param)
 }
 
 /* Start the prefetch thread */
-static bool startPrefetchThread(TinyAIMappedModel *model)
+static bool startPrefetchThread(HyperionMappedModel *model)
 {
     if (!model->config.prefetchEnabled) {
         return true;
@@ -291,7 +291,7 @@ static bool startPrefetchThread(TinyAIMappedModel *model)
 }
 
 /* Stop the prefetch thread */
-static void stopPrefetchThread(TinyAIMappedModel *model)
+static void stopPrefetchThread(HyperionMappedModel *model)
 {
     if (!model->prefetchRunning) {
         return;
@@ -309,25 +309,25 @@ static void stopPrefetchThread(TinyAIMappedModel *model)
 
 /* Implementation of public API */
 
-TinyAIMappedModel *tinyaiOpenMappedModel(const char *filepath, const TinyAIMmapConfig *config)
+HyperionMappedModel *hyperionOpenMappedModel(const char *filepath, const HyperionMmapConfig *config)
 {
     if (!filepath) {
         return NULL;
     }
 
     /* Allocate model structure */
-    TinyAIMappedModel *model = (TinyAIMappedModel *)malloc(sizeof(TinyAIMappedModel));
+    HyperionMappedModel *model = (HyperionMappedModel *)malloc(sizeof(HyperionMappedModel));
     if (!model) {
         return NULL;
     }
-    memset(model, 0, sizeof(TinyAIMappedModel));
+    memset(model, 0, sizeof(HyperionMappedModel));
 
     /* Copy configuration */
     if (config) {
         model->config = *config;
     }
     else {
-        model->config = tinyaiCreateDefaultMmapConfig();
+        model->config = hyperionCreateDefaultMmapConfig();
     }
 
 #ifdef _WIN32
@@ -402,9 +402,9 @@ TinyAIMappedModel *tinyaiOpenMappedModel(const char *filepath, const TinyAIMmapC
 
     /* Read model header and verify magic number */
     uint32_t *header = (uint32_t *)model->mappedData;
-    if (header[0] != TINYAI_MODEL_MAGIC) {
-        /* Not a valid TinyAI model file */
-        tinyaiCloseMappedModel(model);
+    if (header[0] != HYPERION_MODEL_MAGIC) {
+        /* Not a valid Hyperion model file */
+        hyperionCloseMappedModel(model);
         return NULL;
     }
 
@@ -413,7 +413,7 @@ TinyAIMappedModel *tinyaiOpenMappedModel(const char *filepath, const TinyAIMmapC
     model->layerCount = header[2];
     if (model->layerCount > MAX_LAYERS) {
         /* Too many layers */
-        tinyaiCloseMappedModel(model);
+        hyperionCloseMappedModel(model);
         return NULL;
     }
 
@@ -446,7 +446,7 @@ TinyAIMappedModel *tinyaiOpenMappedModel(const char *filepath, const TinyAIMmapC
     if (model->config.prefetchEnabled) {
         if (!startPrefetchThread(model)) {
             /* Failed to start prefetch thread */
-            tinyaiCloseMappedModel(model);
+            hyperionCloseMappedModel(model);
             return NULL;
         }
     }
@@ -454,7 +454,7 @@ TinyAIMappedModel *tinyaiOpenMappedModel(const char *filepath, const TinyAIMmapC
     return model;
 }
 
-void tinyaiCloseMappedModel(TinyAIMappedModel *model)
+void hyperionCloseMappedModel(HyperionMappedModel *model)
 {
     if (!model) {
         return;
@@ -504,7 +504,7 @@ void tinyaiCloseMappedModel(TinyAIMappedModel *model)
     free(model);
 }
 
-int tinyaiGetMappedLayerCount(const TinyAIMappedModel *model)
+int hyperionGetMappedLayerCount(const HyperionMappedModel *model)
 {
     if (!model) {
         return -1;
@@ -513,7 +513,7 @@ int tinyaiGetMappedLayerCount(const TinyAIMappedModel *model)
     return model->layerCount;
 }
 
-const TinyAILayerDescriptor *tinyaiGetLayerDescriptor(const TinyAIMappedModel *model,
+const HyperionLayerDescriptor *hyperionGetLayerDescriptor(const HyperionMappedModel *model,
                                                       int                      layerIndex)
 {
     if (!model || layerIndex < 0 || layerIndex >= model->layerCount) {
@@ -523,7 +523,7 @@ const TinyAILayerDescriptor *tinyaiGetLayerDescriptor(const TinyAIMappedModel *m
     return &model->layers[layerIndex];
 }
 
-void *tinyaiGetLayerWeights(TinyAIMappedModel *model, int layerIndex)
+void *hyperionGetLayerWeights(HyperionMappedModel *model, int layerIndex)
 {
     if (!model || layerIndex < 0 || layerIndex >= model->layerCount) {
         return NULL;
@@ -547,7 +547,7 @@ void *tinyaiGetLayerWeights(TinyAIMappedModel *model, int layerIndex)
     return weights;
 }
 
-bool tinyaiPrefetchLayerWeights(TinyAIMappedModel *model, int layerIndex)
+bool hyperionPrefetchLayerWeights(HyperionMappedModel *model, int layerIndex)
 {
     if (!model || layerIndex < 0 || layerIndex >= model->layerCount) {
         return false;
@@ -565,7 +565,7 @@ bool tinyaiPrefetchLayerWeights(TinyAIMappedModel *model, int layerIndex)
     return success;
 }
 
-void tinyaiReleaseLayerWeights(TinyAIMappedModel *model, int layerIndex)
+void hyperionReleaseLayerWeights(HyperionMappedModel *model, int layerIndex)
 {
     if (!model || layerIndex < 0 || layerIndex >= model->layerCount) {
         return;
@@ -581,9 +581,9 @@ void tinyaiReleaseLayerWeights(TinyAIMappedModel *model, int layerIndex)
     unlockModel(model);
 }
 
-TinyAIMmapConfig tinyaiCreateDefaultMmapConfig(void)
+HyperionMmapConfig hyperionCreateDefaultMmapConfig(void)
 {
-    TinyAIMmapConfig config;
+    HyperionMmapConfig config;
 
     /* Default to 256MB cache */
     config.maxCacheSize = 256 * 1024 * 1024;
@@ -603,7 +603,7 @@ TinyAIMmapConfig tinyaiCreateDefaultMmapConfig(void)
     return config;
 }
 
-size_t tinyaiGetMappedModelMemoryUsage(const TinyAIMappedModel *model)
+size_t hyperionGetMappedModelMemoryUsage(const HyperionMappedModel *model)
 {
     if (!model) {
         return 0;
@@ -612,7 +612,7 @@ size_t tinyaiGetMappedModelMemoryUsage(const TinyAIMappedModel *model)
     return model->currentCacheSize;
 }
 
-void tinyaiSetLayerPriority(TinyAIMappedModel *model, int layerIndex, float priority)
+void hyperionSetLayerPriority(HyperionMappedModel *model, int layerIndex, float priority)
 {
     if (!model || layerIndex < 0 || layerIndex >= model->layerCount) {
         return;
@@ -628,7 +628,7 @@ void tinyaiSetLayerPriority(TinyAIMappedModel *model, int layerIndex, float prio
     unlockModel(model);
 }
 
-void tinyaiResetLayerPriorities(TinyAIMappedModel *model)
+void hyperionResetLayerPriorities(HyperionMappedModel *model)
 {
     if (!model) {
         return;

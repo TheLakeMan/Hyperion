@@ -4,18 +4,18 @@
 #include <string.h>
 
 // Get size of tensor type in bytes
-static size_t get_type_size(TinyAITensorType type)
+static size_t get_type_size(HyperionTensorType type)
 {
     switch (type) {
-    case TINYAI_TENSOR_FLOAT32:
+    case HYPERION_TENSOR_FLOAT32:
         return sizeof(float);
-    case TINYAI_TENSOR_FLOAT16:
+    case HYPERION_TENSOR_FLOAT16:
         return sizeof(uint16_t);
-    case TINYAI_TENSOR_INT8:
+    case HYPERION_TENSOR_INT8:
         return sizeof(int8_t);
-    case TINYAI_TENSOR_INT16:
+    case HYPERION_TENSOR_INT16:
         return sizeof(int16_t);
-    case TINYAI_TENSOR_INT32:
+    case HYPERION_TENSOR_INT32:
         return sizeof(int32_t);
     default:
         return 0;
@@ -23,9 +23,9 @@ static size_t get_type_size(TinyAITensorType type)
 }
 
 // Create a memory-efficient tensor
-TinyAIMemoryEfficientTensor *tinyaiCreateMemoryEfficientTensor(const TinyAITensorShape *shape,
-                                                               TinyAITensorType         type,
-                                                               TinyAIMemoryStrategy     strategy)
+HyperionMemoryEfficientTensor *hyperionCreateMemoryEfficientTensor(const HyperionTensorShape *shape,
+                                                               HyperionTensorType         type,
+                                                               HyperionMemoryStrategy     strategy)
 {
 
     if (!shape || !shape->dims || shape->num_dims == 0) {
@@ -39,7 +39,7 @@ TinyAIMemoryEfficientTensor *tinyaiCreateMemoryEfficientTensor(const TinyAITenso
     }
 
     // Allocate tensor structure
-    TinyAIMemoryEfficientTensor *tensor = malloc(sizeof(TinyAIMemoryEfficientTensor));
+    HyperionMemoryEfficientTensor *tensor = malloc(sizeof(HyperionMemoryEfficientTensor));
     if (!tensor) {
         return NULL;
     }
@@ -66,7 +66,7 @@ TinyAIMemoryEfficientTensor *tinyaiCreateMemoryEfficientTensor(const TinyAITenso
     tensor->memory_usage = total_bytes;
 
     switch (strategy) {
-    case TINYAI_MEMORY_STATIC:
+    case HYPERION_MEMORY_STATIC:
         tensor->data = malloc(total_bytes);
         if (!tensor->data) {
             free(tensor->shape.dims);
@@ -75,7 +75,7 @@ TinyAIMemoryEfficientTensor *tinyaiCreateMemoryEfficientTensor(const TinyAITenso
         }
         break;
 
-    case TINYAI_MEMORY_POOLED:
+    case HYPERION_MEMORY_POOLED:
         tensor->memory_pool = malloc(total_bytes);
         if (!tensor->memory_pool) {
             free(tensor->shape.dims);
@@ -86,7 +86,7 @@ TinyAIMemoryEfficientTensor *tinyaiCreateMemoryEfficientTensor(const TinyAITenso
         tensor->data      = tensor->memory_pool;
         break;
 
-    case TINYAI_MEMORY_STREAM:
+    case HYPERION_MEMORY_STREAM:
         // For streaming, we'll allocate memory in chunks as needed
         tensor->data = NULL;
         break;
@@ -101,7 +101,7 @@ TinyAIMemoryEfficientTensor *tinyaiCreateMemoryEfficientTensor(const TinyAITenso
 }
 
 // Free a memory-efficient tensor
-void tinyaiFreeMemoryEfficientTensor(TinyAIMemoryEfficientTensor *tensor)
+void hyperionFreeMemoryEfficientTensor(HyperionMemoryEfficientTensor *tensor)
 {
     if (!tensor) {
         return;
@@ -112,19 +112,19 @@ void tinyaiFreeMemoryEfficientTensor(TinyAIMemoryEfficientTensor *tensor)
     }
 
     switch (tensor->strategy) {
-    case TINYAI_MEMORY_STATIC:
+    case HYPERION_MEMORY_STATIC:
         if (tensor->data) {
             free(tensor->data);
         }
         break;
 
-    case TINYAI_MEMORY_POOLED:
+    case HYPERION_MEMORY_POOLED:
         if (tensor->memory_pool) {
             free(tensor->memory_pool);
         }
         break;
 
-    case TINYAI_MEMORY_STREAM:
+    case HYPERION_MEMORY_STREAM:
         if (tensor->data) {
             free(tensor->data);
         }
@@ -135,8 +135,8 @@ void tinyaiFreeMemoryEfficientTensor(TinyAIMemoryEfficientTensor *tensor)
 }
 
 // Perform in-place tensor addition
-bool tinyaiTensorAddInPlace(TinyAIMemoryEfficientTensor       *dest,
-                            const TinyAIMemoryEfficientTensor *src)
+bool hyperionTensorAddInPlace(HyperionMemoryEfficientTensor       *dest,
+                            const HyperionMemoryEfficientTensor *src)
 {
     if (!dest || !src || dest->type != src->type ||
         dest->shape.total_size != src->shape.total_size) {
@@ -148,60 +148,60 @@ bool tinyaiTensorAddInPlace(TinyAIMemoryEfficientTensor       *dest,
 
     // Ensure tensors are contiguous
     if (!dest->is_contiguous) {
-        if (!tinyaiMakeTensorContiguous(dest)) {
+        if (!hyperionMakeTensorContiguous(dest)) {
             return false;
         }
     }
 
     if (!src->is_contiguous) {
-        TinyAIMemoryEfficientTensor *temp =
-            tinyaiCreateMemoryEfficientTensor(&src->shape, src->type, TINYAI_MEMORY_STATIC);
+        HyperionMemoryEfficientTensor *temp =
+            hyperionCreateMemoryEfficientTensor(&src->shape, src->type, HYPERION_MEMORY_STATIC);
         if (!temp) {
             return false;
         }
         memcpy(temp->data, src->data, total_bytes);
-        tinyaiMakeTensorContiguous(temp);
+        hyperionMakeTensorContiguous(temp);
 
         // Perform addition
         for (size_t i = 0; i < dest->shape.total_size; i++) {
             switch (dest->type) {
-            case TINYAI_TENSOR_FLOAT32:
+            case HYPERION_TENSOR_FLOAT32:
                 ((float *)dest->data)[i] += ((float *)temp->data)[i];
                 break;
-            case TINYAI_TENSOR_FLOAT16:
+            case HYPERION_TENSOR_FLOAT16:
                 ((uint16_t *)dest->data)[i] += ((uint16_t *)temp->data)[i];
                 break;
-            case TINYAI_TENSOR_INT8:
+            case HYPERION_TENSOR_INT8:
                 ((int8_t *)dest->data)[i] += ((int8_t *)temp->data)[i];
                 break;
-            case TINYAI_TENSOR_INT16:
+            case HYPERION_TENSOR_INT16:
                 ((int16_t *)dest->data)[i] += ((int16_t *)temp->data)[i];
                 break;
-            case TINYAI_TENSOR_INT32:
+            case HYPERION_TENSOR_INT32:
                 ((int32_t *)dest->data)[i] += ((int32_t *)temp->data)[i];
                 break;
             }
         }
 
-        tinyaiFreeMemoryEfficientTensor(temp);
+        hyperionFreeMemoryEfficientTensor(temp);
     }
     else {
         // Perform addition directly
         for (size_t i = 0; i < dest->shape.total_size; i++) {
             switch (dest->type) {
-            case TINYAI_TENSOR_FLOAT32:
+            case HYPERION_TENSOR_FLOAT32:
                 ((float *)dest->data)[i] += ((float *)src->data)[i];
                 break;
-            case TINYAI_TENSOR_FLOAT16:
+            case HYPERION_TENSOR_FLOAT16:
                 ((uint16_t *)dest->data)[i] += ((uint16_t *)src->data)[i];
                 break;
-            case TINYAI_TENSOR_INT8:
+            case HYPERION_TENSOR_INT8:
                 ((int8_t *)dest->data)[i] += ((int8_t *)src->data)[i];
                 break;
-            case TINYAI_TENSOR_INT16:
+            case HYPERION_TENSOR_INT16:
                 ((int16_t *)dest->data)[i] += ((int16_t *)src->data)[i];
                 break;
-            case TINYAI_TENSOR_INT32:
+            case HYPERION_TENSOR_INT32:
                 ((int32_t *)dest->data)[i] += ((int32_t *)src->data)[i];
                 break;
             }
@@ -212,8 +212,8 @@ bool tinyaiTensorAddInPlace(TinyAIMemoryEfficientTensor       *dest,
 }
 
 // Perform in-place tensor multiplication
-bool tinyaiTensorMulInPlace(TinyAIMemoryEfficientTensor       *dest,
-                            const TinyAIMemoryEfficientTensor *src)
+bool hyperionTensorMulInPlace(HyperionMemoryEfficientTensor       *dest,
+                            const HyperionMemoryEfficientTensor *src)
 {
     if (!dest || !src || dest->type != src->type ||
         dest->shape.total_size != src->shape.total_size) {
@@ -222,60 +222,60 @@ bool tinyaiTensorMulInPlace(TinyAIMemoryEfficientTensor       *dest,
 
     // Ensure tensors are contiguous
     if (!dest->is_contiguous) {
-        if (!tinyaiMakeTensorContiguous(dest)) {
+        if (!hyperionMakeTensorContiguous(dest)) {
             return false;
         }
     }
 
     if (!src->is_contiguous) {
-        TinyAIMemoryEfficientTensor *temp =
-            tinyaiCreateMemoryEfficientTensor(&src->shape, src->type, TINYAI_MEMORY_STATIC);
+        HyperionMemoryEfficientTensor *temp =
+            hyperionCreateMemoryEfficientTensor(&src->shape, src->type, HYPERION_MEMORY_STATIC);
         if (!temp) {
             return false;
         }
         memcpy(temp->data, src->data, src->shape.total_size * get_type_size(src->type));
-        tinyaiMakeTensorContiguous(temp);
+        hyperionMakeTensorContiguous(temp);
 
         // Perform multiplication
         for (size_t i = 0; i < dest->shape.total_size; i++) {
             switch (dest->type) {
-            case TINYAI_TENSOR_FLOAT32:
+            case HYPERION_TENSOR_FLOAT32:
                 ((float *)dest->data)[i] *= ((float *)temp->data)[i];
                 break;
-            case TINYAI_TENSOR_FLOAT16:
+            case HYPERION_TENSOR_FLOAT16:
                 ((uint16_t *)dest->data)[i] *= ((uint16_t *)temp->data)[i];
                 break;
-            case TINYAI_TENSOR_INT8:
+            case HYPERION_TENSOR_INT8:
                 ((int8_t *)dest->data)[i] *= ((int8_t *)temp->data)[i];
                 break;
-            case TINYAI_TENSOR_INT16:
+            case HYPERION_TENSOR_INT16:
                 ((int16_t *)dest->data)[i] *= ((int16_t *)temp->data)[i];
                 break;
-            case TINYAI_TENSOR_INT32:
+            case HYPERION_TENSOR_INT32:
                 ((int32_t *)dest->data)[i] *= ((int32_t *)temp->data)[i];
                 break;
             }
         }
 
-        tinyaiFreeMemoryEfficientTensor(temp);
+        hyperionFreeMemoryEfficientTensor(temp);
     }
     else {
         // Perform multiplication directly
         for (size_t i = 0; i < dest->shape.total_size; i++) {
             switch (dest->type) {
-            case TINYAI_TENSOR_FLOAT32:
+            case HYPERION_TENSOR_FLOAT32:
                 ((float *)dest->data)[i] *= ((float *)src->data)[i];
                 break;
-            case TINYAI_TENSOR_FLOAT16:
+            case HYPERION_TENSOR_FLOAT16:
                 ((uint16_t *)dest->data)[i] *= ((uint16_t *)src->data)[i];
                 break;
-            case TINYAI_TENSOR_INT8:
+            case HYPERION_TENSOR_INT8:
                 ((int8_t *)dest->data)[i] *= ((int8_t *)src->data)[i];
                 break;
-            case TINYAI_TENSOR_INT16:
+            case HYPERION_TENSOR_INT16:
                 ((int16_t *)dest->data)[i] *= ((int16_t *)src->data)[i];
                 break;
-            case TINYAI_TENSOR_INT32:
+            case HYPERION_TENSOR_INT32:
                 ((int32_t *)dest->data)[i] *= ((int32_t *)src->data)[i];
                 break;
             }
@@ -286,8 +286,8 @@ bool tinyaiTensorMulInPlace(TinyAIMemoryEfficientTensor       *dest,
 }
 
 // Perform streaming tensor operation
-bool tinyaiTensorStreamOperation(TinyAIMemoryEfficientTensor       *dest,
-                                 const TinyAIMemoryEfficientTensor *src,
+bool hyperionTensorStreamOperation(HyperionMemoryEfficientTensor       *dest,
+                                 const HyperionMemoryEfficientTensor *src,
                                  void (*operation)(void *, const void *, size_t), size_t chunk_size)
 {
     if (!dest || !src || !operation || chunk_size == 0 || dest->type != src->type ||
@@ -330,9 +330,9 @@ bool tinyaiTensorStreamOperation(TinyAIMemoryEfficientTensor       *dest,
 }
 
 // Allocate memory from pool
-void *tinyaiTensorPoolAlloc(TinyAIMemoryEfficientTensor *tensor, size_t size)
+void *hyperionTensorPoolAlloc(HyperionMemoryEfficientTensor *tensor, size_t size)
 {
-    if (!tensor || tensor->strategy != TINYAI_MEMORY_POOLED || !tensor->memory_pool) {
+    if (!tensor || tensor->strategy != HYPERION_MEMORY_POOLED || !tensor->memory_pool) {
         return NULL;
     }
 
@@ -356,9 +356,9 @@ void *tinyaiTensorPoolAlloc(TinyAIMemoryEfficientTensor *tensor, size_t size)
 }
 
 // Free memory to pool
-void tinyaiTensorPoolFree(TinyAIMemoryEfficientTensor *tensor, void *ptr)
+void hyperionTensorPoolFree(HyperionMemoryEfficientTensor *tensor, void *ptr)
 {
-    if (!tensor || !ptr || tensor->strategy != TINYAI_MEMORY_POOLED || ptr < tensor->memory_pool ||
+    if (!tensor || !ptr || tensor->strategy != HYPERION_MEMORY_POOLED || ptr < tensor->memory_pool ||
         ptr >= (char *)tensor->memory_pool + tensor->pool_size) {
         return;
     }
@@ -368,13 +368,13 @@ void tinyaiTensorPoolFree(TinyAIMemoryEfficientTensor *tensor, void *ptr)
 }
 
 // Get tensor memory usage
-size_t tinyaiGetTensorMemoryUsage(const TinyAIMemoryEfficientTensor *tensor)
+size_t hyperionGetTensorMemoryUsage(const HyperionMemoryEfficientTensor *tensor)
 {
     return tensor ? tensor->memory_usage : 0;
 }
 
 // Optimize tensor memory layout
-bool tinyaiOptimizeTensorMemory(TinyAIMemoryEfficientTensor *tensor)
+bool hyperionOptimizeTensorMemory(HyperionMemoryEfficientTensor *tensor)
 {
     if (!tensor) {
         return false;
@@ -382,11 +382,11 @@ bool tinyaiOptimizeTensorMemory(TinyAIMemoryEfficientTensor *tensor)
 
     // Make tensor contiguous if not already
     if (!tensor->is_contiguous) {
-        return tinyaiMakeTensorContiguous(tensor);
+        return hyperionMakeTensorContiguous(tensor);
     }
 
     // For pooled memory, try to compact the pool
-    if (tensor->strategy == TINYAI_MEMORY_POOLED && tensor->memory_pool) {
+    if (tensor->strategy == HYPERION_MEMORY_POOLED && tensor->memory_pool) {
         void *new_pool = malloc(tensor->pool_size);
         if (!new_pool) {
             return false;
@@ -403,7 +403,7 @@ bool tinyaiOptimizeTensorMemory(TinyAIMemoryEfficientTensor *tensor)
 }
 
 // Convert tensor to contiguous memory layout
-bool tinyaiMakeTensorContiguous(TinyAIMemoryEfficientTensor *tensor)
+bool hyperionMakeTensorContiguous(HyperionMemoryEfficientTensor *tensor)
 {
     if (!tensor || tensor->is_contiguous) {
         return true;
@@ -422,7 +422,7 @@ bool tinyaiMakeTensorContiguous(TinyAIMemoryEfficientTensor *tensor)
     memcpy(new_data, tensor->data, total_bytes);
 
     // Update tensor
-    if (tensor->strategy == TINYAI_MEMORY_STATIC) {
+    if (tensor->strategy == HYPERION_MEMORY_STATIC) {
         free(tensor->data);
     }
     tensor->data          = new_data;
@@ -432,9 +432,9 @@ bool tinyaiMakeTensorContiguous(TinyAIMemoryEfficientTensor *tensor)
 }
 
 // Resize tensor memory pool
-bool tinyaiResizeTensorPool(TinyAIMemoryEfficientTensor *tensor, size_t new_size)
+bool hyperionResizeTensorPool(HyperionMemoryEfficientTensor *tensor, size_t new_size)
 {
-    if (!tensor || tensor->strategy != TINYAI_MEMORY_POOLED) {
+    if (!tensor || tensor->strategy != HYPERION_MEMORY_POOLED) {
         return false;
     }
 
@@ -452,15 +452,15 @@ bool tinyaiResizeTensorPool(TinyAIMemoryEfficientTensor *tensor, size_t new_size
 }
 
 // Get tensor data pointer
-void *tinyaiGetTensorData(const TinyAIMemoryEfficientTensor *tensor)
+void *hyperionGetTensorData(const HyperionMemoryEfficientTensor *tensor)
 {
     return tensor ? tensor->data : NULL;
 }
 
 // Get tensor shape
-TinyAITensorShape tinyaiGetTensorShape(const TinyAIMemoryEfficientTensor *tensor)
+HyperionTensorShape hyperionGetTensorShape(const HyperionMemoryEfficientTensor *tensor)
 {
-    TinyAITensorShape shape = {0};
+    HyperionTensorShape shape = {0};
     if (tensor) {
         shape = tensor->shape;
     }
@@ -468,7 +468,7 @@ TinyAITensorShape tinyaiGetTensorShape(const TinyAIMemoryEfficientTensor *tensor
 }
 
 // Set tensor data
-bool tinyaiSetTensorData(TinyAIMemoryEfficientTensor *tensor, const void *data, size_t size)
+bool hyperionSetTensorData(HyperionMemoryEfficientTensor *tensor, const void *data, size_t size)
 {
     if (!tensor || !data || size == 0) {
         return false;
@@ -483,7 +483,7 @@ bool tinyaiSetTensorData(TinyAIMemoryEfficientTensor *tensor, const void *data, 
 
     // Ensure tensor is contiguous
     if (!tensor->is_contiguous) {
-        if (!tinyaiMakeTensorContiguous(tensor)) {
+        if (!hyperionMakeTensorContiguous(tensor)) {
             return false;
         }
     }

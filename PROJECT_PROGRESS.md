@@ -1,4 +1,4 @@
-# TinyAI Project Progress
+# Hyperion Project Progress
 
 ## Build Status
 - Core Framework: Ready
@@ -224,6 +224,6 @@ ctest -C Debug
 ```
 
 ### Using Visual Studio:
-1. Open the solution file at `vs2022/TinyAI.sln`
+1. Open the solution file at `vs2022/Hyperion.sln`
 2. Build the solution (F7 or Build > Build Solution)
-3. Run the tests (Test > Run All Tests) 
+3. Run the tests (Test > Run All Tests)

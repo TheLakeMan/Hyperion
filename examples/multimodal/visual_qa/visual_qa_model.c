@@ -1,6 +1,6 @@
 /**
  * @file visual_qa_model.c
- * @brief Implementation of visual question answering using multimodal model in TinyAI
+ * @brief Implementation of visual question answering using multimodal model in Hyperion
  */
 
 #include "visual_qa_model.h"
@@ -13,9 +13,9 @@
 /**
  * Internal structure for visual QA model
  */
-struct TinyAIVisualQAModel {
-    TinyAIMultimodalModel *model;             /* Underlying multimodal model */
-    TinyAITokenizer       *tokenizer;         /* Tokenizer for text processing */
+struct HyperionVisualQAModel {
+    HyperionMultimodalModel *model;             /* Underlying multimodal model */
+    HyperionTokenizer       *tokenizer;         /* Tokenizer for text processing */
     int                    imageWidth;        /* Input image width */
     int                    imageHeight;       /* Input image height */
     int                    maxQuestionLength; /* Maximum tokens for question */
@@ -27,7 +27,7 @@ struct TinyAIVisualQAModel {
 /**
  * Create a visual question answering model
  */
-TinyAIVisualQAModel *tinyaiVisualQAModelCreate(const TinyAIVisualQAConfig *config)
+HyperionVisualQAModel *hyperionVisualQAModelCreate(const HyperionVisualQAConfig *config)
 {
     if (!config) {
         fprintf(stderr, "Invalid configuration\n");
@@ -35,14 +35,14 @@ TinyAIVisualQAModel *tinyaiVisualQAModelCreate(const TinyAIVisualQAConfig *confi
     }
 
     /* Allocate model structure */
-    TinyAIVisualQAModel *model = (TinyAIVisualQAModel *)malloc(sizeof(TinyAIVisualQAModel));
+    HyperionVisualQAModel *model = (HyperionVisualQAModel *)malloc(sizeof(HyperionVisualQAModel));
     if (!model) {
         fprintf(stderr, "Failed to allocate visual QA model\n");
         return NULL;
     }
 
     /* Initialize model structure */
-    memset(model, 0, sizeof(TinyAIVisualQAModel));
+    memset(model, 0, sizeof(HyperionVisualQAModel));
     model->imageWidth        = config->imageWidth;
     model->imageHeight       = config->imageHeight;
     model->maxQuestionLength = config->maxQuestionLength;
@@ -52,7 +52,7 @@ TinyAIVisualQAModel *tinyaiVisualQAModelCreate(const TinyAIVisualQAConfig *confi
 
     /* Load tokenizer */
     if (config->vocabFile) {
-        model->tokenizer = tinyaiTokenizerCreate(config->vocabFile);
+        model->tokenizer = hyperionTokenizerCreate(config->vocabFile);
         if (!model->tokenizer) {
             fprintf(stderr, "Failed to create tokenizer from %s\n", config->vocabFile);
             free(model);
@@ -66,32 +66,32 @@ TinyAIVisualQAModel *tinyaiVisualQAModelCreate(const TinyAIVisualQAConfig *confi
     }
 
     /* Configure multimodal model parameters */
-    TinyAIMultimodalModelParams mmParams;
-    memset(&mmParams, 0, sizeof(TinyAIMultimodalModelParams));
+    HyperionMultimodalModelParams mmParams;
+    memset(&mmParams, 0, sizeof(HyperionMultimodalModelParams));
 
     /* Set model type and fusion method */
-    mmParams.modelType    = TINYAI_MULTIMODAL_CROSS_ATTN;
-    mmParams.fusionMethod = TINYAI_FUSION_ATTENTION;
+    mmParams.modelType    = HYPERION_MULTIMODAL_CROSS_ATTN;
+    mmParams.fusionMethod = HYPERION_FUSION_ATTENTION;
     mmParams.fusionDim    = config->fusionDim;
     mmParams.numLayers    = 2; /* Cross-attention followed by fusion */
 
     /* Configure modalities */
     mmParams.numModalities   = 2; /* Text and image */
-    mmParams.modalityConfigs = (TinyAIModalityConfig *)malloc(2 * sizeof(TinyAIModalityConfig));
+    mmParams.modalityConfigs = (HyperionModalityConfig *)malloc(2 * sizeof(HyperionModalityConfig));
     if (!mmParams.modalityConfigs) {
         fprintf(stderr, "Failed to allocate modality configurations\n");
-        tinyaiTokenizerFree(model->tokenizer);
+        hyperionTokenizerFree(model->tokenizer);
         free(model);
         return NULL;
     }
 
     /* Configure text modality */
-    mmParams.modalityConfigs[0].modality              = TINYAI_MODALITY_TEXT;
+    mmParams.modalityConfigs[0].modality              = HYPERION_MODALITY_TEXT;
     mmParams.modalityConfigs[0].config.text.maxTokens = config->maxQuestionLength;
     mmParams.modalityConfigs[0].config.text.embedDim  = config->textEmbedDim;
 
     /* Configure image modality */
-    mmParams.modalityConfigs[1].modality              = TINYAI_MODALITY_IMAGE;
+    mmParams.modalityConfigs[1].modality              = HYPERION_MODALITY_IMAGE;
     mmParams.modalityConfigs[1].config.image.width    = config->imageWidth;
     mmParams.modalityConfigs[1].config.image.height   = config->imageHeight;
     mmParams.modalityConfigs[1].config.image.channels = 3; /* RGB */
@@ -103,11 +103,11 @@ TinyAIVisualQAModel *tinyaiVisualQAModelCreate(const TinyAIVisualQAConfig *confi
     mmParams.customParams    = NULL;
 
     /* Create multimodal model */
-    model->model = tinyaiMultimodalModelCreate(&mmParams);
+    model->model = hyperionMultimodalModelCreate(&mmParams);
     if (!model->model) {
         fprintf(stderr, "Failed to create multimodal model\n");
         free(mmParams.modalityConfigs);
-        tinyaiTokenizerFree(model->tokenizer);
+        hyperionTokenizerFree(model->tokenizer);
         free(model);
         return NULL;
     }
@@ -121,7 +121,7 @@ TinyAIVisualQAModel *tinyaiVisualQAModelCreate(const TinyAIVisualQAConfig *confi
 /**
  * Free a visual QA model
  */
-void tinyaiVisualQAModelFree(TinyAIVisualQAModel *model)
+void hyperionVisualQAModelFree(HyperionVisualQAModel *model)
 {
     if (!model) {
         return;
@@ -129,12 +129,12 @@ void tinyaiVisualQAModelFree(TinyAIVisualQAModel *model)
 
     /* Free multimodal model */
     if (model->model) {
-        tinyaiMultimodalModelFree(model->model);
+        hyperionMultimodalModelFree(model->model);
     }
 
     /* Free tokenizer */
     if (model->tokenizer) {
-        tinyaiTokenizerFree(model->tokenizer);
+        hyperionTokenizerFree(model->tokenizer);
     }
 
     /* Free model structure */
@@ -144,7 +144,7 @@ void tinyaiVisualQAModelFree(TinyAIVisualQAModel *model)
 /**
  * Answer a question about an image
  */
-bool tinyaiVisualQAGenerateAnswer(TinyAIVisualQAModel *model, const char *imagePath,
+bool hyperionVisualQAGenerateAnswer(HyperionVisualQAModel *model, const char *imagePath,
                                   const char *question, char *answer, int maxLength)
 {
     if (!model || !imagePath || !question || !answer || maxLength <= 0) {
@@ -152,17 +152,17 @@ bool tinyaiVisualQAGenerateAnswer(TinyAIVisualQAModel *model, const char *imageP
     }
 
     /* Load image */
-    TinyAIImage *image = tinyaiImageLoadFromFile(imagePath);
+    HyperionImage *image = hyperionImageLoadFromFile(imagePath);
     if (!image) {
         fprintf(stderr, "Failed to load image from %s\n", imagePath);
         return false;
     }
 
     /* Generate answer */
-    bool success = tinyaiVisualQAGenerateAnswerFromImage(model, image, question, answer, maxLength);
+    bool success = hyperionVisualQAGenerateAnswerFromImage(model, image, question, answer, maxLength);
 
     /* Clean up */
-    tinyaiImageFree(image);
+    hyperionImageFree(image);
 
     return success;
 }
@@ -170,7 +170,7 @@ bool tinyaiVisualQAGenerateAnswer(TinyAIVisualQAModel *model, const char *imageP
 /**
  * Answer a question about an image directly from image data
  */
-bool tinyaiVisualQAGenerateAnswerFromImage(TinyAIVisualQAModel *model, const TinyAIImage *image,
+bool hyperionVisualQAGenerateAnswerFromImage(HyperionVisualQAModel *model, const HyperionImage *image,
                                            const char *question, char *answer, int maxLength)
 {
     if (!model || !image || !question || !answer || maxLength <= 0) {
@@ -178,16 +178,16 @@ bool tinyaiVisualQAGenerateAnswerFromImage(TinyAIVisualQAModel *model, const Tin
     }
 
     /* Preprocess image if needed */
-    TinyAIImage *processedImage = NULL;
+    HyperionImage *processedImage = NULL;
     if (image->width != model->imageWidth || image->height != model->imageHeight) {
-        processedImage = tinyaiImageResize(image, model->imageWidth, model->imageHeight);
+        processedImage = hyperionImageResize(image, model->imageWidth, model->imageHeight);
         if (!processedImage) {
             fprintf(stderr, "Failed to resize image\n");
             return false;
         }
     }
     else {
-        processedImage = tinyaiImageCopy(image);
+        processedImage = hyperionImageCopy(image);
         if (!processedImage) {
             fprintf(stderr, "Failed to copy image\n");
             return false;
@@ -200,10 +200,10 @@ bool tinyaiVisualQAGenerateAnswerFromImage(TinyAIVisualQAModel *model, const Tin
 
     if (question && *question) {
         /* Convert question to tokens */
-        questionTokens = tinyaiTokenizerEncodeText(model->tokenizer, question, &questionLength);
+        questionTokens = hyperionTokenizerEncodeText(model->tokenizer, question, &questionLength);
         if (!questionTokens || questionLength == 0) {
             fprintf(stderr, "Failed to tokenize question: %s\n", question);
-            tinyaiImageFree(processedImage);
+            hyperionImageFree(processedImage);
             return false;
         }
 
@@ -214,16 +214,16 @@ bool tinyaiVisualQAGenerateAnswerFromImage(TinyAIVisualQAModel *model, const Tin
     }
     else {
         fprintf(stderr, "Empty question\n");
-        tinyaiImageFree(processedImage);
+        hyperionImageFree(processedImage);
         return false;
     }
 
     /* Prepare multimodal input */
-    TinyAIMultimodalInput mmInput;
-    if (!tinyaiMultimodalInputInit(&mmInput)) {
+    HyperionMultimodalInput mmInput;
+    if (!hyperionMultimodalInputInit(&mmInput)) {
         fprintf(stderr, "Failed to initialize multimodal input\n");
         free(questionTokens);
-        tinyaiImageFree(processedImage);
+        hyperionImageFree(processedImage);
         return false;
     }
 
@@ -235,24 +235,24 @@ bool tinyaiVisualQAGenerateAnswerFromImage(TinyAIVisualQAModel *model, const Tin
     mmInput.textLength = questionLength;
 
     /* Prepare multimodal output */
-    TinyAIMultimodalOutput mmOutput;
-    memset(&mmOutput, 0, sizeof(TinyAIMultimodalOutput));
-    if (!tinyaiMultimodalOutputInit(&mmOutput, model->textEmbedDim, 1,
-                                    tinyaiTokenizerGetVocabSize(model->tokenizer), 0)) {
+    HyperionMultimodalOutput mmOutput;
+    memset(&mmOutput, 0, sizeof(HyperionMultimodalOutput));
+    if (!hyperionMultimodalOutputInit(&mmOutput, model->textEmbedDim, 1,
+                                    hyperionTokenizerGetVocabSize(model->tokenizer), 0)) {
         fprintf(stderr, "Failed to initialize multimodal output\n");
         free(questionTokens);
-        tinyaiMultimodalInputFree(&mmInput, false);
-        tinyaiImageFree(processedImage);
+        hyperionMultimodalInputFree(&mmInput, false);
+        hyperionImageFree(processedImage);
         return false;
     }
 
     /* Process input */
-    if (!tinyaiMultimodalModelProcess(model->model, &mmInput, &mmOutput)) {
+    if (!hyperionMultimodalModelProcess(model->model, &mmInput, &mmOutput)) {
         fprintf(stderr, "Failed to process multimodal input\n");
-        tinyaiMultimodalOutputFree(&mmOutput);
+        hyperionMultimodalOutputFree(&mmOutput);
         free(questionTokens);
-        tinyaiMultimodalInputFree(&mmInput, false);
-        tinyaiImageFree(processedImage);
+        hyperionMultimodalInputFree(&mmInput, false);
+        hyperionImageFree(processedImage);
         return false;
     }
 
@@ -261,7 +261,7 @@ bool tinyaiVisualQAGenerateAnswerFromImage(TinyAIVisualQAModel *model, const Tin
     int numTokens = 0;
 
     /* Start token handling - assuming we have a [START] token */
-    int startToken = tinyaiTokenizerEncode(model->tokenizer, "[START]", 7);
+    int startToken = hyperionTokenizerEncode(model->tokenizer, "[START]", 7);
     if (startToken < 0) {
         /* If no specific start token, try using first token */
         startToken = 0;
@@ -269,19 +269,19 @@ bool tinyaiVisualQAGenerateAnswerFromImage(TinyAIVisualQAModel *model, const Tin
     answerTokens[numTokens++] = startToken;
 
     /* End token handling */
-    int endToken = tinyaiTokenizerEncode(model->tokenizer, "[END]", 5);
+    int endToken = hyperionTokenizerEncode(model->tokenizer, "[END]", 5);
     if (endToken < 0) {
-        endToken = tinyaiTokenizerGetVocabSize(model->tokenizer) - 1; /* Default end token */
+        endToken = hyperionTokenizerGetVocabSize(model->tokenizer) - 1; /* Default end token */
     }
 
     /* Generate tokens one by one */
     int *generationTokens = (int *)malloc(sizeof(int) * (questionLength + numTokens));
     if (!generationTokens) {
         fprintf(stderr, "Failed to allocate tokens for generation\n");
-        tinyaiMultimodalOutputFree(&mmOutput);
+        hyperionMultimodalOutputFree(&mmOutput);
         free(questionTokens);
-        tinyaiMultimodalInputFree(&mmInput, false);
-        tinyaiImageFree(processedImage);
+        hyperionMultimodalInputFree(&mmInput, false);
+        hyperionImageFree(processedImage);
         return false;
     }
 
@@ -297,12 +297,12 @@ bool tinyaiVisualQAGenerateAnswerFromImage(TinyAIVisualQAModel *model, const Tin
     /* Generate answer tokens */
     for (int i = 0; i < model->maxAnswerLength && numTokens < 256; i++) {
         /* Process updated input */
-        tinyaiMultimodalOutputFree(&mmOutput);
-        if (!tinyaiMultimodalOutputInit(&mmOutput, model->textEmbedDim, 1,
-                                        tinyaiTokenizerGetVocabSize(model->tokenizer), 0)) {
+        hyperionMultimodalOutputFree(&mmOutput);
+        if (!hyperionMultimodalOutputInit(&mmOutput, model->textEmbedDim, 1,
+                                        hyperionTokenizerGetVocabSize(model->tokenizer), 0)) {
             break;
         }
-        if (!tinyaiMultimodalModelProcess(model->model, &mmInput, &mmOutput)) {
+        if (!hyperionMultimodalModelProcess(model->model, &mmInput, &mmOutput)) {
             break;
         }
 
@@ -315,11 +315,11 @@ bool tinyaiVisualQAGenerateAnswerFromImage(TinyAIVisualQAModel *model, const Tin
         /* Find the token with maximum probability (greedy decoding) */
         int   maxToken = 0;
         float maxProb  = logits[0];
-        for (int j = 1; j < tinyaiTokenizerGetVocabSize(model->tokenizer); j++) {
+        for (int j = 1; j < hyperionTokenizerGetVocabSize(model->tokenizer); j++) {
             if (logits[j] > maxProb) {
                 maxProb  = logits[j];
                 maxToken = j;
-            }
+            }S
         }
 
         /* Add token to generated sequence */
@@ -347,7 +347,7 @@ bool tinyaiVisualQAGenerateAnswerFromImage(TinyAIVisualQAModel *model, const Tin
     }
 
     /* Decode answer tokens to text (skip the initial start token) */
-    char *decodedText = tinyaiTokenizerDecode(model->tokenizer, answerTokens + 1, numTokens - 1);
+    char *decodedText = hyperionTokenizerDecode(model->tokenizer, answerTokens + 1, numTokens - 1);
     if (decodedText) {
         /* Copy to output buffer, ensuring we don't exceed maxLength */
         strncpy(answer, decodedText, maxLength - 1);
@@ -361,11 +361,11 @@ bool tinyaiVisualQAGenerateAnswerFromImage(TinyAIVisualQAModel *model, const Tin
     }
 
     /* Clean up */
-    tinyaiMultimodalOutputFree(&mmOutput);
+    hyperionMultimodalOutputFree(&mmOutput);
     free(questionTokens);
     free(mmInput.textInput); /* This is now using generationTokens */
-    tinyaiMultimodalInputFree(&mmInput, false);
-    tinyaiImageFree(processedImage);
+    hyperionMultimodalInputFree(&mmInput, false);
+    hyperionImageFree(processedImage);
 
     return true;
 }
@@ -373,7 +373,7 @@ bool tinyaiVisualQAGenerateAnswerFromImage(TinyAIVisualQAModel *model, const Tin
 /**
  * Get model's memory usage statistics
  */
-bool tinyaiVisualQAModelGetMemoryUsage(const TinyAIVisualQAModel *model, size_t *weightMemory,
+bool hyperionVisualQAModelGetMemoryUsage(const HyperionVisualQAModel *model, size_t *weightMemory,
                                        size_t *activationMemory)
 {
     if (!model || !weightMemory || !activationMemory) {
@@ -381,18 +381,18 @@ bool tinyaiVisualQAModelGetMemoryUsage(const TinyAIVisualQAModel *model, size_t 
     }
 
     /* Get memory usage from multimodal model */
-    return tinyaiMultimodalModelGetMemoryUsage(model->model, weightMemory, activationMemory);
+    return hyperionMultimodalModelGetMemoryUsage(model->model, weightMemory, activationMemory);
 }
 
 /**
  * Enable or disable SIMD acceleration
  */
-bool tinyaiVisualQAModelEnableSIMD(TinyAIVisualQAModel *model, bool enable)
+bool hyperionVisualQAModelEnableSIMD(HyperionVisualQAModel *model, bool enable)
 {
     if (!model) {
         return false;
     }
 
     model->useSIMD = enable;
-    return tinyaiMultimodalModelEnableSIMD(model->model, enable);
+    return hyperionMultimodalModelEnableSIMD(model->model, enable);
 }

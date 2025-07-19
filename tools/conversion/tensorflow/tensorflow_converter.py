@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-TensorFlow to TinyAI Model Converter
+TensorFlow to Hyperion Model Converter
 
 This module converts TensorFlow/Keras models to TinyAI format.
 It handles:

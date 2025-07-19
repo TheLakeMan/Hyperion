@@ -1,27 +1,27 @@
 /**
- * TinyAI Tokenizer Header
+ * Hyperion Tokenizer Header
  * 
- * This header defines the tokenizer API for text processing in TinyAI.
+ * This header defines the tokenizer API for text processing in Hyperion.
  */
 
-#ifndef TINYAI_TOKENIZER_H
-#define TINYAI_TOKENIZER_H
+#ifndef HYPERION_TOKENIZER_H
+#define HYPERION_TOKENIZER_H
 
 #include <stdint.h>
 
 /* ----------------- Constants ----------------- */
 
 /* Maximum vocabulary size */
-#define TINYAI_MAX_VOCAB_SIZE 65536
+#define HYPERION_MAX_VOCAB_SIZE 65536
 
 /* Maximum token length */
-#define TINYAI_MAX_TOKEN_LENGTH 256
+#define HYPERION_MAX_TOKEN_LENGTH 256
 
 /* Special token IDs */
-#define TINYAI_TOKEN_UNKNOWN 0
-#define TINYAI_TOKEN_BOS     1
-#define TINYAI_TOKEN_EOS     2
-#define TINYAI_TOKEN_PAD     3
+#define HYPERION_TOKEN_UNKNOWN 0
+#define HYPERION_TOKEN_BOS     1
+#define HYPERION_TOKEN_EOS     2
+#define HYPERION_TOKEN_PAD     3
 
 /* ----------------- Types ----------------- */
 
@@ -29,11 +29,11 @@
  * Tokenizer structure
  */
 typedef struct {
-    char *tokens[TINYAI_MAX_VOCAB_SIZE];    /* Token strings */
+    char *tokens[HYPERION_MAX_VOCAB_SIZE];    /* Token strings */
     uint32_t tokenCount;                    /* Number of tokens in vocabulary */
     uint32_t *frequencies;                  /* Token frequencies (for training) */
     int caseSensitive;                      /* Whether tokenization is case-sensitive */
-} TinyAITokenizer;
+} HyperionTokenizer;
 
 /* ----------------- API Functions ----------------- */
 
@@ -42,14 +42,14 @@ typedef struct {
  * 
  * @return New tokenizer or NULL on error
  */
-TinyAITokenizer* tinyaiCreateTokenizer();
+HyperionTokenizer* hyperionCreateTokenizer();
 
 /**
  * Destroy a tokenizer
  * 
  * @param tokenizer Tokenizer to destroy
  */
-void tinyaiDestroyTokenizer(TinyAITokenizer *tokenizer);
+void hyperionDestroyTokenizer(HyperionTokenizer *tokenizer);
 
 /**
  * Load a vocabulary from a file
@@ -58,7 +58,7 @@ void tinyaiDestroyTokenizer(TinyAITokenizer *tokenizer);
  * @param path File path
  * @return 0 on success, non-zero on error
  */
-int tinyaiLoadVocabulary(TinyAITokenizer *tokenizer, const char *path);
+int hyperionLoadVocabulary(HyperionTokenizer *tokenizer, const char *path);
 
 /**
  * Add a token to the vocabulary
@@ -68,16 +68,16 @@ int tinyaiLoadVocabulary(TinyAITokenizer *tokenizer, const char *path);
  * @param frequency Token frequency
  * @return Token ID or -1 on error
  */
-int tinyaiAddToken(TinyAITokenizer *tokenizer, const char *token, uint32_t frequency);
+int hyperionAddToken(HyperionTokenizer *tokenizer, const char *token, uint32_t frequency);
 
 /**
  * Get a token ID by string
  * 
  * @param tokenizer Tokenizer to use
  * @param token Token string
- * @return Token ID or TINYAI_TOKEN_UNKNOWN if not found
+ * @return Token ID or HYPERION_TOKEN_UNKNOWN if not found
  */
-int tinyaiGetTokenId(const TinyAITokenizer *tokenizer, const char *token);
+int hyperionGetTokenId(const HyperionTokenizer *tokenizer, const char *token);
 
 /**
  * Get a token string by ID
@@ -86,7 +86,7 @@ int tinyaiGetTokenId(const TinyAITokenizer *tokenizer, const char *token);
  * @param id Token ID
  * @return Token string or NULL if not found
  */
-const char* tinyaiGetTokenString(const TinyAITokenizer *tokenizer, int id);
+const char* hyperionGetTokenString(const HyperionTokenizer *tokenizer, int id);
 
 /**
  * Encode a text string into token IDs
@@ -97,7 +97,7 @@ const char* tinyaiGetTokenString(const TinyAITokenizer *tokenizer, int id);
  * @param maxTokens Maximum number of tokens to output
  * @return Number of tokens encoded
  */
-int tinyaiEncodeText(const TinyAITokenizer *tokenizer, const char *text, 
+int hyperionEncodeText(const HyperionTokenizer *tokenizer, const char *text, 
                    int *tokens, int maxTokens);
 
 /**
@@ -110,7 +110,7 @@ int tinyaiEncodeText(const TinyAITokenizer *tokenizer, const char *text,
  * @param maxLength Maximum output length
  * @return Length of decoded text
  */
-int tinyaiDecodeTokens(const TinyAITokenizer *tokenizer, const int *tokens, 
+int hyperionDecodeTokens(const HyperionTokenizer *tokenizer, const int *tokens, 
                      int tokenCount, char *text, int maxLength);
 
 /**
@@ -121,7 +121,7 @@ int tinyaiDecodeTokens(const TinyAITokenizer *tokenizer, const int *tokens,
  * @param maxVocabSize Maximum vocabulary size
  * @return 0 on success, non-zero on error
  */
-int tinyaiCreateMinimalVocabulary(TinyAITokenizer *tokenizer, 
+int hyperionCreateMinimalVocabulary(HyperionTokenizer *tokenizer, 
                                 const char *corpus, int maxVocabSize);
 
 /**
@@ -131,6 +131,6 @@ int tinyaiCreateMinimalVocabulary(TinyAITokenizer *tokenizer,
  * @param path File path
  * @return 0 on success, non-zero on error
  */
-int tinyaiSaveVocabulary(const TinyAITokenizer *tokenizer, const char *path);
+int hyperionSaveVocabulary(const HyperionTokenizer *tokenizer, const char *path);
 
-#endif /* TINYAI_TOKENIZER_H */
+#endif /* HYPERION_TOKENIZER_H */

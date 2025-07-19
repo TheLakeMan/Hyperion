@@ -1,8 +1,8 @@
-# TinyAI API Reference
+# Hyperion API Reference
 
 ## Overview
 
-This document provides a comprehensive reference for the TinyAI API, covering all core components, their functions, and usage examples.
+This document provides a comprehensive reference for the Hyperion API, covering all core components, their functions, and usage examples.
 
 ## Core Components
 
@@ -17,27 +17,27 @@ typedef struct {
     size_t max_pool_size;        // Maximum memory pool size
     bool track_allocations;      // Whether to track allocations
     bool enable_optimization;    // Whether to enable memory optimization
-} TinyAIMemoryConfig;
+} HyperionMemoryConfig;
 
 /**
  * Initialize memory management
  */
-bool tinyaiInitMemory(const TinyAIMemoryConfig* config);
+bool hyperionInitMemory(const HyperionMemoryConfig* config);
 
 /**
  * Allocate memory
  */
-void* tinyaiAlloc(size_t size);
+void* hyperionAlloc(size_t size);
 
 /**
  * Free allocated memory
  */
-void tinyaiFree(void* ptr);
+void hyperionFree(void* ptr);
 
 /**
  * Get memory statistics
  */
-TinyAIMemoryStats tinyaiGetMemoryStats();
+HyperionMemoryStats hyperionGetMemoryStats();
 ```
 
 ### I/O System
@@ -46,22 +46,22 @@ TinyAIMemoryStats tinyaiGetMemoryStats();
 /**
  * File operations
  */
-bool tinyaiFileExists(const char* path);
-bool tinyaiReadFile(const char* path, void* buffer, size_t size);
-bool tinyaiWriteFile(const char* path, const void* buffer, size_t size);
+bool hyperionFileExists(const char* path);
+bool hyperionReadFile(const char* path, void* buffer, size_t size);
+bool hyperionWriteFile(const char* path, const void* buffer, size_t size);
 
 /**
  * Directory operations
  */
-bool tinyaiCreateDir(const char* path);
-bool tinyaiListDir(const char* path, char*** files, size_t* count);
+bool hyperionCreateDir(const char* path);
+bool hyperionListDir(const char* path, char*** files, size_t* count);
 
 /**
  * Path manipulation
  */
-char* tinyaiJoinPath(const char* path1, const char* path2);
-char* tinyaiGetDirName(const char* path);
-char* tinyaiGetBaseName(const char* path);
+char* hyperionJoinPath(const char* path1, const char* path2);
+char* hyperionGetDirName(const char* path);
+char* hyperionGetBaseName(const char* path);
 ```
 
 ### Configuration System
@@ -72,30 +72,30 @@ char* tinyaiGetBaseName(const char* path);
  */
 typedef struct {
     const char* key;
-    TinyAIConfigType type;
+    HyperionConfigType type;
     union {
         int int_value;
         float float_value;
         bool bool_value;
         char* string_value;
     } value;
-} TinyAIConfig;
+} HyperionConfig;
 
 /**
  * Load configuration
  */
-bool tinyaiLoadConfig(const char* path, TinyAIConfig** config, size_t* count);
+bool hyperionLoadConfig(const char* path, HyperionConfig** config, size_t* count);
 
 /**
  * Get configuration value
  */
-bool tinyaiGetConfigValue(const TinyAIConfig* config, size_t count, 
+bool hyperionGetConfigValue(const HyperionConfig* config, size_t count, 
                          const char* key, void* value);
 
 /**
  * Set configuration value
  */
-bool tinyaiSetConfigValue(TinyAIConfig* config, size_t count, 
+bool hyperionSetConfigValue(HyperionConfig* config, size_t count, 
                          const char* key, const void* value);
 ```
 
@@ -111,23 +111,23 @@ typedef struct {
     const char* vocabulary_path;  // Path to vocabulary file
     size_t max_tokens;           // Maximum number of tokens
     bool case_sensitive;         // Whether to be case sensitive
-} TinyAITokenizerConfig;
+} HyperionTokenizerConfig;
 
 /**
  * Create tokenizer
  */
-TinyAITokenizer* tinyaiCreateTokenizer(const TinyAITokenizerConfig* config);
+HyperionTokenizer* hyperionCreateTokenizer(const HyperionTokenizerConfig* config);
 
 /**
  * Tokenize text
  */
-bool tinyaiTokenize(TinyAITokenizer* tokenizer, const char* text, 
+bool hyperionTokenize(HyperionTokenizer* tokenizer, const char* text, 
                    int* tokens, size_t* count);
 
 /**
  * Detokenize tokens
  */
-bool tinyaiDetokenize(TinyAITokenizer* tokenizer, const int* tokens, 
+bool hyperionDetokenize(HyperionTokenizer* tokenizer, const int* tokens, 
                      size_t count, char** text);
 ```
 
@@ -142,13 +142,13 @@ typedef struct {
     float temperature;           // Sampling temperature
     int top_k;                   // Top-k sampling parameter
     float top_p;                 // Top-p sampling parameter
-} TinyAIGenerationConfig;
+} HyperionGenerationConfig;
 
 /**
  * Generate text
  */
-bool tinyaiGenerateText(TinyAIModel* model, const char* prompt,
-                       const TinyAIGenerationConfig* config,
+bool hyperionGenerateText(HyperionModel* model, const char* prompt,
+                       const HyperionGenerationConfig* config);
                        char** output);
 ```
 
@@ -165,19 +165,19 @@ typedef struct {
     bool enable_in_place_ops;     // Whether to use in-place operations
     float memory_speed_tradeoff;  // Memory/speed tradeoff (0.0 to 1.0)
     size_t max_memory_budget;     // Maximum memory budget
-} TinyAIMemoryOptimizerConfig;
+} HyperionMemoryOptimizerConfig;
 
 /**
  * Create memory optimizer
  */
-TinyAIMemoryOptimizer* tinyaiCreateMemoryOptimizer(
-    const TinyAIMemoryOptimizerConfig* config);
+HyperionMemoryOptimizer* hyperionCreateMemoryOptimizer(
+    const HyperionMemoryOptimizerConfig* config);
 
 /**
  * Optimize memory usage
  */
-bool tinyaiOptimizeMemoryUsage(TinyAIMemoryOptimizer* optimizer,
-                              TinyAIModel* model,
+bool hyperionOptimizeMemoryUsage(HyperionMemoryOptimizer* optimizer,
+                              HyperionModel* model,
                               size_t memory_budget);
 ```
 
@@ -192,18 +192,18 @@ typedef struct {
     int prefetch_window;          // Number of layers to prefetch
     bool enable_adaptive_window;  // Whether to adapt prefetch window
     size_t max_memory_usage;      // Maximum memory usage
-} TinyAIProgressiveLoaderConfig;
+} HyperionProgressiveLoaderConfig;
 
 /**
  * Create progressive loader
  */
-TinyAIProgressiveLoader* tinyaiCreateProgressiveLoader(
-    const TinyAIProgressiveLoaderConfig* config);
+HyperionProgressiveLoader* hyperionCreateProgressiveLoader(
+    const HyperionProgressiveLoaderConfig* config);
 
 /**
  * Load layer
  */
-bool tinyaiLoadLayer(TinyAIProgressiveLoader* loader, int layer_index);
+bool hyperionLoadLayer(HyperionProgressiveLoader* loader, int layer_index);
 ```
 
 ### Layer Scheduler
@@ -217,23 +217,23 @@ typedef struct {
     float memory_speed_tradeoff;  // Memory/speed tradeoff
     bool recompute_activations;   // Whether to recompute activations
     size_t max_activation_memory; // Maximum activation memory
-} TinyAILayerSchedulerConfig;
+} HyperionLayerSchedulerConfig;
 
 /**
  * Create layer scheduler
  */
-TinyAILayerScheduler* tinyaiCreateLayerScheduler(
-    TinyAIModel* model,
-    const TinyAILayerSchedulerConfig* config);
+HyperionLayerScheduler* hyperionCreateLayerScheduler(
+    HyperionModel* model,
+    const HyperionLayerSchedulerConfig* config);
 
 /**
  * Execute layer with optimization
  */
-bool tinyaiExecuteLayerWithMemoryOptimization(
-    TinyAILayerScheduler* scheduler,
+bool hyperionExecuteLayerWithMemoryOptimization(
+    HyperionLayerScheduler* scheduler,
     int layer_index,
-    TinyAITensor* input,
-    TinyAITensor* output);
+    HyperionTensor* input,
+    HyperionTensor* output);
 ```
 
 ## Utility Components
@@ -249,20 +249,20 @@ typedef struct {
     bool symmetric;              // Whether to use symmetric quantization
     float scale;                 // Quantization scale
     int zero_point;              // Quantization zero point
-} TinyAIQuantizationConfig;
+} HyperionQuantizationConfig;
 
 /**
  * Quantize tensor
  */
-bool tinyaiQuantizeTensor(const TinyAITensor* input,
-                         TinyAITensor* output,
-                         const TinyAIQuantizationConfig* config);
+bool hyperionQuantizeTensor(const HyperionTensor* input,
+                         HyperionTensor* output,
+                         const HyperionQuantizationConfig* config);
 
 /**
  * Dequantize tensor
  */
-bool tinyaiDequantizeTensor(const TinyAITensor* input,
-                           TinyAITensor* output);
+bool hyperionDequantizeTensor(const HyperionTensor* input,
+                           HyperionTensor* output);
 ```
 
 ### Sparse Operations
@@ -272,24 +272,24 @@ bool tinyaiDequantizeTensor(const TinyAITensor* input,
  * Sparse matrix configuration
  */
 typedef struct {
-    TinyAISparseFormat format;   // Sparse format (CSR, CSC, etc.)
+    HyperionSparseFormat format;   // Sparse format (CSR, CSC, etc.)
     int block_size;              // Block size for blocked formats
     bool enable_simd;            // Whether to enable SIMD
-} TinyAISparseConfig;
+} HyperionSparseConfig;
 
 /**
  * Convert to sparse format
  */
-bool tinyaiConvertToSparse(const TinyAITensor* dense,
-                          TinyAITensor* sparse,
-                          const TinyAISparseConfig* config);
+bool hyperionConvertToSparse(const HyperionTensor* dense,
+                          HyperionTensor* sparse,
+                          const HyperionSparseConfig* config);
 
 /**
  * Sparse matrix multiplication
  */
-bool tinyaiSparseMatMul(const TinyAITensor* a,
-                       const TinyAITensor* b,
-                       TinyAITensor* c);
+bool hyperionSparseMatMul(const HyperionTensor* a,
+                       const HyperionTensor* b,
+                       HyperionTensor* c);
 ```
 
 ## Error Handling
@@ -299,23 +299,23 @@ bool tinyaiSparseMatMul(const TinyAITensor* a,
  * Error codes
  */
 typedef enum {
-    TINYAI_SUCCESS = 0,
-    TINYAI_ERROR_MEMORY,
-    TINYAI_ERROR_IO,
-    TINYAI_ERROR_INVALID_ARGUMENT,
-    TINYAI_ERROR_NOT_IMPLEMENTED,
-    TINYAI_ERROR_RUNTIME
-} TinyAIErrorCode;
+    HYPERION_SUCCESS = 0,
+    HYPERION_ERROR_MEMORY,
+    HYPERION_ERROR_IO,
+    HYPERION_ERROR_INVALID_ARGUMENT,
+    HYPERION_ERROR_NOT_IMPLEMENTED,
+    HYPERION_ERROR_RUNTIME
+} HyperionErrorCode;
 
 /**
  * Get error message
  */
-const char* tinyaiGetErrorMessage(TinyAIErrorCode code);
+const char* hyperionGetErrorMessage(HyperionErrorCode code);
 
 /**
  * Set error handler
  */
-void tinyaiSetErrorHandler(TinyAIErrorHandler handler);
+void hyperionSetErrorHandler(HyperionErrorHandler handler);
 ```
 
 ## Usage Examples
@@ -324,67 +324,67 @@ void tinyaiSetErrorHandler(TinyAIErrorHandler handler);
 
 ```c
 // Initialize memory management
-TinyAIMemoryConfig mem_config = {
+HyperionMemoryConfig mem_config = {
     .initial_pool_size = 1024 * 1024 * 1024,  // 1GB
     .max_pool_size = 2 * 1024 * 1024 * 1024,  // 2GB
     .track_allocations = true,
     .enable_optimization = true
 };
-tinyaiInitMemory(&mem_config);
+hyperionInitMemory(&mem_config);
 
 // Load model
-TinyAIModel* model = tinyaiLoadModel("model.tinyai");
+HyperionModel* model = hyperionLoadModel("model.hyperion");
 
 // Create tokenizer
-TinyAITokenizerConfig tokenizer_config = {
+HyperionTokenizerConfig tokenizer_config = {
     .vocabulary_path = "vocabulary.txt",
     .max_tokens = 50000,
     .case_sensitive = false
 };
-TinyAITokenizer* tokenizer = tinyaiCreateTokenizer(&tokenizer_config);
+HyperionTokenizer* tokenizer = hyperionCreateTokenizer(&tokenizer_config);
 
 // Generate text
-TinyAIGenerationConfig gen_config = {
+HyperionGenerationConfig gen_config = {
     .max_length = 100,
     .temperature = 0.7f,
     .top_k = 50,
     .top_p = 0.9f
 };
 char* output;
-tinyaiGenerateText(model, "Hello, ", &gen_config, &output);
+hyperionGenerateText(model, "Hello, ", &gen_config, &output);
 ```
 
 ### Memory Optimization
 
 ```c
 // Create memory optimizer
-TinyAIMemoryOptimizerConfig opt_config = {
+HyperionMemoryOptimizerConfig opt_config = {
     .enable_tensor_reuse = true,
     .enable_in_place_ops = true,
     .memory_speed_tradeoff = 0.5f,
     .max_memory_budget = 512 * 1024 * 1024  // 512MB
 };
-TinyAIMemoryOptimizer* optimizer = tinyaiCreateMemoryOptimizer(&opt_config);
+HyperionMemoryOptimizer* optimizer = hyperionCreateMemoryOptimizer(&opt_config);
 
 // Optimize model
-tinyaiOptimizeMemoryUsage(optimizer, model, 256 * 1024 * 1024);  // 256MB budget
+hyperionOptimizeMemoryUsage(optimizer, model, 256 * 1024 * 1024);  // 256MB budget
 ```
 
 ### Progressive Loading
 
 ```c
 // Create progressive loader
-TinyAIProgressiveLoaderConfig loader_config = {
+HyperionProgressiveLoaderConfig loader_config = {
     .enable_prefetch = true,
     .prefetch_window = 3,
     .enable_adaptive_window = true,
     .max_memory_usage = 256 * 1024 * 1024  // 256MB
 };
-TinyAIProgressiveLoader* loader = tinyaiCreateProgressiveLoader(&loader_config);
+HyperionProgressiveLoader* loader = hyperionCreateProgressiveLoader(&loader_config);
 
 // Load layers as needed
-tinyaiLoadLayer(loader, 0);
-tinyaiLoadLayer(loader, 1);
+hyperionLoadLayer(loader, 0);
+hyperionLoadLayer(loader, 1);
 ```
 
 ## Best Practices
@@ -420,43 +420,43 @@ tinyaiLoadLayer(loader, 1);
  * Tensor memory allocation strategy
  */
 typedef enum {
-    TINYAI_TENSOR_STATIC,    // Static allocation
-    TINYAI_TENSOR_POOLED,    // Pooled allocation
-    TINYAI_TENSOR_STREAMING  // Streaming allocation
-} TinyAITensorAllocStrategy;
+    HYPERION_TENSOR_STATIC,    // Static allocation
+    HYPERION_TENSOR_POOLED,    // Pooled allocation
+    HYPERION_TENSOR_STREAMING  // Streaming allocation
+} HyperionTensorAllocStrategy;
 
 /**
  * Tensor memory configuration
  */
 typedef struct {
-    TinyAITensorAllocStrategy strategy;  // Allocation strategy
+    HyperionTensorAllocStrategy strategy;  // Allocation strategy
     size_t pool_size;                    // Pool size for pooled strategy
     size_t stream_buffer_size;           // Buffer size for streaming
     bool enable_in_place;                // Whether to enable in-place ops
-} TinyAITensorMemoryConfig;
+} HyperionTensorMemoryConfig;
 
 /**
  * Create memory-efficient tensor
  */
-TinyAITensor* tinyaiCreateTensorWithMemoryConfig(
-    const TinyAITensorMemoryConfig* config,
+HyperionTensor* hyperionCreateTensorWithMemoryConfig(
+    const HyperionTensorMemoryConfig* config,
     int ndims,
     const int* dims,
-    TinyAIDataType dtype);
+    HyperionDataType dtype);
 
 /**
  * Perform in-place tensor operation
  */
-bool tinyaiTensorInPlaceOp(
-    TinyAITensor* tensor,
-    TinyAITensorOp op,
+bool hyperionTensorInPlaceOp(
+    HyperionTensor* tensor,
+    HyperionTensorOp op,
     const void* params);
 
 /**
  * Stream tensor data
  */
-bool tinyaiStreamTensorData(
-    TinyAITensor* tensor,
+bool hyperionStreamTensorData(
+    HyperionTensor* tensor,
     const void* data,
     size_t offset,
     size_t size);
@@ -464,8 +464,8 @@ bool tinyaiStreamTensorData(
 /**
  * Get tensor memory statistics
  */
-TinyAITensorMemoryStats tinyaiGetTensorMemoryStats(
-    const TinyAITensor* tensor);
+HyperionTensorMemoryStats hyperionGetTensorMemoryStats(
+    const HyperionTensor* tensor);
 ```
 
 ### Performance Impact Assessment
@@ -480,7 +480,7 @@ typedef struct {
     bool track_cpu_usage;        // Whether to track CPU usage
     bool track_cache_usage;      // Whether to track cache usage
     bool enable_optimization;    // Whether to enable optimization analysis
-} TinyAIPerformanceConfig;
+} HyperionPerformanceConfig;
 
 /**
  * Performance metrics
@@ -491,7 +491,7 @@ typedef struct {
     float cpu_usage_percent;     // CPU usage percentage
     size_t cache_misses;         // Number of cache misses
     size_t cache_hits;          // Number of cache hits
-} TinyAIPerformanceMetrics;
+} HyperionPerformanceMetrics;
 
 /**
  * Optimization impact
@@ -501,39 +501,39 @@ typedef struct {
     float memory_reduction;      // Memory reduction percentage
     float cpu_efficiency;        // CPU efficiency improvement
     char* recommendations;       // Optimization recommendations
-} TinyAIOptimizationImpact;
+} HyperionOptimizationImpact;
 
 /**
  * Create performance analysis context
  */
-TinyAIPerformanceAnalysis* tinyaiCreatePerformanceAnalysis(
-    const TinyAIPerformanceConfig* config);
+HyperionPerformanceAnalysis* hyperionCreatePerformanceAnalysis(
+    const HyperionPerformanceConfig* config);
 
 /**
  * Record performance metrics
  */
-bool tinyaiRecordMetrics(
-    TinyAIPerformanceAnalysis* analysis,
-    const TinyAIPerformanceMetrics* metrics);
+bool hyperionRecordMetrics(
+    HyperionPerformanceAnalysis* analysis,
+    const HyperionPerformanceMetrics* metrics);
 
 /**
  * Analyze optimization impact
  */
-bool tinyaiAnalyzeOptimizationImpact(
-    TinyAIPerformanceAnalysis* analysis,
-    const TinyAIPerformanceMetrics* baseline,
-    const TinyAIPerformanceMetrics* current);
+bool hyperionAnalyzeOptimizationImpact(
+    HyperionPerformanceAnalysis* analysis,
+    const HyperionPerformanceMetrics* baseline,
+    const HyperionPerformanceMetrics* current);
 
 /**
  * Generate performance report
  */
-bool tinyaiGeneratePerformanceReport(
-    const TinyAIPerformanceAnalysis* analysis,
+bool hyperionGeneratePerformanceReport(
+    const HyperionPerformanceAnalysis* analysis,
     const char* output_path);
 
 /**
  * Get performance trend
  */
-float tinyaiGetPerformanceTrend(
-    const TinyAIPerformanceAnalysis* analysis);
-``` 
+float hyperionGetPerformanceTrend(
+    const HyperionPerformanceAnalysis* analysis);
+```

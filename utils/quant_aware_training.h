@@ -1,13 +1,13 @@
 /**
  * @file quant_aware_training.h
- * @brief Quantization-aware training utilities for TinyAI
+ * @brief Quantization-aware training utilities for Hyperion
  *
  * This header provides utilities for implementing quantization-aware training,
  * which helps models maintain accuracy when quantized post-training.
  */
 
-#ifndef TINYAI_QUANT_AWARE_TRAINING_H
-#define TINYAI_QUANT_AWARE_TRAINING_H
+#ifndef HYPERION_QUANT_AWARE_TRAINING_H
+#define HYPERION_QUANT_AWARE_TRAINING_H
 
 #include "quantize.h"
 #include "quantize_mixed.h"
@@ -23,8 +23,8 @@ extern "C" {
  * Configuration for quantization-aware training
  */
 typedef struct {
-    TinyAIPrecisionType weightPrecision;           /* Precision for weights during training */
-    TinyAIPrecisionType activationPrecision;       /* Precision for activations during training */
+    HyperionPrecisionType weightPrecision;           /* Precision for weights during training */
+    HyperionPrecisionType activationPrecision;       /* Precision for activations during training */
     bool                useSymmetricQuantization;  /* Whether to use symmetric quantization */
     bool                usePerChannelQuantization; /* Whether to use per-channel quantization */
     float               learningRate;              /* Learning rate for training */
@@ -35,7 +35,7 @@ typedef struct {
     bool                enableStraightThroughEstimator; /* Whether to use STE for gradients */
     bool                useNoiseInjection; /* Add noise to simulate quantization effects */
     float               noiseStrength;     /* Strength of injected noise (0.0-1.0) */
-} TinyAIQuantAwareTrainingConfig;
+} HyperionQuantAwareTrainingConfig;
 
 /**
  * Initialize a model for quantization-aware training
@@ -44,8 +44,8 @@ typedef struct {
  * @param config Training configuration
  * @return true on success, false on failure
  */
-bool tinyaiInitQuantAwareTraining(const char                           *modelPath,
-                                  const TinyAIQuantAwareTrainingConfig *config);
+bool hyperionInitQuantAwareTraining(const char                           *modelPath,
+                                  const HyperionQuantAwareTrainingConfig *config);
 
 /**
  * Train a model with quantization awareness
@@ -55,8 +55,8 @@ bool tinyaiInitQuantAwareTraining(const char                           *modelPat
  * @param config Training configuration
  * @return true on success, false on failure
  */
-bool tinyaiTrainWithQuantAwareness(const char *modelPath, const char *outputModelPath,
-                                   const TinyAIQuantAwareTrainingConfig *config);
+bool hyperionTrainWithQuantAwareness(const char *modelPath, const char *outputModelPath,
+                                   const HyperionQuantAwareTrainingConfig *config);
 
 /**
  * Create a straight-through estimator for a quantization operation
@@ -67,8 +67,8 @@ bool tinyaiTrainWithQuantAwareness(const char *modelPath, const char *outputMode
  * @param precision Quantization precision
  * @return Gradient for backpropagation
  */
-float tinyaiStraightThroughEstimator(float realValue, float quantizedValue,
-                                     TinyAIPrecisionType precision);
+float hyperionStraightThroughEstimator(float realValue, float quantizedValue,
+                                     HyperionPrecisionType precision);
 
 /**
  * Simulate quantization effects during training by adding controlled noise
@@ -79,7 +79,7 @@ float tinyaiStraightThroughEstimator(float realValue, float quantizedValue,
  * @param strength Noise strength (0.0-1.0)
  * @return true on success, false on failure
  */
-bool tinyaiSimulateQuantizationNoise(float *weights, int numElements, TinyAIPrecisionType precision,
+bool hyperionSimulateQuantizationNoise(float *weights, int numElements, HyperionPrecisionType precision,
                                      float strength);
 
 /**
@@ -91,7 +91,7 @@ bool tinyaiSimulateQuantizationNoise(float *weights, int numElements, TinyAIPrec
  * @param outQuantized Output buffer for quantized weights (can be same as weights)
  * @return true on success, false on failure
  */
-bool tinyaiQuantizeForForwardPass(float *weights, int numElements, TinyAIPrecisionType precision,
+bool hyperionQuantizeForForwardPass(float *weights, int numElements, HyperionPrecisionType precision,
                                   float *outQuantized);
 
 /**
@@ -103,26 +103,26 @@ bool tinyaiQuantizeForForwardPass(float *weights, int numElements, TinyAIPrecisi
  * @param accuracy Output parameter for accuracy
  * @return true on success, false on failure
  */
-bool tinyaiEvaluateQuantizedAccuracy(const char *modelPath, const char *datasetPath,
-                                     const TinyAIQuantAwareTrainingConfig *config, float *accuracy);
+bool hyperionEvaluateQuantizedAccuracy(const char *modelPath, const char *datasetPath,
+                                     const HyperionQuantAwareTrainingConfig *config, float *accuracy);
 
 /**
  * Create a default quantization-aware training configuration
  *
  * @return Default configuration (must be freed with free())
  */
-TinyAIQuantAwareTrainingConfig *tinyaiCreateDefaultQuantAwareTrainingConfig(void);
+HyperionQuantAwareTrainingConfig *hyperionCreateDefaultQuantAwareTrainingConfig(void);
 
 /**
- * Export quantization-aware trained model to TinyAI format
+ * Export quantization-aware trained model to Hyperion format
  *
  * @param modelPath Path to trained model
  * @param exportPath Path to save exported model
  * @param config Quantization configuration
  * @return true on success, false on failure
  */
-bool tinyaiExportQuantAwareModel(const char *modelPath, const char *exportPath,
-                                 const TinyAIQuantAwareTrainingConfig *config);
+bool hyperionExportQuantAwareModel(const char *modelPath, const char *exportPath,
+                                 const HyperionQuantAwareTrainingConfig *config);
 
 /**
  * Fine-tune a pre-trained model with quantization awareness
@@ -133,12 +133,12 @@ bool tinyaiExportQuantAwareModel(const char *modelPath, const char *exportPath,
  * @param freezeLayers Number of layers to freeze from the bottom (0 = train all)
  * @return true on success, false on failure
  */
-bool tinyaiFineTuneWithQuantAwareness(const char *modelPath, const char *outputModelPath,
-                                      const TinyAIQuantAwareTrainingConfig *config,
+bool hyperionFineTuneWithQuantAwareness(const char *modelPath, const char *outputModelPath,
+                                      const HyperionQuantAwareTrainingConfig *config,
                                       int                                   freezeLayers);
 
 #ifdef __cplusplus
-}
+} /* extern "C" */
 #endif
 
-#endif /* TINYAI_QUANT_AWARE_TRAINING_H */
+#endif /* HYPERION_QUANT_AWARE_TRAINING_H */

@@ -1,14 +1,14 @@
 /**
  * @file memory_efficient_tensor.h
- * @brief Memory-efficient tensor operations for TinyAI
+ * @brief Memory-efficient tensor operations for Hyperion
  *
  * This header provides utilities for performing tensor operations with minimal
  * memory overhead, including in-place operations, memory pooling, and
  * streaming operations.
  */
 
-#ifndef TINYAI_MEMORY_EFFICIENT_TENSOR_H
-#define TINYAI_MEMORY_EFFICIENT_TENSOR_H
+#ifndef HYPERION_MEMORY_EFFICIENT_TENSOR_H
+#define HYPERION_MEMORY_EFFICIENT_TENSOR_H
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -22,21 +22,21 @@ extern "C" {
  * @brief Tensor data type
  */
 typedef enum {
-    TINYAI_TENSOR_FLOAT32 = 0,
-    TINYAI_TENSOR_FLOAT16 = 1,
-    TINYAI_TENSOR_INT8    = 2,
-    TINYAI_TENSOR_INT16   = 3,
-    TINYAI_TENSOR_INT32   = 4
-} TinyAITensorType;
+    HYPERION_TENSOR_FLOAT32 = 0,
+    HYPERION_TENSOR_FLOAT16 = 1,
+    HYPERION_TENSOR_INT8    = 2,
+    HYPERION_TENSOR_INT16   = 3,
+    HYPERION_TENSOR_INT32   = 4
+} HyperionTensorType;
 
 /**
  * @brief Memory allocation strategy
  */
 typedef enum {
-    TINYAI_MEMORY_STATIC = 0, // Pre-allocated memory
-    TINYAI_MEMORY_POOLED = 1, // Memory pooling
-    TINYAI_MEMORY_STREAM = 2  // Streaming memory
-} TinyAIMemoryStrategy;
+    HYPERION_MEMORY_STATIC = 0, // Pre-allocated memory
+    HYPERION_MEMORY_POOLED = 1, // Memory pooling
+    HYPERION_MEMORY_STREAM = 2  // Streaming memory
+} HyperionMemoryStrategy;
 
 /**
  * @brief Tensor shape information
@@ -45,21 +45,21 @@ typedef struct {
     size_t *dims;       // Array of dimension sizes
     size_t  num_dims;   // Number of dimensions
     size_t  total_size; // Total number of elements
-} TinyAITensorShape;
+} HyperionTensorShape;
 
 /**
  * @brief Memory-efficient tensor
  */
 typedef struct {
     void                *data;          // Pointer to tensor data
-    TinyAITensorType     type;          // Data type
-    TinyAITensorShape    shape;         // Shape information
-    TinyAIMemoryStrategy strategy;      // Memory allocation strategy
+    HyperionTensorType     type;          // Data type
+    HyperionTensorShape    shape;         // Shape information
+    HyperionMemoryStrategy strategy;      // Memory allocation strategy
     size_t               memory_usage;  // Current memory usage
     bool                 is_contiguous; // Whether data is contiguous
     void                *memory_pool;   // Memory pool for pooled strategy
     size_t               pool_size;     // Size of memory pool
-} TinyAIMemoryEfficientTensor;
+} HyperionMemoryEfficientTensor;
 
 /**
  * @brief Create a memory-efficient tensor
@@ -69,16 +69,16 @@ typedef struct {
  * @param strategy Memory allocation strategy
  * @return Pointer to created tensor or NULL on failure
  */
-TinyAIMemoryEfficientTensor *tinyaiCreateMemoryEfficientTensor(const TinyAITensorShape *shape,
-                                                               TinyAITensorType         type,
-                                                               TinyAIMemoryStrategy     strategy);
+HyperionMemoryEfficientTensor *hyperionCreateMemoryEfficientTensor(const HyperionTensorShape *shape,
+                                                               HyperionTensorType         type,
+                                                               HyperionMemoryStrategy     strategy);
 
 /**
  * @brief Free a memory-efficient tensor
  *
  * @param tensor Tensor to free
  */
-void tinyaiFreeMemoryEfficientTensor(TinyAIMemoryEfficientTensor *tensor);
+void hyperionFreeMemoryEfficientTensor(HyperionMemoryEfficientTensor *tensor);
 
 /**
  * @brief Perform in-place tensor addition
@@ -87,8 +87,8 @@ void tinyaiFreeMemoryEfficientTensor(TinyAIMemoryEfficientTensor *tensor);
  * @param src Source tensor
  * @return true if successful, false on failure
  */
-bool tinyaiTensorAddInPlace(TinyAIMemoryEfficientTensor       *dest,
-                            const TinyAIMemoryEfficientTensor *src);
+bool hyperionTensorAddInPlace(HyperionMemoryEfficientTensor       *dest,
+                            const HyperionMemoryEfficientTensor *src);
 
 /**
  * @brief Perform in-place tensor multiplication
@@ -97,8 +97,8 @@ bool tinyaiTensorAddInPlace(TinyAIMemoryEfficientTensor       *dest,
  * @param src Source tensor
  * @return true if successful, false on failure
  */
-bool tinyaiTensorMulInPlace(TinyAIMemoryEfficientTensor       *dest,
-                            const TinyAIMemoryEfficientTensor *src);
+bool hyperionTensorMulInPlace(HyperionMemoryEfficientTensor       *dest,
+                            const HyperionMemoryEfficientTensor *src);
 
 /**
  * @brief Perform streaming tensor operation
@@ -109,8 +109,8 @@ bool tinyaiTensorMulInPlace(TinyAIMemoryEfficientTensor       *dest,
  * @param chunk_size Size of chunks for streaming
  * @return true if successful, false on failure
  */
-bool tinyaiTensorStreamOperation(TinyAIMemoryEfficientTensor       *dest,
-                                 const TinyAIMemoryEfficientTensor *src,
+bool hyperionTensorStreamOperation(HyperionMemoryEfficientTensor       *dest,
+                                 const HyperionMemoryEfficientTensor *src,
                                  void (*operation)(void *, const void *, size_t),
                                  size_t chunk_size);
 
@@ -121,7 +121,7 @@ bool tinyaiTensorStreamOperation(TinyAIMemoryEfficientTensor       *dest,
  * @param size Size to allocate
  * @return Pointer to allocated memory or NULL on failure
  */
-void *tinyaiTensorPoolAlloc(TinyAIMemoryEfficientTensor *tensor, size_t size);
+void *hyperionTensorPoolAlloc(HyperionMemoryEfficientTensor *tensor, size_t size);
 
 /**
  * @brief Free memory to pool
@@ -129,7 +129,7 @@ void *tinyaiTensorPoolAlloc(TinyAIMemoryEfficientTensor *tensor, size_t size);
  * @param tensor Tensor using memory pool
  * @param ptr Pointer to memory to free
  */
-void tinyaiTensorPoolFree(TinyAIMemoryEfficientTensor *tensor, void *ptr);
+void hyperionTensorPoolFree(HyperionMemoryEfficientTensor *tensor, void *ptr);
 
 /**
  * @brief Get tensor memory usage
@@ -137,7 +137,7 @@ void tinyaiTensorPoolFree(TinyAIMemoryEfficientTensor *tensor, void *ptr);
  * @param tensor Tensor to check
  * @return Current memory usage in bytes
  */
-size_t tinyaiGetTensorMemoryUsage(const TinyAIMemoryEfficientTensor *tensor);
+size_t hyperionGetTensorMemoryUsage(const HyperionMemoryEfficientTensor *tensor);
 
 /**
  * @brief Optimize tensor memory layout
@@ -145,7 +145,7 @@ size_t tinyaiGetTensorMemoryUsage(const TinyAIMemoryEfficientTensor *tensor);
  * @param tensor Tensor to optimize
  * @return true if successful, false on failure
  */
-bool tinyaiOptimizeTensorMemory(TinyAIMemoryEfficientTensor *tensor);
+bool hyperionOptimizeTensorMemory(HyperionMemoryEfficientTensor *tensor);
 
 /**
  * @brief Convert tensor to contiguous memory layout
@@ -153,7 +153,7 @@ bool tinyaiOptimizeTensorMemory(TinyAIMemoryEfficientTensor *tensor);
  * @param tensor Tensor to convert
  * @return true if successful, false on failure
  */
-bool tinyaiMakeTensorContiguous(TinyAIMemoryEfficientTensor *tensor);
+bool hyperionMakeTensorContiguous(HyperionMemoryEfficientTensor *tensor);
 
 /**
  * @brief Resize tensor memory pool
@@ -162,7 +162,7 @@ bool tinyaiMakeTensorContiguous(TinyAIMemoryEfficientTensor *tensor);
  * @param new_size New pool size
  * @return true if successful, false on failure
  */
-bool tinyaiResizeTensorPool(TinyAIMemoryEfficientTensor *tensor, size_t new_size);
+bool hyperionResizeTensorPool(HyperionMemoryEfficientTensor *tensor, size_t new_size);
 
 /**
  * @brief Get tensor data pointer
@@ -170,7 +170,7 @@ bool tinyaiResizeTensorPool(TinyAIMemoryEfficientTensor *tensor, size_t new_size
  * @param tensor Tensor to get data from
  * @return Pointer to tensor data
  */
-void *tinyaiGetTensorData(const TinyAIMemoryEfficientTensor *tensor);
+void *hyperionGetTensorData(const HyperionMemoryEfficientTensor *tensor);
 
 /**
  * @brief Get tensor shape
@@ -178,7 +178,7 @@ void *tinyaiGetTensorData(const TinyAIMemoryEfficientTensor *tensor);
  * @param tensor Tensor to get shape from
  * @return Tensor shape
  */
-TinyAITensorShape tinyaiGetTensorShape(const TinyAIMemoryEfficientTensor *tensor);
+HyperionTensorShape hyperionGetTensorShape(const HyperionMemoryEfficientTensor *tensor);
 
 /**
  * @brief Set tensor data
@@ -188,10 +188,10 @@ TinyAITensorShape tinyaiGetTensorShape(const TinyAIMemoryEfficientTensor *tensor
  * @param size Size of data in bytes
  * @return true if successful, false on failure
  */
-bool tinyaiSetTensorData(TinyAIMemoryEfficientTensor *tensor, const void *data, size_t size);
+bool hyperionSetTensorData(HyperionMemoryEfficientTensor *tensor, const void *data, size_t size);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* TINYAI_MEMORY_EFFICIENT_TENSOR_H */
+#endif /* HYPERION_MEMORY_EFFICIENT_TENSOR_H */

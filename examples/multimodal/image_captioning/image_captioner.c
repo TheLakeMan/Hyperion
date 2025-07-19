@@ -1,6 +1,6 @@
 /**
  * @file image_captioner.c
- * @brief Implementation of image captioning in TinyAI
+ * @brief Implementation of image captioning in Hyperion
  */
 
 #include "image_captioner.h"
@@ -16,10 +16,10 @@
 /**
  * Image captioner structure
  */
-struct TinyAIImageCaptioner {
-    TinyAIMultimodalModel *model;           /* Multimodal model */
-    TinyAITokenizer       *tokenizer;       /* Tokenizer */
-    TinyAICaptionStyle     captionStyle;    /* Caption style */
+struct HyperionImageCaptioner {
+    HyperionMultimodalModel *model;           /* Multimodal model */
+    HyperionTokenizer       *tokenizer;       /* Tokenizer */
+    HyperionCaptionStyle     captionStyle;    /* Caption style */
     char                  *customPrompt;    /* Custom prompt template */
     int                    maxTokens;       /* Maximum tokens in caption */
     bool                   useQuantization; /* Whether to use quantization */
@@ -37,7 +37,7 @@ static const char *PROMPT_TECHNICAL   = "Provide a technical description of this
 /**
  * Create an image captioner
  */
-TinyAIImageCaptioner *tinyaiImageCaptionerCreate(const TinyAIImageCaptionerConfig *config)
+HyperionImageCaptioner *hyperionImageCaptionerCreate(const HyperionImageCaptionerConfig *config)
 {
     if (!config || !config->modelPath || !config->weightsPath || !config->tokenizerPath) {
         fprintf(stderr, "Invalid image captioner configuration\n");
@@ -45,14 +45,14 @@ TinyAIImageCaptioner *tinyaiImageCaptionerCreate(const TinyAIImageCaptionerConfi
     }
 
     /* Allocate captioner structure */
-    TinyAIImageCaptioner *captioner = (TinyAIImageCaptioner *)malloc(sizeof(TinyAIImageCaptioner));
+    HyperionImageCaptioner *captioner = (HyperionImageCaptioner *)malloc(sizeof(HyperionImageCaptioner));
     if (!captioner) {
         fprintf(stderr, "Failed to allocate image captioner\n");
         return NULL;
     }
 
     /* Initialize with defaults */
-    memset(captioner, 0, sizeof(TinyAIImageCaptioner));
+    memset(captioner, 0, sizeof(HyperionImageCaptioner));
     captioner->captionStyle    = config->captionStyle;
     captioner->maxTokens       = config->maxTokens > 0 ? config->maxTokens : 100;
     captioner->useQuantization = config->useQuantization;
@@ -66,15 +66,15 @@ TinyAIImageCaptioner *tinyaiImageCaptionerCreate(const TinyAIImageCaptionerConfi
     }
 
     /* Load tokenizer */
-    captioner->tokenizer = tinyaiTokenizerCreate(config->tokenizerPath);
+    captioner->tokenizer = hyperionTokenizerCreate(config->tokenizerPath);
     if (!captioner->tokenizer) {
         fprintf(stderr, "Failed to create tokenizer from %s\n", config->tokenizerPath);
-        tinyaiImageCaptionerFree(captioner);
+        hyperionImageCaptionerFree(captioner);
         return NULL;
     }
 
     /* Create and initialize multimodal model */
-    TinyAIMultimodalModelConfig modelConfig = {.modelPath       = config->modelPath,
+    HyperionMultimodalModelConfig modelConfig = {.modelPath       = config->modelPath,
                                                .weightsPath     = config->weightsPath,
                                                .tokenizerPath   = config->tokenizerPath,
                                                .imageWidth      = captioner->imageWidth,
@@ -82,10 +82,10 @@ TinyAIImageCaptioner *tinyaiImageCaptionerCreate(const TinyAIImageCaptionerConfi
                                                .useQuantization = captioner->useQuantization,
                                                .useSIMD         = captioner->useSIMD};
 
-    captioner->model = tinyaiMultimodalModelCreate(&modelConfig);
+    captioner->model = hyperionMultimodalModelCreate(&modelConfig);
     if (!captioner->model) {
         fprintf(stderr, "Failed to create multimodal model\n");
-        tinyaiImageCaptionerFree(captioner);
+        hyperionImageCaptionerFree(captioner);
         return NULL;
     }
 
@@ -95,7 +95,7 @@ TinyAIImageCaptioner *tinyaiImageCaptionerCreate(const TinyAIImageCaptionerConfi
 /**
  * Free an image captioner
  */
-void tinyaiImageCaptionerFree(TinyAIImageCaptioner *captioner)
+void hyperionImageCaptionerFree(HyperionImageCaptioner *captioner)
 {
     if (!captioner) {
         return;
@@ -103,12 +103,12 @@ void tinyaiImageCaptionerFree(TinyAIImageCaptioner *captioner)
 
     /* Free the model */
     if (captioner->model) {
-        tinyaiMultimodalModelFree(captioner->model);
+        hyperionMultimodalModelFree(captioner->model);
     }
 
     /* Free the tokenizer */
     if (captioner->tokenizer) {
-        tinyaiTokenizerFree(captioner->tokenizer);
+        hyperionTokenizerFree(captioner->tokenizer);
     }
 
     /* Free custom prompt */
@@ -123,18 +123,18 @@ void tinyaiImageCaptionerFree(TinyAIImageCaptioner *captioner)
 /**
  * Get prompt template based on caption style
  */
-static const char *getCaptionPrompt(TinyAIImageCaptioner *captioner)
+static const char *getCaptionPrompt(HyperionImageCaptioner *captioner)
 {
     switch (captioner->captionStyle) {
-    case TINYAI_CAPTION_STYLE_DESCRIPTIVE:
+    case HYPERION_CAPTION_STYLE_DESCRIPTIVE:
         return PROMPT_DESCRIPTIVE;
-    case TINYAI_CAPTION_STYLE_CONCISE:
+    case HYPERION_CAPTION_STYLE_CONCISE:
         return PROMPT_CONCISE;
-    case TINYAI_CAPTION_STYLE_CREATIVE:
+    case HYPERION_CAPTION_STYLE_CREATIVE:
         return PROMPT_CREATIVE;
-    case TINYAI_CAPTION_STYLE_TECHNICAL:
+    case HYPERION_CAPTION_STYLE_TECHNICAL:
         return PROMPT_TECHNICAL;
-    case TINYAI_CAPTION_STYLE_CUSTOM:
+    case HYPERION_CAPTION_STYLE_CUSTOM:
         return captioner->customPrompt ? captioner->customPrompt : PROMPT_DESCRIPTIVE;
     default:
         return PROMPT_DESCRIPTIVE;
@@ -144,7 +144,7 @@ static const char *getCaptionPrompt(TinyAIImageCaptioner *captioner)
 /**
  * Generate a caption for an image file
  */
-bool tinyaiImageCaptionerCaptionFile(TinyAIImageCaptioner *captioner, const char *imagePath,
+bool hyperionImageCaptionerCaptionFile(HyperionImageCaptioner *captioner, const char *imagePath,
                                      char *caption, int maxLength)
 {
     if (!captioner || !imagePath || !caption || maxLength <= 0) {
@@ -152,17 +152,17 @@ bool tinyaiImageCaptionerCaptionFile(TinyAIImageCaptioner *captioner, const char
     }
 
     /* Load the image */
-    TinyAIImage *image = tinyaiImageLoadFromFile(imagePath);
+    HyperionImage *image = hyperionImageLoadFromFile(imagePath);
     if (!image) {
         fprintf(stderr, "Failed to load image from %s\n", imagePath);
         return false;
     }
 
     /* Generate caption */
-    bool result = tinyaiImageCaptionerCaptionImage(captioner, image, caption, maxLength);
+    bool result = hyperionImageCaptionerCaptionImage(captioner, image, caption, maxLength);
 
     /* Clean up */
-    tinyaiImageFree(image);
+    hyperionImageFree(image);
 
     return result;
 }
@@ -170,7 +170,7 @@ bool tinyaiImageCaptionerCaptionFile(TinyAIImageCaptioner *captioner, const char
 /**
  * Generate a caption for an image
  */
-bool tinyaiImageCaptionerCaptionImage(TinyAIImageCaptioner *captioner, const TinyAIImage *image,
+bool hyperionImageCaptionerCaptionImage(HyperionImageCaptioner *captioner, const HyperionImage *image,
                                       char *caption, int maxLength)
 {
     if (!captioner || !image || !caption || maxLength <= 0 || !captioner->model ||
@@ -182,8 +182,8 @@ bool tinyaiImageCaptionerCaptionImage(TinyAIImageCaptioner *captioner, const Tin
     const char *promptTemplate = getCaptionPrompt(captioner);
 
     /* Generate the caption using the multimodal model */
-    TinyAIMultimodalInferenceParams params;
-    memset(&params, 0, sizeof(TinyAIMultimodalInferenceParams));
+    HyperionMultimodalInferenceParams params;
+    memset(&params, 0, sizeof(HyperionMultimodalInferenceParams));
     params.image       = image;
     params.textPrompt  = promptTemplate;
     params.maxTokens   = captioner->maxTokens;
@@ -191,7 +191,7 @@ bool tinyaiImageCaptionerCaptionImage(TinyAIImageCaptioner *captioner, const Tin
     params.topP        = 0.9f; /* Good for captioning */
 
     /* Perform inference */
-    char *generatedText = tinyaiMultimodalModelGenerateText(captioner->model, &params);
+    char *generatedText = hyperionMultimodalModelGenerateText(captioner->model, &params);
     if (!generatedText) {
         fprintf(stderr, "Failed to generate caption\n");
         return false;
@@ -210,7 +210,7 @@ bool tinyaiImageCaptionerCaptionImage(TinyAIImageCaptioner *captioner, const Tin
 /**
  * Set the caption style
  */
-bool tinyaiImageCaptionerSetStyle(TinyAIImageCaptioner *captioner, TinyAICaptionStyle style,
+bool hyperionImageCaptionerSetStyle(HyperionImageCaptioner *captioner, HyperionCaptionStyle style,
                                   const char *customPrompt)
 {
     if (!captioner) {
@@ -220,7 +220,7 @@ bool tinyaiImageCaptionerSetStyle(TinyAIImageCaptioner *captioner, TinyAICaption
     captioner->captionStyle = style;
 
     /* Update custom prompt if provided */
-    if (style == TINYAI_CAPTION_STYLE_CUSTOM) {
+    if (style == HYPERION_CAPTION_STYLE_CUSTOM) {
         /* Free existing custom prompt if any */
         if (captioner->customPrompt) {
             free(captioner->customPrompt);
@@ -237,7 +237,7 @@ bool tinyaiImageCaptionerSetStyle(TinyAIImageCaptioner *captioner, TinyAICaption
         }
         else {
             /* Fall back to descriptive if no custom prompt is provided */
-            captioner->captionStyle = TINYAI_CAPTION_STYLE_DESCRIPTIVE;
+            captioner->captionStyle = HYPERION_CAPTION_STYLE_DESCRIPTIVE;
         }
     }
 
@@ -247,7 +247,7 @@ bool tinyaiImageCaptionerSetStyle(TinyAIImageCaptioner *captioner, TinyAICaption
 /**
  * Get memory usage statistics
  */
-bool tinyaiImageCaptionerGetMemoryUsage(const TinyAIImageCaptioner *captioner, size_t *weightMemory,
+bool hyperionImageCaptionerGetMemoryUsage(const HyperionImageCaptioner *captioner, size_t *weightMemory,
                                         size_t *activationMemory)
 {
     if (!captioner || !weightMemory || !activationMemory) {
@@ -256,7 +256,7 @@ bool tinyaiImageCaptionerGetMemoryUsage(const TinyAIImageCaptioner *captioner, s
 
     /* Get memory usage from the multimodal model */
     if (captioner->model) {
-        return tinyaiMultimodalModelGetMemoryUsage(captioner->model, weightMemory,
+        return hyperionMultimodalModelGetMemoryUsage(captioner->model, weightMemory,
                                                    activationMemory);
     }
 
@@ -269,7 +269,7 @@ bool tinyaiImageCaptionerGetMemoryUsage(const TinyAIImageCaptioner *captioner, s
 /**
  * Enable or disable SIMD acceleration
  */
-bool tinyaiImageCaptionerEnableSIMD(TinyAIImageCaptioner *captioner, bool enable)
+bool hyperionImageCaptionerEnableSIMD(HyperionImageCaptioner *captioner, bool enable)
 {
     if (!captioner) {
         return false;
@@ -279,7 +279,7 @@ bool tinyaiImageCaptionerEnableSIMD(TinyAIImageCaptioner *captioner, bool enable
 
     /* Apply to the model if available */
     if (captioner->model) {
-        return tinyaiMultimodalModelEnableSIMD(captioner->model, enable);
+        return hyperionMultimodalModelEnableSIMD(captioner->model, enable);
     }
 
     return true;

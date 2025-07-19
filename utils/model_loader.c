@@ -1,6 +1,6 @@
 /**
  * @file model_loader.c
- * @brief Utilities for loading pre-trained model weights in TinyAI
+ * @brief Utilities for loading pre-trained model weights in Hyperion
  */
 
 #include "model_loader.h"
@@ -12,7 +12,7 @@
 #include <string.h>
 
 /* Forward declaration for types from image_model.h */
-typedef struct TinyAIImagePreprocessParams TinyAIImagePreprocessParams;
+typedef struct HyperionImagePreprocessParams HyperionImagePreprocessParams;
 
 /* This struct declaration is matching the internal struct from image_model.c */
 typedef struct Layer {
@@ -41,12 +41,12 @@ typedef struct Layer {
 } Layer;
 
 /**
- * Header for TinyAI model weight files
+ * Header for Hyperion model weight files
  */
 typedef struct {
-    char     magic[8];    /* Magic string "TINYAIWT" */
+    char     magic[8];    /* Magic string "HYPERIONWT" */
     uint32_t version;     /* Version number (currently 1) */
-    uint32_t modelType;   /* Type of model (matches TinyAIImageModelType) */
+    uint32_t modelType;   /* Type of model (matches HyperionImageModelType) */
     uint32_t inputWidth;  /* Input width */
     uint32_t inputHeight; /* Input height */
     uint32_t channels;    /* Input channels */
@@ -54,7 +54,7 @@ typedef struct {
     uint32_t numClasses;  /* Number of output classes */
     uint8_t  quantized;   /* Whether weights are quantized (0=full precision, 1=4-bit) */
     uint8_t  padding[3];  /* Padding to align to 4 bytes */
-} TinyAIModelHeader;
+} HyperionModelHeader;
 
 /**
  * Layer information in weight file
@@ -68,24 +68,24 @@ typedef struct {
     uint32_t padding;      /* Padding for conv layers */
     uint32_t weightsSize;  /* Size of weights blob in bytes */
     uint32_t biasSize;     /* Size of bias blob in bytes */
-} TinyAILayerInfo;
+} HyperionLayerInfo;
 
 /* External functions from image_model.c that we need */
-extern int   tinyaiGetImageModelType(const TinyAIImageModel *model);
-extern int   tinyaiGetImageModelInputWidth(const TinyAIImageModel *model);
-extern int   tinyaiGetImageModelInputHeight(const TinyAIImageModel *model);
-extern int   tinyaiGetImageModelInputChannels(const TinyAIImageModel *model);
-extern int   tinyaiGetImageModelNumClasses(const TinyAIImageModel *model);
-extern int   tinyaiGetImageModelNumLayers(const TinyAIImageModel *model);
-extern bool  tinyaiIsImageModelQuantized(const TinyAIImageModel *model);
-extern void *tinyaiGetImageModelMemoryPool(const TinyAIImageModel *model);
-extern bool  tinyaiGetImageModelUseSIMD(const TinyAIImageModel *model);
-extern bool  tinyaiGetLayerInfo(const TinyAIImageModel *model, int layerIdx, Layer *layer);
-extern bool  tinyaiSetLayerWeights(TinyAIImageModel *model, int layerIdx, void *weights,
+extern int   hyperionGetImageModelType(const HyperionImageModel *model);
+extern int   hyperionGetImageModelInputWidth(const HyperionImageModel *model);
+extern int   hyperionGetImageModelInputHeight(const HyperionImageModel *model);
+extern int   hyperionGetImageModelInputChannels(const HyperionImageModel *model);
+extern int   hyperionGetImageModelNumClasses(const HyperionImageModel *model);
+extern int   hyperionGetImageModelNumLayers(const HyperionImageModel *model);
+extern bool  hyperionIsImageModelQuantized(const HyperionImageModel *model);
+extern void *hyperionGetImageModelMemoryPool(const HyperionImageModel *model);
+extern bool  hyperionGetImageModelUseSIMD(const HyperionImageModel *model);
+extern bool  hyperionGetLayerInfo(const HyperionImageModel *model, int layerIdx, Layer *layer);
+extern bool  hyperionSetLayerWeights(HyperionImageModel *model, int layerIdx, void *weights,
                                    size_t weightsSize);
-extern bool  tinyaiSetLayerBiases(TinyAIImageModel *model, int layerIdx, float *biases,
+extern bool  hyperionSetLayerBiases(HyperionImageModel *model, int layerIdx, float *biases,
                                   size_t biasSize);
-extern bool  tinyaiSetLayerScales(TinyAIImageModel *model, int layerIdx, float *scales,
+extern bool  hyperionSetLayerScales(HyperionImageModel *model, int layerIdx, float *scales,
                                   size_t scaleSize);
 
 /**
@@ -94,32 +94,32 @@ extern bool  tinyaiSetLayerScales(TinyAIImageModel *model, int layerIdx, float *
  * @param header Header from weight file
  * @return true if compatible, false otherwise
  */
-static bool validateModelCompatibility(TinyAIImageModel *model, const TinyAIModelHeader *header)
+static bool validateModelCompatibility(HyperionImageModel *model, const HyperionModelHeader *header)
 {
     if (!model || !header) {
         return false;
     }
 
     /* Check basic compatibility */
-    if (tinyaiGetImageModelType(model) != header->modelType) {
-        fprintf(stderr, "Model type mismatch: %d vs %d\n", tinyaiGetImageModelType(model),
+    if (hyperionGetImageModelType(model) != header->modelType) {
+        fprintf(stderr, "Model type mismatch: %d vs %d\n", hyperionGetImageModelType(model),
                 header->modelType);
         return false;
     }
 
-    if (tinyaiGetImageModelInputWidth(model) != header->inputWidth ||
-        tinyaiGetImageModelInputHeight(model) != header->inputHeight ||
-        tinyaiGetImageModelInputChannels(model) != header->channels) {
+    if (hyperionGetImageModelInputWidth(model) != header->inputWidth ||
+        hyperionGetImageModelInputHeight(model) != header->inputHeight ||
+        hyperionGetImageModelInputChannels(model) != header->channels) {
         fprintf(stderr, "Input dimensions mismatch: %dx%dx%d vs %dx%dx%d\n",
-                tinyaiGetImageModelInputWidth(model), tinyaiGetImageModelInputHeight(model),
-                tinyaiGetImageModelInputChannels(model), header->inputWidth, header->inputHeight,
+                hyperionGetImageModelInputWidth(model), hyperionGetImageModelInputHeight(model),
+                hyperionGetImageModelInputChannels(model), header->inputWidth, header->inputHeight,
                 header->channels);
         return false;
     }
 
-    if (tinyaiGetImageModelNumClasses(model) != header->numClasses) {
+    if (hyperionGetImageModelNumClasses(model) != header->numClasses) {
         fprintf(stderr, "Number of classes mismatch: %d vs %d\n",
-                tinyaiGetImageModelNumClasses(model), header->numClasses);
+                hyperionGetImageModelNumClasses(model), header->numClasses);
         return false;
     }
 
@@ -134,7 +134,7 @@ static bool validateModelCompatibility(TinyAIImageModel *model, const TinyAIMode
  * @param convertPrecision Whether to convert between precisions if needed
  * @return true on success, false on failure
  */
-bool tinyaiLoadModelWeights(TinyAIImageModel *model, const char *filepath, bool convertPrecision)
+bool hyperionLoadModelWeights(HyperionImageModel *model, const char *filepath, bool convertPrecision)
 {
     if (!model || !filepath) {
         return false;
@@ -147,7 +147,7 @@ bool tinyaiLoadModelWeights(TinyAIImageModel *model, const char *filepath, bool 
     }
 
     /* Read header */
-    TinyAIModelHeader header;
+    HyperionModelHeader header;
     if (fread(&header, sizeof(header), 1, file) != 1) {
         fprintf(stderr, "Failed to read header from weights file\n");
         fclose(file);
@@ -155,7 +155,7 @@ bool tinyaiLoadModelWeights(TinyAIImageModel *model, const char *filepath, bool 
     }
 
     /* Validate magic string */
-    if (strncmp(header.magic, "TINYAIWT", 8) != 0) {
+    if (strncmp(header.magic, "HYPERIONWT", 8) != 0) {
         fprintf(stderr, "Invalid magic string in weights file\n");
         fclose(file);
         return false;
@@ -169,7 +169,7 @@ bool tinyaiLoadModelWeights(TinyAIImageModel *model, const char *filepath, bool 
     }
 
     /* Check if we need to convert precision */
-    bool needsConversion = (tinyaiIsImageModelQuantized(model) != (header.quantized == 1));
+    bool needsConversion = (hyperionIsImageModelQuantized(model) != (header.quantized == 1));
     if (needsConversion && !convertPrecision) {
         fprintf(stderr, "Precision mismatch and conversion not allowed\n");
         fclose(file);
@@ -178,7 +178,7 @@ bool tinyaiLoadModelWeights(TinyAIImageModel *model, const char *filepath, bool 
 
     /* Load each layer */
     for (int i = 0; i < header.numLayers; i++) {
-        TinyAILayerInfo layerInfo;
+        HyperionLayerInfo layerInfo;
 
         /* Read layer info */
         if (fread(&layerInfo, sizeof(layerInfo), 1, file) != 1) {
@@ -194,11 +194,11 @@ bool tinyaiLoadModelWeights(TinyAIImageModel *model, const char *filepath, bool 
 
         /* Find matching layer in the model */
         bool layerFound = false;
-        int  numLayers  = tinyaiGetImageModelNumLayers(model);
+        int  numLayers  = hyperionGetImageModelNumLayers(model);
 
         for (int j = 0; j < numLayers; j++) {
             Layer layer;
-            if (!tinyaiGetLayerInfo(model, j, &layer)) {
+            if (!hyperionGetLayerInfo(model, j, &layer)) {
                 continue;
             }
 
@@ -215,12 +215,12 @@ bool tinyaiLoadModelWeights(TinyAIImageModel *model, const char *filepath, bool 
 
                 /* Handle weights */
                 if (layerInfo.weightsSize > 0) {
-                    void *memoryPool = tinyaiGetImageModelMemoryPool(model);
-                    bool  useSIMD    = tinyaiGetImageModelUseSIMD(model);
+                    void *memoryPool = hyperionGetImageModelMemoryPool(model);
+                    bool  useSIMD    = hyperionGetImageModelUseSIMD(model);
 
                     if (needsConversion) {
                         /* Need to convert between quantized and full precision */
-                        if (tinyaiIsImageModelQuantized(model)) {
+                        if (hyperionIsImageModelQuantized(model)) {
                             /* Convert from full precision to 4-bit */
                             float *tempWeights = (float *)malloc(layerInfo.weightsSize);
                             if (!tempWeights) {
@@ -248,8 +248,8 @@ bool tinyaiLoadModelWeights(TinyAIImageModel *model, const char *filepath, bool 
                                 return false;
                             }
 
-                            tinyaiQuantizeWeights(tempWeights, quantizedWeights, numWeights);
-                            tinyaiSetLayerWeights(model, j, quantizedWeights, (numWeights + 1) / 2);
+                            hyperionQuantizeWeights(tempWeights, quantizedWeights, numWeights);
+                            hyperionSetLayerWeights(model, j, quantizedWeights, (numWeights + 1) / 2);
 
                             free(quantizedWeights);
                             free(tempWeights);
@@ -283,8 +283,8 @@ bool tinyaiLoadModelWeights(TinyAIImageModel *model, const char *filepath, bool 
                                 return false;
                             }
 
-                            tinyaiDequantizeWeights(tempWeights, dequantizedWeights, numWeights);
-                            tinyaiSetLayerWeights(model, j, dequantizedWeights,
+                            hyperionDequantizeWeights(tempWeights, dequantizedWeights, numWeights);
+                            hyperionSetLayerWeights(model, j, dequantizedWeights,
                                                   numWeights * sizeof(float));
 
                             free(dequantizedWeights);
@@ -309,7 +309,7 @@ bool tinyaiLoadModelWeights(TinyAIImageModel *model, const char *filepath, bool 
                         }
 
                         /* Set weights into the model */
-                        tinyaiSetLayerWeights(model, j, weights, layerInfo.weightsSize);
+                        hyperionSetLayerWeights(model, j, weights, layerInfo.weightsSize);
                         free(weights);
                     }
                 }
@@ -332,7 +332,7 @@ bool tinyaiLoadModelWeights(TinyAIImageModel *model, const char *filepath, bool 
                     }
 
                     /* Set biases into the model */
-                    tinyaiSetLayerBiases(model, j, biases, layerInfo.biasSize);
+                    hyperionSetLayerBiases(model, j, biases, layerInfo.biasSize);
                     free(biases);
                 }
 
@@ -357,7 +357,7 @@ bool tinyaiLoadModelWeights(TinyAIImageModel *model, const char *filepath, bool 
  * @param filepath Path to save the weights to
  * @return true on success, false on failure
  */
-bool tinyaiSaveModelWeights(TinyAIImageModel *model, const char *filepath)
+bool hyperionSaveModelWeights(HyperionImageModel *model, const char *filepath)
 {
     if (!model || !filepath) {
         return false;
@@ -370,21 +370,21 @@ bool tinyaiSaveModelWeights(TinyAIImageModel *model, const char *filepath)
     }
 
     /* Prepare header */
-    TinyAIModelHeader header;
+    HyperionModelHeader header;
     memset(&header, 0, sizeof(header));
 
     /* Set magic string and version */
-    memcpy(header.magic, "TINYAIWT", 8);
+    memcpy(header.magic, "HYPERIONWT", 8);
     header.version = 1;
 
     /* Set model info */
-    header.modelType   = tinyaiGetImageModelType(model);
-    header.inputWidth  = tinyaiGetImageModelInputWidth(model);
-    header.inputHeight = tinyaiGetImageModelInputHeight(model);
-    header.channels    = tinyaiGetImageModelInputChannels(model);
-    header.numLayers   = tinyaiGetImageModelNumLayers(model);
-    header.numClasses  = tinyaiGetImageModelNumClasses(model);
-    header.quantized   = tinyaiIsImageModelQuantized(model) ? 1 : 0;
+    header.modelType   = hyperionGetImageModelType(model);
+    header.inputWidth  = hyperionGetImageModelInputWidth(model);
+    header.inputHeight = hyperionGetImageModelInputHeight(model);
+    header.channels    = hyperionGetImageModelInputChannels(model);
+    header.numLayers   = hyperionGetImageModelNumLayers(model);
+    header.numClasses  = hyperionGetImageModelNumClasses(model);
+    header.quantized   = hyperionIsImageModelQuantized(model) ? 1 : 0;
 
     /* Write header */
     if (fwrite(&header, sizeof(header), 1, file) != 1) {
@@ -394,17 +394,17 @@ bool tinyaiSaveModelWeights(TinyAIImageModel *model, const char *filepath)
     }
 
     /* Write each layer */
-    int numLayers = tinyaiGetImageModelNumLayers(model);
+    int numLayers = hyperionGetImageModelNumLayers(model);
     for (int i = 0; i < numLayers; i++) {
         Layer layer;
-        if (!tinyaiGetLayerInfo(model, i, &layer)) {
+        if (!hyperionGetLayerInfo(model, i, &layer)) {
             fprintf(stderr, "Failed to get layer info for layer %d\n", i);
             fclose(file);
             return false;
         }
 
         /* Prepare layer info */
-        TinyAILayerInfo layerInfo;
+        HyperionLayerInfo layerInfo;
         memset(&layerInfo, 0, sizeof(layerInfo));
 
         layerInfo.layerType    = layer.type;
@@ -451,15 +451,15 @@ bool tinyaiSaveModelWeights(TinyAIImageModel *model, const char *filepath)
 }
 
 /**
- * Generate a TinyAI model weight file from a standard format model (e.g., ONNX, TFLite)
+ * Generate a Hyperion model weight file from a standard format model (e.g., ONNX, TFLite)
  * @param srcFilepath Source model file path
- * @param destFilepath Destination TinyAI weight file path
+ * @param destFilepath Destination Hyperion weight file path
  * @param modelType Target model type
  * @param quantize Whether to quantize weights to 4-bit
  * @return true on success, false on failure
  */
-bool tinyaiConvertModelWeights(const char *srcFilepath, const char *destFilepath,
-                               TinyAIImageModelType modelType, bool quantize)
+bool hyperionConvertModelWeights(const char *srcFilepath, const char *destFilepath,
+                               HyperionImageModelType modelType, bool quantize)
 {
     /* This is a placeholder function that would normally implement
        conversion from standard formats. In a real implementation,

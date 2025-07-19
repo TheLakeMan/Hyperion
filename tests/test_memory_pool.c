@@ -29,28 +29,28 @@ static int testBasicAllocFree()
 {
     printf("Running test: Basic Allocation and Deallocation\n");
 
-    TinyAIMemoryPoolConfig config;
-    tinyaiMemoryPoolGetDefaultConfig(&config);
+    HyperionMemoryPoolConfig config;
+    hyperionMemoryPoolGetDefaultConfig(&config);
     config.initialCapacity = TEST_INITIAL_CAPACITY;
 
-    TinyAIMemoryPool *pool = tinyaiMemoryPoolCreate(&config);
+    HyperionMemoryPool *pool = hyperionMemoryPoolCreate(&config);
     if (!pool) {
         printf("ERROR: Failed to create memory pool\n");
         return 0;
     }
 
     /* Test a simple allocation */
-    void *ptr = tinyaiMemoryPoolAlloc(pool, 1024, 16);
+    void *ptr = hyperionMemoryPoolAlloc(pool, 1024, 16);
     if (!ptr) {
         printf("ERROR: Failed to allocate memory\n");
-        tinyaiMemoryPoolDestroy(pool);
+        hyperionMemoryPoolDestroy(pool);
         return 0;
     }
 
     /* Verify the pointer is aligned */
     if ((uintptr_t)ptr % 16 != 0) {
         printf("ERROR: Memory is not properly aligned\n");
-        tinyaiMemoryPoolDestroy(pool);
+        hyperionMemoryPoolDestroy(pool);
         return 0;
     }
 
@@ -58,17 +58,17 @@ static int testBasicAllocFree()
     memset(ptr, 0xAA, 1024);
 
     /* Free the memory */
-    tinyaiMemoryPoolFree(pool, ptr);
+    hyperionMemoryPoolFree(pool, ptr);
 
     /* Get statistics */
-    TinyAIMemoryPoolStats stats;
-    tinyaiMemoryPoolGetStats(pool, &stats);
+    HyperionMemoryPoolStats stats;
+    hyperionMemoryPoolGetStats(pool, &stats);
 
     printf("  Test allocated and freed 1024 bytes\n");
     printf("  Total pool size: %zu bytes\n", stats.totalAllocated);
     printf("  Free blocks: %zu\n", stats.freeBlocks);
 
-    tinyaiMemoryPoolDestroy(pool);
+    hyperionMemoryPoolDestroy(pool);
 
     /* Test passed if we got here without crashing */
     return 1;
@@ -79,11 +79,11 @@ static int testMultipleAllocs()
 {
     printf("Running test: Multiple Allocations\n");
 
-    TinyAIMemoryPoolConfig config;
-    tinyaiMemoryPoolGetDefaultConfig(&config);
+    HyperionMemoryPoolConfig config;
+    hyperionMemoryPoolGetDefaultConfig(&config);
     config.initialCapacity = TEST_INITIAL_CAPACITY;
 
-    TinyAIMemoryPool *pool = tinyaiMemoryPoolCreate(&config);
+    HyperionMemoryPool *pool = hyperionMemoryPoolCreate(&config);
     if (!pool) {
         printf("ERROR: Failed to create memory pool\n");
         return 0;
@@ -94,10 +94,10 @@ static int testMultipleAllocs()
     size_t sizes[10] = {64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768};
 
     for (int i = 0; i < 10; i++) {
-        ptrs[i] = tinyaiMemoryPoolAlloc(pool, sizes[i], 16);
+        ptrs[i] = hyperionMemoryPoolAlloc(pool, sizes[i], 16);
         if (!ptrs[i]) {
             printf("ERROR: Failed to allocate block %d of size %zu\n", i, sizes[i]);
-            tinyaiMemoryPoolDestroy(pool);
+            hyperionMemoryPoolDestroy(pool);
             return 0;
         }
 
@@ -111,7 +111,7 @@ static int testMultipleAllocs()
         for (size_t j = 0; j < sizes[i]; j++) {
             if (p[j] != (unsigned char)(i + 1)) {
                 printf("ERROR: Memory corruption detected in block %d\n", i);
-                tinyaiMemoryPoolDestroy(pool);
+                hyperionMemoryPoolDestroy(pool);
                 return 0;
             }
         }
@@ -119,18 +119,18 @@ static int testMultipleAllocs()
 
     /* Free all blocks */
     for (int i = 0; i < 10; i++) {
-        tinyaiMemoryPoolFree(pool, ptrs[i]);
+        hyperionMemoryPoolFree(pool, ptrs[i]);
     }
 
     /* Get statistics */
-    TinyAIMemoryPoolStats stats;
-    tinyaiMemoryPoolGetStats(pool, &stats);
+    HyperionMemoryPoolStats stats;
+    hyperionMemoryPoolGetStats(pool, &stats);
 
     printf("  Allocated and verified 10 blocks of different sizes\n");
     printf("  Total pool size: %zu bytes\n", stats.totalAllocated);
     printf("  Free blocks: %zu\n", stats.freeBlocks);
 
-    tinyaiMemoryPoolDestroy(pool);
+    hyperionMemoryPoolDestroy(pool);
 
     return 1;
 }
@@ -140,11 +140,11 @@ static int testFragmentationAndMerging()
 {
     printf("Running test: Fragmentation and Merging\n");
 
-    TinyAIMemoryPoolConfig config;
-    tinyaiMemoryPoolGetDefaultConfig(&config);
+    HyperionMemoryPoolConfig config;
+    hyperionMemoryPoolGetDefaultConfig(&config);
     config.initialCapacity = TEST_INITIAL_CAPACITY;
 
-    TinyAIMemoryPool *pool = tinyaiMemoryPoolCreate(&config);
+    HyperionMemoryPool *pool = hyperionMemoryPoolCreate(&config);
     if (!pool) {
         printf("ERROR: Failed to create memory pool\n");
         return 0;
@@ -153,29 +153,29 @@ static int testFragmentationAndMerging()
     /* Allocate many small blocks to fragment the pool */
     void *ptrs[100];
     for (int i = 0; i < 100; i++) {
-        ptrs[i] = tinyaiMemoryPoolAlloc(pool, 1024, 16);
+        ptrs[i] = hyperionMemoryPoolAlloc(pool, 1024, 16);
         if (!ptrs[i]) {
             printf("ERROR: Failed to allocate block %d\n", i);
-            tinyaiMemoryPoolDestroy(pool);
+            hyperionMemoryPoolDestroy(pool);
             return 0;
         }
     }
 
     /* Free alternating blocks to create fragmentation */
     for (int i = 0; i < 100; i += 2) {
-        tinyaiMemoryPoolFree(pool, ptrs[i]);
+        hyperionMemoryPoolFree(pool, ptrs[i]);
     }
 
     /* Check fragmentation */
-    TinyAIMemoryPoolStats statsBefore;
-    tinyaiMemoryPoolGetStats(pool, &statsBefore);
+    HyperionMemoryPoolStats statsBefore;
+    hyperionMemoryPoolGetStats(pool, &statsBefore);
 
     /* Compact the pool */
-    tinyaiMemoryPoolCompact(pool);
+    hyperionMemoryPoolCompact(pool);
 
     /* Check if compaction helped */
-    TinyAIMemoryPoolStats statsAfter;
-    tinyaiMemoryPoolGetStats(pool, &statsAfter);
+    HyperionMemoryPoolStats statsAfter;
+    hyperionMemoryPoolGetStats(pool, &statsAfter);
 
     printf("  Fragmentation before compaction: %zu%%\n", statsBefore.fragmentationScore);
     printf("  Fragmentation after compaction: %zu%%\n", statsAfter.fragmentationScore);
@@ -184,16 +184,16 @@ static int testFragmentationAndMerging()
 
     /* Free remaining blocks */
     for (int i = 1; i < 100; i += 2) {
-        tinyaiMemoryPoolFree(pool, ptrs[i]);
+        hyperionMemoryPoolFree(pool, ptrs[i]);
     }
 
     /* Check final state after all blocks are freed */
-    TinyAIMemoryPoolStats finalStats;
-    tinyaiMemoryPoolGetStats(pool, &finalStats);
+    HyperionMemoryPoolStats finalStats;
+    hyperionMemoryPoolGetStats(pool, &finalStats);
 
     printf("  Total free blocks after all deallocations: %zu\n", finalStats.freeBlocks);
 
-    tinyaiMemoryPoolDestroy(pool);
+    hyperionMemoryPoolDestroy(pool);
 
     /* Test passes if compaction reduced fragmentation or free block count */
     return (statsAfter.fragmentationScore <= statsBefore.fragmentationScore ||
@@ -205,11 +205,11 @@ static int testWeightAllocation()
 {
     printf("Running test: 4-Bit Weight Allocation\n");
 
-    TinyAIMemoryPoolConfig config;
-    tinyaiMemoryPoolGetDefaultConfig(&config);
+    HyperionMemoryPoolConfig config;
+    hyperionMemoryPoolGetDefaultConfig(&config);
     config.initialCapacity = TEST_INITIAL_CAPACITY;
 
-    TinyAIMemoryPool *pool = tinyaiMemoryPoolCreate(&config);
+    HyperionMemoryPool *pool = hyperionMemoryPoolCreate(&config);
     if (!pool) {
         printf("ERROR: Failed to create memory pool\n");
         return 0;
@@ -218,18 +218,18 @@ static int testWeightAllocation()
     /* Allocate weights for a simple matrix (100x100) */
     size_t   rows    = 100;
     size_t   cols    = 100;
-    uint8_t *weights = tinyaiMemoryPoolAllocWeights4Bit(pool, rows, cols, true);
+    uint8_t *weights = hyperionMemoryPoolAllocWeights4Bit(pool, rows, cols, true);
 
     if (!weights) {
         printf("ERROR: Failed to allocate weights\n");
-        tinyaiMemoryPoolDestroy(pool);
+        hyperionMemoryPoolDestroy(pool);
         return 0;
     }
 
     /* Check alignment for SIMD */
     if ((uintptr_t)weights % 32 != 0) {
         printf("ERROR: Weights not aligned for SIMD operations\n");
-        tinyaiMemoryPoolDestroy(pool);
+        hyperionMemoryPoolDestroy(pool);
         return 0;
     }
 
@@ -240,22 +240,22 @@ static int testWeightAllocation()
     }
 
     /* Free the weights */
-    tinyaiMemoryPoolFree(pool, weights);
+    hyperionMemoryPoolFree(pool, weights);
 
     /* Allocate activations */
     size_t activationSize = 1000;
-    float *activations    = tinyaiMemoryPoolAllocActivations(pool, activationSize, true);
+    float *activations    = hyperionMemoryPoolAllocActivations(pool, activationSize, true);
 
     if (!activations) {
         printf("ERROR: Failed to allocate activations\n");
-        tinyaiMemoryPoolDestroy(pool);
+        hyperionMemoryPoolDestroy(pool);
         return 0;
     }
 
     /* Check alignment */
     if ((uintptr_t)activations % 32 != 0) {
         printf("ERROR: Activations not aligned for SIMD operations\n");
-        tinyaiMemoryPoolDestroy(pool);
+        hyperionMemoryPoolDestroy(pool);
         return 0;
     }
 
@@ -265,17 +265,17 @@ static int testWeightAllocation()
     }
 
     /* Free activations */
-    tinyaiMemoryPoolFree(pool, activations);
+    hyperionMemoryPoolFree(pool, activations);
 
     /* Get statistics */
-    TinyAIMemoryPoolStats stats;
-    tinyaiMemoryPoolGetStats(pool, &stats);
+    HyperionMemoryPoolStats stats;
+    hyperionMemoryPoolGetStats(pool, &stats);
 
     printf("  Successfully allocated and freed weights (100x100) and activations (1000)\n");
     printf("  Total pool size: %zu bytes\n", stats.totalAllocated);
     printf("  Free blocks: %zu\n", stats.freeBlocks);
 
-    tinyaiMemoryPoolDestroy(pool);
+    hyperionMemoryPoolDestroy(pool);
 
     return 1;
 }
@@ -285,12 +285,12 @@ static int testStressTest()
 {
     printf("Running test: Stress Test\n");
 
-    TinyAIMemoryPoolConfig config;
-    tinyaiMemoryPoolGetDefaultConfig(&config);
+    HyperionMemoryPoolConfig config;
+    hyperionMemoryPoolGetDefaultConfig(&config);
     config.initialCapacity = TEST_INITIAL_CAPACITY;
     config.allowGrowth     = true;
 
-    TinyAIMemoryPool *pool = tinyaiMemoryPoolCreate(&config);
+    HyperionMemoryPool *pool = hyperionMemoryPoolCreate(&config);
     if (!pool) {
         printf("ERROR: Failed to create memory pool\n");
         return 0;
@@ -308,7 +308,7 @@ static int testStressTest()
         sizes[i] = TEST_MIN_ALLOCATION_SIZE +
                    (rand() % (TEST_MAX_ALLOCATION_SIZE - TEST_MIN_ALLOCATION_SIZE));
 
-        ptrs[i] = tinyaiMemoryPoolAlloc(pool, sizes[i], 16);
+        ptrs[i] = hyperionMemoryPoolAlloc(pool, sizes[i], 16);
         if (!ptrs[i]) {
             printf("  Could not allocate more after %d allocations\n", i);
             numAllocs = i;
@@ -324,8 +324,8 @@ static int testStressTest()
     double  allocTime = (double)(endAlloc - startAlloc) / CLOCKS_PER_SEC;
 
     /* Get statistics */
-    TinyAIMemoryPoolStats stats;
-    tinyaiMemoryPoolGetStats(pool, &stats);
+    HyperionMemoryPoolStats stats;
+    hyperionMemoryPoolGetStats(pool, &stats);
 
     printf("  Allocated %d blocks in %.4f seconds (%.2f allocations/sec)\n", numAllocs, allocTime,
            numAllocs / allocTime);
@@ -344,7 +344,7 @@ static int testStressTest()
     clock_t startFree = clock();
 
     for (int i = 0; i < numAllocs; i++) {
-        tinyaiMemoryPoolFree(pool, ptrs[i]);
+        hyperionMemoryPoolFree(pool, ptrs[i]);
     }
 
     clock_t endFree  = clock();
@@ -357,12 +357,12 @@ static int testStressTest()
     testStats.totalFreeTime += freeTime;
 
     /* Get statistics after freeing */
-    tinyaiMemoryPoolGetStats(pool, &stats);
+    hyperionMemoryPoolGetStats(pool, &stats);
 
     printf("  Free blocks: %zu\n", stats.freeBlocks);
     printf("  Fragmentation: %zu%%\n", stats.fragmentationScore);
 
-    tinyaiMemoryPoolDestroy(pool);
+    hyperionMemoryPoolDestroy(pool);
 
     return 1;
 }
@@ -372,12 +372,12 @@ static int testLargeModelSimulation()
 {
     printf("Running test: Large Model Simulation\n");
 
-    TinyAIMemoryPoolConfig config;
-    tinyaiMemoryPoolGetDefaultConfig(&config);
+    HyperionMemoryPoolConfig config;
+    hyperionMemoryPoolGetDefaultConfig(&config);
     config.initialCapacity = TEST_INITIAL_CAPACITY * 2;
     config.allowGrowth     = true;
 
-    TinyAIMemoryPool *pool = tinyaiMemoryPoolCreate(&config);
+    HyperionMemoryPool *pool = hyperionMemoryPoolCreate(&config);
     if (!pool) {
         printf("ERROR: Failed to create memory pool\n");
         return 0;
@@ -398,46 +398,46 @@ static int testLargeModelSimulation()
     /* Allocate all weights and activations */
     for (int i = 0; i < numLayers; i++) {
         /* Query/Key/Value weights - 3 * hiddenSize^2 */
-        qkvWeights[i] = tinyaiMemoryPoolAllocWeights4Bit(pool, 3 * hiddenSize, hiddenSize, true);
+        qkvWeights[i] = hyperionMemoryPoolAllocWeights4Bit(pool, 3 * hiddenSize, hiddenSize, true);
 
         if (!qkvWeights[i]) {
             printf("ERROR: Failed to allocate QKV weights for layer %d\n", i);
-            tinyaiMemoryPoolDestroy(pool);
+            hyperionMemoryPoolDestroy(pool);
             return 0;
         }
 
         /* Feed-forward weights - intermediateSize * hiddenSize */
-        ffnWeights[i] = tinyaiMemoryPoolAllocWeights4Bit(pool, intermediateSize, hiddenSize, true);
+        ffnWeights[i] = hyperionMemoryPoolAllocWeights4Bit(pool, intermediateSize, hiddenSize, true);
 
         if (!ffnWeights[i]) {
             printf("ERROR: Failed to allocate FFN weights for layer %d\n", i);
-            tinyaiMemoryPoolDestroy(pool);
+            hyperionMemoryPoolDestroy(pool);
             return 0;
         }
 
         /* Allocate activations */
         activations[i * 2] =
-            tinyaiMemoryPoolAllocActivations(pool, maxSeqLength * hiddenSize, true);
+            hyperionMemoryPoolAllocActivations(pool, maxSeqLength * hiddenSize, true);
 
         if (!activations[i * 2]) {
             printf("ERROR: Failed to allocate first activation for layer %d\n", i);
-            tinyaiMemoryPoolDestroy(pool);
+            hyperionMemoryPoolDestroy(pool);
             return 0;
         }
 
         activations[i * 2 + 1] =
-            tinyaiMemoryPoolAllocActivations(pool, maxSeqLength * hiddenSize, true);
+            hyperionMemoryPoolAllocActivations(pool, maxSeqLength * hiddenSize, true);
 
         if (!activations[i * 2 + 1]) {
             printf("ERROR: Failed to allocate second activation for layer %d\n", i);
-            tinyaiMemoryPoolDestroy(pool);
+            hyperionMemoryPoolDestroy(pool);
             return 0;
         }
     }
 
     /* Get statistics */
-    TinyAIMemoryPoolStats stats;
-    tinyaiMemoryPoolGetStats(pool, &stats);
+    HyperionMemoryPoolStats stats;
+    hyperionMemoryPoolGetStats(pool, &stats);
 
     printf("  Model simulation allocated %d QKV matrices, %d FFN matrices, and %d activation "
            "tensors\n",
@@ -447,19 +447,19 @@ static int testLargeModelSimulation()
 
     /* Free all weights and activations in reverse order */
     for (int i = numLayers - 1; i >= 0; i--) {
-        tinyaiMemoryPoolFree(pool, activations[i * 2 + 1]);
-        tinyaiMemoryPoolFree(pool, activations[i * 2]);
-        tinyaiMemoryPoolFree(pool, ffnWeights[i]);
-        tinyaiMemoryPoolFree(pool, qkvWeights[i]);
+        hyperionMemoryPoolFree(pool, activations[i * 2 + 1]);
+        hyperionMemoryPoolFree(pool, activations[i * 2]);
+        hyperionMemoryPoolFree(pool, ffnWeights[i]);
+        hyperionMemoryPoolFree(pool, qkvWeights[i]);
     }
 
     /* Get statistics after freeing */
-    tinyaiMemoryPoolGetStats(pool, &stats);
+    hyperionMemoryPoolGetStats(pool, &stats);
 
     printf("  After freeing: Used memory: %zu bytes\n", stats.totalUsed);
     printf("  Free blocks: %zu\n", stats.freeBlocks);
 
-    tinyaiMemoryPoolDestroy(pool);
+    hyperionMemoryPoolDestroy(pool);
 
     return 1;
 }
@@ -494,7 +494,7 @@ int main()
 {
     srand(time(NULL));
 
-    printf("TinyAI Memory Pool Test Suite\n");
+    printf("Hyperion Memory Pool Test Suite\n");
     printf("=============================\n\n");
 
     /* Run tests */

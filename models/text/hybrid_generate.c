@@ -1,6 +1,6 @@
 /**
  * @file hybrid_generate.c
- * @brief Implementation of hybrid text generation for TinyAI
+ * @brief Implementation of hybrid text generation for Hyperion
  */
 
 #include "hybrid_generate.h"
@@ -12,9 +12,9 @@
 /**
  * @brief Context structure for hybrid text generation
  */
-struct TinyAIHybridGenerate {
-    TinyAIModel     *localModel;           /* Local model for generation */
-    TinyAIMcpClient *mcpClient;            /* MCP client for remote generation */
+struct HyperionHybridGenerate {
+    HyperionModel     *localModel;           /* Local model for generation */
+    HyperionMcpClient *mcpClient;            /* MCP client for remote generation */
     bool             usedRemoteExecution;  /* Whether the last generation used remote execution */
     bool             forceRemote;          /* Force remote execution for next generation */
     bool             forceLocal;           /* Force local execution for next generation */
@@ -34,7 +34,7 @@ static double getCurrentTimeMs()
 }
 
 /* Helper function to decide if remote execution should be used */
-static bool shouldUseRemote(TinyAIHybridGenerate *ctx, const TinyAIGenerationParams *params)
+static bool shouldUseRemote(HyperionHybridGenerate *ctx, const HyperionGenerationParams *params)
 {
     /* If no MCP client, always use local */
     if (!ctx->mcpClient) {
@@ -52,19 +52,19 @@ static bool shouldUseRemote(TinyAIHybridGenerate *ctx, const TinyAIGenerationPar
     }
 
     /* If MCP is not available, use local */
-    if (!tinyaiMcpIsAvailable(ctx->mcpClient)) {
+    if (!hyperionMcpIsAvailable(ctx->mcpClient)) {
         return false;
     }
 
     /* Get execution preference */
-    TinyAIMcpExecutionPreference pref = tinyaiMcpGetExecutionPreference(ctx->mcpClient);
+    HyperionMcpExecutionPreference pref = hyperionMcpGetExecutionPreference(ctx->mcpClient);
 
     /* Based on preference, decide execution environment */
     switch (pref) {
-    case TINYAI_EXEC_ALWAYS_LOCAL:
+    case HYPERION_EXEC_ALWAYS_LOCAL:
         return false;
 
-    case TINYAI_EXEC_PREFER_LOCAL:
+    case HYPERION_EXEC_PREFER_LOCAL:
         /* Use remote only if local model is inadequate */
 
         /* If prompt length exceeds local context size, use remote */
@@ -86,11 +86,11 @@ static bool shouldUseRemote(TinyAIHybridGenerate *ctx, const TinyAIGenerationPar
         /* Otherwise use local */
         return false;
 
-    case TINYAI_EXEC_PREFER_MCP:
+    case HYPERION_EXEC_PREFER_MCP:
         /* Use local only if remote is inadequate */
         return true;
 
-    case TINYAI_EXEC_CUSTOM_POLICY:
+    case HYPERION_EXEC_CUSTOM_POLICY:
         /* Implement any custom decision logic here */
         /* For now, use a heuristic based on prompt length */
         if (params->promptLength > 100) {
@@ -104,7 +104,7 @@ static bool shouldUseRemote(TinyAIHybridGenerate *ctx, const TinyAIGenerationPar
 }
 
 /* Helper function to execute remote generation via MCP */
-static int executeRemoteGeneration(TinyAIHybridGenerate *ctx, const TinyAIGenerationParams *params,
+static int executeRemoteGeneration(HyperionHybridGenerate *ctx, const HyperionGenerationParams *params,
                                    int *outputTokens, int maxTokens)
 {
     if (!ctx || !params || !outputTokens || maxTokens <= 0) {
@@ -149,7 +149,7 @@ static int executeRemoteGeneration(TinyAIHybridGenerate *ctx, const TinyAIGenera
 
     /* Call MCP tool for text generation */
     char resultJson[8192];
-    int  resultCode = tinyaiMcpCallTool(ctx->mcpClient, "generate_text", argsJson, resultJson,
+    int  resultCode = hyperionMcpCallTool(ctx->mcpClient, "generate_text", argsJson, resultJson,
                                         sizeof(resultJson));
 
     if (resultCode < 0) {
@@ -186,7 +186,7 @@ static int executeRemoteGeneration(TinyAIHybridGenerate *ctx, const TinyAIGenera
 }
 
 /* Helper function to execute local generation */
-static int executeLocalGeneration(TinyAIHybridGenerate *ctx, const TinyAIGenerationParams *params,
+static int executeLocalGeneration(HyperionHybridGenerate *ctx, const HyperionGenerationParams *params,
                                   int *outputTokens, int maxTokens)
 {
     if (!ctx || !params || !outputTokens || maxTokens <= 0 || !ctx->localModel) {
@@ -196,7 +196,7 @@ static int executeLocalGeneration(TinyAIHybridGenerate *ctx, const TinyAIGenerat
     double startTime = getCurrentTimeMs();
 
     /* Call the local model's generation function */
-    int result = tinyaiGenerateText(ctx->localModel, params, outputTokens, maxTokens);
+    int result = hyperionGenerateText(ctx->localModel, params, outputTokens, maxTokens);
 
     double endTime            = getCurrentTimeMs();
     ctx->lastLocalTimeMs      = endTime - startTime;
@@ -208,21 +208,21 @@ static int executeLocalGeneration(TinyAIHybridGenerate *ctx, const TinyAIGenerat
     return result;
 }
 
-TinyAIHybridGenerate *tinyaiCreateHybridGenerate(TinyAIModel     *localModel,
-                                                 TinyAIMcpClient *mcpClient)
+HyperionHybridGenerate *hyperionCreateHybridGenerate(HyperionModel     *localModel,
+                                                 HyperionMcpClient *mcpClient)
 {
-    TinyAIHybridGenerate *ctx = (TinyAIHybridGenerate *)malloc(sizeof(TinyAIHybridGenerate));
+    HyperionHybridGenerate *ctx = (HyperionHybridGenerate *)malloc(sizeof(HyperionHybridGenerate));
     if (!ctx)
         return NULL;
 
-    memset(ctx, 0, sizeof(TinyAIHybridGenerate));
+    memset(ctx, 0, sizeof(HyperionHybridGenerate));
     ctx->localModel = localModel;
     ctx->mcpClient  = mcpClient;
 
     return ctx;
 }
 
-void tinyaiDestroyHybridGenerate(TinyAIHybridGenerate *ctx)
+void hyperionDestroyHybridGenerate(HyperionHybridGenerate *ctx)
 {
     if (!ctx)
         return;
@@ -232,7 +232,7 @@ void tinyaiDestroyHybridGenerate(TinyAIHybridGenerate *ctx)
     free(ctx);
 }
 
-int tinyaiHybridGenerateText(TinyAIHybridGenerate *ctx, const TinyAIGenerationParams *params,
+int hyperionHybridGenerateText(HyperionHybridGenerate *ctx, const HyperionGenerationParams *params,
                              int *outputTokens, int maxTokens)
 {
     if (!ctx || !params || !outputTokens || maxTokens <= 0) {
@@ -264,14 +264,14 @@ int tinyaiHybridGenerateText(TinyAIHybridGenerate *ctx, const TinyAIGenerationPa
     return result;
 }
 
-bool tinyaiHybridGenerateUsedRemote(TinyAIHybridGenerate *ctx)
+bool hyperionHybridGenerateUsedRemote(HyperionHybridGenerate *ctx)
 {
     if (!ctx)
         return false;
     return ctx->usedRemoteExecution;
 }
 
-void tinyaiHybridGenerateGetStats(TinyAIHybridGenerate *ctx, double *localTimeMs,
+void hyperionHybridGenerateGetStats(HyperionHybridGenerate *ctx, double *localTimeMs,
                                   double *remoteTimeMs, double *tokensPerSecond)
 {
     if (!ctx)
@@ -293,14 +293,14 @@ void tinyaiHybridGenerateGetStats(TinyAIHybridGenerate *ctx, double *localTimeMs
     }
 }
 
-bool tinyaiHybridGenerateForceMode(TinyAIHybridGenerate *ctx, bool forceRemote)
+bool hyperionHybridGenerateForceMode(HyperionHybridGenerate *ctx, bool forceRemote)
 {
     if (!ctx)
         return false;
 
     if (forceRemote) {
         /* Check if remote is available */
-        if (!ctx->mcpClient || !tinyaiMcpIsAvailable(ctx->mcpClient)) {
+        if (!ctx->mcpClient || !hyperionMcpIsAvailable(ctx->mcpClient)) {
             return false;
         }
 
@@ -320,15 +320,15 @@ bool tinyaiHybridGenerateForceMode(TinyAIHybridGenerate *ctx, bool forceRemote)
     return true;
 }
 
-bool tinyaiHybridGenerateHasRemote(TinyAIHybridGenerate *ctx)
+bool hyperionHybridGenerateHasRemote(HyperionHybridGenerate *ctx)
 {
     if (!ctx || !ctx->mcpClient)
         return false;
-    return tinyaiMcpIsAvailable(ctx->mcpClient);
+    return hyperionMcpIsAvailable(ctx->mcpClient);
 }
 
-bool tinyaiHybridGenerateWouldUseRemote(TinyAIHybridGenerate         *ctx,
-                                        const TinyAIGenerationParams *params)
+bool hyperionHybridGenerateWouldUseRemote(HyperionHybridGenerate         *ctx,
+                                        const HyperionGenerationParams *params)
 {
     if (!ctx || !params)
         return false;

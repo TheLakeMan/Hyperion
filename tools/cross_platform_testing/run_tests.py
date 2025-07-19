@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Cross-Platform Testing Framework for TinyAI
+Cross-Platform Testing Framework for Hyperion
 
 This script automates testing across multiple platforms:
 - Detects the current platform
@@ -103,7 +103,7 @@ def get_platform_specific_script(platform_name):
     return platform_scripts.get(platform_name)
 
 def find_project_root():
-    """Find the root directory of the TinyAI project."""
+    """Find the root directory of the Hyperion project."""
     current_dir = os.path.dirname(os.path.abspath(__file__))
     while current_dir != os.path.dirname(current_dir):  # Stop at filesystem root
         if os.path.isfile(os.path.join(current_dir, "CMakeLists.txt")) and \
@@ -174,14 +174,14 @@ def generate_report(results, format="text"):
     elif format == "html":
         report_path = os.path.join(report_dir, f"{report_filename}.html")
         with open(report_path, "w") as f:
-            f.write("<html><head><title>TinyAI Cross-Platform Test Report</title>")
+            f.write("<html><head><title>Hyperion Cross-Platform Test Report</title>")
             f.write("<style>body{font-family:Arial,sans-serif;margin:40px;}")
             f.write("table{border-collapse:collapse;width:100%;}")
             f.write("th,td{text-align:left;padding:8px;border:1px solid #ddd;}")
             f.write("th{background-color:#f2f2f2;}")
             f.write(".pass{color:green;}.fail{color:red;}")
             f.write("</style></head><body>")
-            f.write(f"<h1>TinyAI Cross-Platform Test Report</h1>")
+            f.write(f"<h1>Hyperion Cross-Platform Test Report</h1>")
             f.write(f"<p>Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>")
             
             # Summary table
@@ -232,7 +232,7 @@ def generate_report(results, format="text"):
     else:  # Default to text format
         report_path = os.path.join(report_dir, f"{report_filename}.txt")
         with open(report_path, "w") as f:
-            f.write("TinyAI Cross-Platform Test Report\n")
+            f.write("Hyperion Cross-Platform Test Report\n")
             f.write("===============================\n\n")
             f.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
             
@@ -286,7 +286,7 @@ def generate_report(results, format="text"):
     return report_path
 
 def main():
-    parser = argparse.ArgumentParser(description="Cross-Platform Testing Framework for TinyAI")
+    parser = argparse.ArgumentParser(description="Cross-Platform Testing Framework for Hyperion")
     parser.add_argument("--platform", help="Specify platform (auto-detect if not provided)")
     parser.add_argument("--tests", help="Comma-separated list of tests to run (all if not provided)")
     parser.add_argument("--report", default="text", choices=["text", "html", "json"], help="Output report format")

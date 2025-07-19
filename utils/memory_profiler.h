@@ -1,5 +1,5 @@
-#ifndef TINYAI_MEMORY_PROFILER_H
-#define TINYAI_MEMORY_PROFILER_H
+#ifndef HYPERION_MEMORY_PROFILER_H
+#define HYPERION_MEMORY_PROFILER_H
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -23,8 +23,8 @@ typedef struct {
     size_t                          sample_count;
     size_t                          max_samples;
     clock_t                         start_time;
-    struct TinyAIProgressiveLoader *loader;
-    struct TinyAIMemoryOptimizer   *optimizer;
+    struct HyperionProgressiveLoader *loader;
+    struct HyperionMemoryOptimizer   *optimizer;
 } MemoryProfiler;
 
 // Initialize memory profiler
@@ -43,4 +43,4 @@ void print_profile_summary(const MemoryProfiler *profiler);
 // Generate memory profile report
 void generate_profile_report(const MemoryProfiler *profiler, const char *output_path);
 
-#endif // TINYAI_MEMORY_PROFILER_H
+#endif // HYPERION_MEMORY_PROFILER_H

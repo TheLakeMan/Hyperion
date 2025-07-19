@@ -1,7 +1,7 @@
-#ifndef TINYAI_MEMORY_ANALYSIS_H
-#define TINYAI_MEMORY_ANALYSIS_H
+#ifndef HYPERION_MEMORY_ANALYSIS_H
+#define HYPERION_MEMORY_ANALYSIS_H
 
-#include "tinyai.h"
+#include "hyperion.h"
 #include <stdbool.h>
 #include <stddef.h>
 
@@ -13,7 +13,7 @@ typedef struct {
     bool   analyze_patterns;    // Analyze memory usage patterns
     size_t sample_interval_ms;  // Sampling interval in milliseconds
     size_t analysis_window_ms;  // Analysis window in milliseconds
-} TinyAIMemoryAnalysisConfig;
+} HyperionMemoryAnalysisConfig;
 
 // Memory allocation record
 typedef struct {
@@ -24,7 +24,7 @@ typedef struct {
     const char *function;  // Function name
     uint64_t    timestamp; // Allocation timestamp
     bool        is_freed;  // Whether the allocation was freed
-} TinyAIMemoryAllocation;
+} HyperionMemoryAllocation;
 
 // Memory usage pattern
 typedef struct {
@@ -36,66 +36,66 @@ typedef struct {
     double allocation_rate;   // Allocations per second
     double deallocation_rate; // Deallocations per second
     double average_lifetime;  // Average allocation lifetime in milliseconds
-} TinyAIMemoryPattern;
+} HyperionMemoryPattern;
 
 // Memory analysis context
 typedef struct {
-    TinyAIMemoryAnalysisConfig config;
-    TinyAIMemoryAllocation    *allocations;
+    HyperionMemoryAnalysisConfig config;
+    HyperionMemoryAllocation    *allocations;
     size_t                     max_allocations;
     size_t                     num_allocations;
-    TinyAIMemoryPattern        pattern;
+    HyperionMemoryPattern        pattern;
     uint64_t                   start_time;
     uint64_t                   last_sample_time;
-} TinyAIMemoryAnalysis;
+} HyperionMemoryAnalysis;
 
 // Create memory analysis context
-TinyAIMemoryAnalysis *tinyaiCreateMemoryAnalysis(const TinyAIMemoryAnalysisConfig *config);
+HyperionMemoryAnalysis *hyperionCreateMemoryAnalysis(const HyperionMemoryAnalysisConfig *config);
 
 // Free memory analysis context
-void tinyaiFreeMemoryAnalysis(TinyAIMemoryAnalysis *analysis);
+void hyperionFreeMemoryAnalysis(HyperionMemoryAnalysis *analysis);
 
 // Record memory allocation
-void tinyaiRecordAllocation(TinyAIMemoryAnalysis *analysis, void *address, size_t size,
+void hyperionRecordAllocation(HyperionMemoryAnalysis *analysis, void *address, size_t size,
                             const char *file, int line, const char *function);
 
 // Record memory deallocation
-void tinyaiRecordDeallocation(TinyAIMemoryAnalysis *analysis, void *address);
+void hyperionRecordDeallocation(HyperionMemoryAnalysis *analysis, void *address);
 
 // Take a memory usage sample
-void tinyaiTakeMemorySample(TinyAIMemoryAnalysis *analysis);
+void hyperionTakeMemorySample(HyperionMemoryAnalysis *analysis);
 
 // Get current memory pattern
-TinyAIMemoryPattern tinyaiGetMemoryPattern(const TinyAIMemoryAnalysis *analysis);
+HyperionMemoryPattern hyperionGetMemoryPattern(const HyperionMemoryAnalysis *analysis);
 
 // Analyze memory usage patterns
-void tinyaiAnalyzeMemoryPatterns(TinyAIMemoryAnalysis *analysis);
+void hyperionAnalyzeMemoryPatterns(HyperionMemoryAnalysis *analysis);
 
 // Generate memory usage report
-void tinyaiGenerateMemoryReport(const TinyAIMemoryAnalysis *analysis, const char *filename);
+void hyperionGenerateMemoryReport(const HyperionMemoryAnalysis *analysis, const char *filename);
 
 // Get memory fragmentation
-double tinyaiGetMemoryFragmentation(const TinyAIMemoryAnalysis *analysis);
+double hyperionGetMemoryFragmentation(const HyperionMemoryAnalysis *analysis);
 
 // Get memory usage trend
-double tinyaiGetMemoryUsageTrend(const TinyAIMemoryAnalysis *analysis);
+double hyperionGetMemoryUsageTrend(const HyperionMemoryAnalysis *analysis);
 
 // Get allocation hotspots
-void tinyaiGetAllocationHotspots(const TinyAIMemoryAnalysis *analysis,
-                                 TinyAIMemoryAllocation **hotspots, size_t *num_hotspots);
+void hyperionGetAllocationHotspots(const HyperionMemoryAnalysis *analysis,
+                                 HyperionMemoryAllocation **hotspots, size_t *num_hotspots);
 
 // Get memory leak candidates
-void tinyaiGetMemoryLeakCandidates(const TinyAIMemoryAnalysis *analysis,
-                                   TinyAIMemoryAllocation **leaks, size_t *num_leaks);
+void hyperionGetMemoryLeakCandidates(const HyperionMemoryAnalysis *analysis,
+                                   HyperionMemoryAllocation **leaks, size_t *num_leaks);
 
 // Reset memory analysis
-void tinyaiResetMemoryAnalysis(TinyAIMemoryAnalysis *analysis);
+void hyperionResetMemoryAnalysis(HyperionMemoryAnalysis *analysis);
 
 // Enable/disable memory analysis
-void tinyaiEnableMemoryAnalysis(TinyAIMemoryAnalysis *analysis, bool enable);
+void hyperionEnableMemoryAnalysis(HyperionMemoryAnalysis *analysis, bool enable);
 
 // Set memory analysis configuration
-void tinyaiSetMemoryAnalysisConfig(TinyAIMemoryAnalysis             *analysis,
-                                   const TinyAIMemoryAnalysisConfig *config);
+void hyperionSetMemoryAnalysisConfig(HyperionMemoryAnalysis             *analysis,
+                                   const HyperionMemoryAnalysisConfig *config);
 
-#endif // TINYAI_MEMORY_ANALYSIS_H
+#endif // HYPERION_MEMORY_ANALYSIS_H

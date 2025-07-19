@@ -1,8 +1,8 @@
-# TinyAI Hybrid Execution
+# Hyperion Hybrid Execution
 
 ## Overview
 
-TinyAI now supports hybrid local/remote execution through the Model Context Protocol (MCP). This allows the framework to transparently switch between local model execution and remote API calls to larger, more powerful models when appropriate.
+Hyperion now supports hybrid local/remote execution through the Model Context Protocol (MCP). This allows the framework to transparently switch between local model execution and remote API calls to larger, more powerful models when appropriate.
 
 ## Features
 
@@ -18,21 +18,21 @@ TinyAI now supports hybrid local/remote execution through the Model Context Prot
 
 ```bash
 # Connect to an MCP server
-tinyai mcp connect your-mcp-server-url
+hyperion mcp connect your-mcp-server-url
 ```
 
 ### 2. Enable Hybrid Mode
 
 ```bash
 # Enable hybrid mode
-tinyai hybrid on
+hyperion hybrid on
 ```
 
 ### 3. Generate Text
 
 ```bash
 # Generate text using the best execution environment
-tinyai generate "Your prompt here" 50 0.7 top_k
+hyperion generate "Your prompt here" 50 0.7 top_k
 ```
 
 ## Command Reference
@@ -55,24 +55,24 @@ tinyai generate "Your prompt here" 50 0.7 top_k
 
 ```bash
 # Connect to an MCP server
-tinyai mcp connect mock://localhost:8080
+hyperion mcp connect mock://localhost:8080
 
 # Enable hybrid mode
-tinyai hybrid on
+hyperion hybrid on
 
 # Check hybrid status
-tinyai hybrid status
+hyperion hybrid status
 
 # Generate text with hybrid execution
-tinyai generate "TinyAI is an ultra-lightweight AI framework that" 30 0.7 top_k
+hyperion generate "Hyperion is an ultra-lightweight AI framework that" 30 0.7 top_k
 
 # Force local execution for comparison
-tinyai hybrid force-local
-tinyai generate "TinyAI provides memory efficiency with" 30 0.7 top_k
+hyperion hybrid force-local
+hyperion generate "Hyperion provides memory efficiency with" 30 0.7 top_k
 
 # Force remote execution for comparison
-tinyai hybrid force-remote
-tinyai generate "The key benefits of TinyAI include" 30 0.7 top_k
+hyperion hybrid force-remote
+hyperion generate "The key benefits of Hyperion include" 30 0.7 top_k
 ```
 
 ## Configuration
@@ -97,7 +97,7 @@ To test the hybrid capabilities, you can use the provided test scripts:
 - Windows: `tools/test_pipeline.bat`
 - Linux/macOS: `tools/test_pipeline.sh`
 
-These scripts demonstrate the full TinyAI pipeline including tokenization, generation, and hybrid execution.
+These scripts demonstrate the full Hyperion pipeline including tokenization, generation, and hybrid execution.
 
 ## Implementation Details
 

@@ -2,39 +2,39 @@
 
 ## Overview
 
-The Core API provides the fundamental functionality for the TinyAI framework, including initialization, memory management, and basic operations.
+The Core API provides the fundamental functionality for the Hyperion framework, including initialization, memory management, and basic operations.
 
 ## Initialization and Cleanup
 
-### `tinyai_init()`
+### `hyperion_init()`
 ```c
-void tinyai_init(void);
+void hyperion_init(void);
 ```
-Initializes the TinyAI framework. Must be called before any other TinyAI functions.
+Initializes the Hyperion framework. Must be called before any other Hyperion functions.
 
 **Example:**
 ```c
-#include <tinyai/core.h>
+#include <hyperion/core.h>
 
 int main() {
-    tinyai_init();
-    // Use TinyAI functionality
-    tinyai_shutdown();
+    hyperion_init();
+    // Use Hyperion functionality
+    hyperion_shutdown();
     return 0;
 }
 ```
 
-### `tinyai_shutdown()`
+### `hyperion_shutdown();`
 ```c
-void tinyai_shutdown(void);
+void hyperion_shutdown();
 ```
-Cleans up resources used by the TinyAI framework. Should be called when TinyAI is no longer needed.
+Cleans up resources used by the Hyperion framework. Should be called when Hyperion is no longer needed.
 
 ## Memory Management
 
-### `tinyai_configure_memory()`
+### `hyperion_configure_memory()`
 ```c
-void tinyai_configure_memory(const TinyAIMemoryConfig* config);
+void hyperion_configure_memory(const HyperionMemoryConfig* config);
 ```
 Configures memory management settings.
 
@@ -43,57 +43,59 @@ Configures memory management settings.
 
 **Example:**
 ```c
-TinyAIMemoryConfig mem_config = {
+```c
+HyperionMemoryConfig mem_config = {
     .initial_pool_size = 1024 * 1024,  // 1MB
     .enable_optimization = true
 };
-tinyai_configure_memory(&mem_config);
+hyperion_configure_memory(&mem_config);
+```
 ```
 
-### `tinyai_get_memory_usage()`
+### `hyperion_get_memory_usage()`
 ```c
-size_t tinyai_get_memory_usage(void);
+size_t hyperion_get_memory_usage(void);
 ```
 Returns the current memory usage in bytes.
 
 ## Error Handling
 
-### `tinyai_get_error()`
+### `hyperion_get_error()`
 ```c
-const char* tinyai_get_error(void);
+const char* hyperion_get_error(void);
 ```
 Returns the last error message.
 
 **Example:**
 ```c
-TinyAIModel* model = tinyai_load_model("model.tmai");
+HyperionModel* model = hyperion_load_model("model.tmai");
 if (!model) {
-    printf("Error: %s\n", tinyai_get_error());
+    printf("Error: %s\n", hyperion_get_error());
     return 1;
 }
 ```
 
 ## Logging
 
-### `tinyai_set_log_level()`
+### `hyperion_set_log_level()`
 ```c
-void tinyai_set_log_level(TinyAILogLevel level);
+void hyperion_set_log_level(HyperionLogLevel level);
 ```
 Sets the logging level.
 
 **Parameters:**
-- `level`: Logging level (TINYAI_LOG_DEBUG, TINYAI_LOG_INFO, TINYAI_LOG_WARN, TINYAI_LOG_ERROR)
+- `level`: Logging level (HYPERION_LOG_DEBUG, HYPERION_LOG_INFO, HYPERION_LOG_WARN, HYPERION_LOG_ERROR)
 
 **Example:**
 ```c
-tinyai_set_log_level(TINYAI_LOG_DEBUG);
+hyperion_set_log_level(HYPERION_LOG_DEBUG);
 ```
 
 ## Performance Monitoring
 
-### `tinyai_get_performance_metrics()`
+### `hyperion_get_performance_metrics()`
 ```c
-void tinyai_get_performance_metrics(TinyAIPerformanceMetrics* metrics);
+void hyperion_get_performance_metrics(HyperionPerformanceMetrics* metrics);
 ```
 Retrieves current performance metrics.
 
@@ -102,48 +104,48 @@ Retrieves current performance metrics.
 
 **Example:**
 ```c
-TinyAIPerformanceMetrics metrics;
-tinyai_get_performance_metrics(&metrics);
+HyperionPerformanceMetrics metrics;
+hyperion_get_performance_metrics(&metrics);
 printf("Memory usage: %zu bytes\n", metrics.memory_usage);
 ```
 
 ## Data Types
 
-### `TinyAIMemoryConfig`
+### `HyperionMemoryConfig`
 ```c
 typedef struct {
     size_t initial_pool_size;
     bool enable_optimization;
     bool track_usage;
-} TinyAIMemoryConfig;
+} HyperionMemoryConfig;
 ```
 Memory configuration structure.
 
-### `TinyAIPerformanceMetrics`
+### `HyperionPerformanceMetrics`
 ```c
 typedef struct {
     size_t memory_usage;
     double execution_time;
     size_t cache_hits;
     size_t cache_misses;
-} TinyAIPerformanceMetrics;
+} HyperionPerformanceMetrics;
 ```
 Performance metrics structure.
 
-### `TinyAILogLevel`
+### `HyperionLogLevel`
 ```c
 typedef enum {
-    TINYAI_LOG_DEBUG,
-    TINYAI_LOG_INFO,
-    TINYAI_LOG_WARN,
-    TINYAI_LOG_ERROR
-} TinyAILogLevel;
+    HYPERION_LOG_DEBUG,
+    HYPERION_LOG_INFO,
+    HYPERION_LOG_WARN,
+    HYPERION_LOG_ERROR
+} HyperionLogLevel;
 ```
 Logging level enumeration.
 
 ## Best Practices
 
-1. Always initialize TinyAI before use
+1. Always initialize Hyperion before use
 2. Configure memory settings based on your needs
 3. Check error messages when operations fail
 4. Set appropriate logging level for debugging
@@ -154,43 +156,43 @@ Logging level enumeration.
 
 ### Basic Usage
 ```c
-#include <tinyai/core.h>
+#include <hyperion/core.h>
 
 int main() {
     // Initialize
-    tinyai_init();
+    hyperion_init();
     
     // Configure memory
-    TinyAIMemoryConfig mem_config = {
+    HyperionMemoryConfig mem_config = {
         .initial_pool_size = 1024 * 1024,
         .enable_optimization = true
     };
-    tinyai_configure_memory(&mem_config);
+    hyperion_configure_memory(&mem_config);
     
     // Set logging level
-    tinyai_set_log_level(TINYAI_LOG_INFO);
+    hyperion_set_log_level(HYPERION_LOG_INFO);
     
-    // Use TinyAI functionality
+    // Use Hyperion functionality
     
     // Clean up
-    tinyai_shutdown();
+    hyperion_shutdown();
     return 0;
 }
 ```
 
 ### Error Handling
 ```c
-TinyAIModel* model = tinyai_load_model("model.tmai");
+HyperionModel* model = hyperion_load_model("model.tmai");
 if (!model) {
-    printf("Error: %s\n", tinyai_get_error());
+    printf("Error: %s\n", hyperion_get_error());
     return 1;
 }
 ```
 
 ### Performance Monitoring
 ```c
-TinyAIPerformanceMetrics metrics;
-tinyai_get_performance_metrics(&metrics);
+HyperionPerformanceMetrics metrics;
+hyperion_get_performance_metrics(&metrics);
 printf("Memory usage: %zu bytes\n", metrics.memory_usage);
 printf("Execution time: %f ms\n", metrics.execution_time);
 ```
@@ -199,4 +201,4 @@ printf("Execution time: %f ms\n", metrics.execution_time);
 
 - [Memory Management API](memory.md)
 - [Performance Tools API](performance.md)
-- [Models API](models.md) 
+- [Models API](models.md)

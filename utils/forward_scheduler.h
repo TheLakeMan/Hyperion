@@ -6,8 +6,8 @@
  * by scheduling layer computations and intelligently managing weight loading/unloading.
  */
 
-#ifndef TINYAI_FORWARD_SCHEDULER_H
-#define TINYAI_FORWARD_SCHEDULER_H
+#ifndef HYPERION_FORWARD_SCHEDULER_H
+#define HYPERION_FORWARD_SCHEDULER_H
 
 #include "mmap_loader.h"
 #include <stdbool.h>
@@ -22,40 +22,40 @@ extern "C" {
  * Forward pass execution mode
  */
 typedef enum {
-    TINYAI_EXEC_NORMAL,     /* Standard execution - all layers loaded at once */
-    TINYAI_EXEC_MEMORY_OPT, /* Memory optimized - only load weights when needed */
-    TINYAI_EXEC_STREAMING,  /* Streaming - process inputs in chunks */
-    TINYAI_EXEC_ADAPTIVE    /* Adaptive - automatically choose best strategy */
-} TinyAIExecutionMode;
+    HYPERION_EXEC_NORMAL,     /* Standard execution - all layers loaded at once */
+    HYPERION_EXEC_MEMORY_OPT, /* Memory optimized - only load weights when needed */
+    HYPERION_EXEC_STREAMING,  /* Streaming - process inputs in chunks */
+    HYPERION_EXEC_ADAPTIVE    /* Adaptive - automatically choose best strategy */
+} HyperionExecutionMode;
 
 /**
  * Layer dependency type
  */
 typedef enum {
-    TINYAI_DEP_NONE,       /* No dependency (parallel execution possible) */
-    TINYAI_DEP_SEQUENTIAL, /* Must execute after previous layer */
-    TINYAI_DEP_RESIDUAL,   /* Residual connection (depends on earlier layer) */
-    TINYAI_DEP_ATTENTION   /* Attention dependency (complex pattern) */
-} TinyAIDependencyType;
+    HYPERION_DEP_NONE,       /* No dependency (parallel execution possible) */
+    HYPERION_DEP_SEQUENTIAL, /* Must execute after previous layer */
+    HYPERION_DEP_RESIDUAL,   /* Residual connection (depends on earlier layer) */
+    HYPERION_DEP_ATTENTION   /* Attention dependency (complex pattern) */
+} HyperionDependencyType;
 
 /**
  * Layer execution descriptor
  */
 typedef struct {
     int                  layerIndex;     /* Index of the layer in the model */
-    TinyAIDependencyType depType;        /* Dependency type */
+    HyperionDependencyType depType;        /* Dependency type */
     int                  dependsOnLayer; /* Index of layer this depends on (-1 for none) */
     bool                 executed;       /* Whether this layer has been executed */
     bool                 outputNeeded;   /* Whether this layer's output is still needed */
     float                memoryUsage;    /* Memory usage of this layer's activation */
     void                *outputPtr;      /* Pointer to layer's output activation */
     size_t               outputSize;     /* Size of output activation in bytes */
-} TinyAIExecLayer;
+} HyperionExecLayer;
 
 /**
  * Forward pass scheduler structure
  */
-typedef struct TinyAIForwardScheduler TinyAIForwardScheduler;
+typedef struct HyperionForwardScheduler HyperionForwardScheduler;
 
 /**
  * Create a new forward pass scheduler
@@ -65,15 +65,15 @@ typedef struct TinyAIForwardScheduler TinyAIForwardScheduler;
  * @param maxMemory Maximum memory to use (in bytes, 0 for unlimited)
  * @return Scheduler instance or NULL on failure
  */
-TinyAIForwardScheduler *tinyaiCreateForwardScheduler(TinyAIMappedModel  *model,
-                                                     TinyAIExecutionMode mode, size_t maxMemory);
+HyperionForwardScheduler *hyperionCreateForwardScheduler(HyperionMappedModel  *model,
+                                                     HyperionExecutionMode mode, size_t maxMemory);
 
 /**
  * Destroy a forward pass scheduler
  *
  * @param scheduler Scheduler to destroy
  */
-void tinyaiDestroyForwardScheduler(TinyAIForwardScheduler *scheduler);
+void hyperionDestroyForwardScheduler(HyperionForwardScheduler *scheduler);
 
 /**
  * Add a layer to the execution schedule
@@ -85,8 +85,8 @@ void tinyaiDestroyForwardScheduler(TinyAIForwardScheduler *scheduler);
  * @param outputSize Size of the layer's output activation in bytes
  * @return true on success, false on failure
  */
-bool tinyaiAddLayerToSchedule(TinyAIForwardScheduler *scheduler, int layerIndex, int dependsOnLayer,
-                              TinyAIDependencyType depType, size_t outputSize);
+bool hyperionAddLayerToSchedule(HyperionForwardScheduler *scheduler, int layerIndex, int dependsOnLayer,
+                              HyperionDependencyType depType, size_t outputSize);
 
 /**
  * Prepare for forward pass execution
@@ -94,7 +94,7 @@ bool tinyaiAddLayerToSchedule(TinyAIForwardScheduler *scheduler, int layerIndex,
  * @param scheduler Scheduler to prepare
  * @return true on success, false on failure
  */
-bool tinyaiPrepareForwardPass(TinyAIForwardScheduler *scheduler);
+bool hyperionPrepareForwardPass(HyperionForwardScheduler *scheduler);
 
 /**
  * Execute the next layer in the schedule
@@ -105,7 +105,7 @@ bool tinyaiPrepareForwardPass(TinyAIForwardScheduler *scheduler);
  * @param layerIndex Pointer to receive the executed layer index or NULL
  * @return true if a layer was executed, false if no more layers or error
  */
-bool tinyaiExecuteNextLayer(TinyAIForwardScheduler *scheduler, const void *input, void *output,
+bool hyperionExecuteNextLayer(HyperionForwardScheduler *scheduler, const void *input, void *output,
                             int *layerIndex);
 
 /**
@@ -117,7 +117,7 @@ bool tinyaiExecuteNextLayer(TinyAIForwardScheduler *scheduler, const void *input
  * @param maxBatchSize Maximum batch size to consider
  * @return Optimal batch size (1 if insufficient memory)
  */
-int tinyaiCalculateOptimalBatchSize(TinyAIForwardScheduler *scheduler, size_t inputSize,
+int hyperionCalculateOptimalBatchSize(HyperionForwardScheduler *scheduler, size_t inputSize,
                                     size_t outputSize, int maxBatchSize);
 
 /**
@@ -126,7 +126,7 @@ int tinyaiCalculateOptimalBatchSize(TinyAIForwardScheduler *scheduler, size_t in
  * @param scheduler Scheduler to get memory usage for
  * @return Current memory usage in bytes
  */
-size_t tinyaiGetSchedulerMemoryUsage(const TinyAIForwardScheduler *scheduler);
+size_t hyperionGetSchedulerMemoryUsage(const HyperionForwardScheduler *scheduler);
 
 /**
  * Get the maximum memory usage during execution
@@ -134,14 +134,14 @@ size_t tinyaiGetSchedulerMemoryUsage(const TinyAIForwardScheduler *scheduler);
  * @param scheduler Scheduler to get max memory usage for
  * @return Maximum memory usage in bytes
  */
-size_t tinyaiGetSchedulerPeakMemoryUsage(const TinyAIForwardScheduler *scheduler);
+size_t hyperionGetSchedulerPeakMemoryUsage(const HyperionForwardScheduler *scheduler);
 
 /**
  * Reset the scheduler for a new forward pass
  *
  * @param scheduler Scheduler to reset
  */
-void tinyaiResetScheduler(TinyAIForwardScheduler *scheduler);
+void hyperionResetScheduler(HyperionForwardScheduler *scheduler);
 
 /**
  * Get the execution status of a layer
@@ -150,7 +150,7 @@ void tinyaiResetScheduler(TinyAIForwardScheduler *scheduler);
  * @param layerIndex Index of the layer to check
  * @return true if the layer has been executed, false otherwise
  */
-bool tinyaiIsLayerExecuted(const TinyAIForwardScheduler *scheduler, int layerIndex);
+bool hyperionIsLayerExecuted(const HyperionForwardScheduler *scheduler, int layerIndex);
 
 /**
  * Get the output of a layer
@@ -159,7 +159,7 @@ bool tinyaiIsLayerExecuted(const TinyAIForwardScheduler *scheduler, int layerInd
  * @param layerIndex Index of the layer to get output for
  * @return Pointer to layer output or NULL if not available
  */
-void *tinyaiGetLayerOutput(const TinyAIForwardScheduler *scheduler, int layerIndex);
+void *hyperionGetLayerOutput(const HyperionForwardScheduler *scheduler, int layerIndex);
 
 /**
  * Mark a layer's output as no longer needed (allows memory to be freed)
@@ -167,10 +167,10 @@ void *tinyaiGetLayerOutput(const TinyAIForwardScheduler *scheduler, int layerInd
  * @param scheduler Scheduler to update
  * @param layerIndex Index of the layer to mark
  */
-void tinyaiMarkLayerOutputUnneeded(TinyAIForwardScheduler *scheduler, int layerIndex);
+void hyperionMarkLayerOutputUnneeded(HyperionForwardScheduler *scheduler, int layerIndex);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* TINYAI_FORWARD_SCHEDULER_H */
+#endif /* HYPERION_FORWARD_SCHEDULER_H */

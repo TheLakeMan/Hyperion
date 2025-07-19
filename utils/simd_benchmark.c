@@ -1,6 +1,6 @@
 /**
  * @file simd_benchmark.c
- * @brief Implementation of benchmarking utilities specifically for SIMD operations in TinyAI
+ * @brief Implementation of benchmarking utilities specifically for SIMD operations in Hyperion
  */
 
 #include "simd_benchmark.h"
@@ -1016,7 +1016,7 @@ SimdBenchmarkResult *run_comprehensive_simd_benchmark(const char *outputFile)
                 fprintf(file, "      \"simd_time_us\": %llu,\n", results[i].simdTime);
                 fprintf(file, "      \"reference_time_us\": %llu,\n", results[i].referenceTime);
                 fprintf(file, "      \"speedup\": %.2f,\n", results[i].speedupFactor);
-                fprintf(file, "      \"correct\": %s,\n",
+                fprintf(file, "      \"correct\": \"%s\",\n",
                         results[i].correctness ? "true" : "false");
                 fprintf(file, "      \"max_error\": %.8f,\n", results[i].maxError);
                 fprintf(file, "      \"data_size_bytes\": %zu\n", results[i].dataSize);
@@ -1130,7 +1130,7 @@ char *analyze_memory_access_patterns(int operationType, int dataSize, const char
     // or detailed profiling tools
 
     // Create recommendations based on operation type
-    snprintf(recommendations, 2048,
+    snprintf(recommendations + strlen(recommendations), 2048 - strlen(recommendations),
              "Memory Access Pattern Analysis for %s\n"
              "===================================================\n\n"
              "Cache Optimization Recommendations:\n\n",

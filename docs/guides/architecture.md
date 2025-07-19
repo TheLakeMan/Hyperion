@@ -1,14 +1,14 @@
-# TinyAI Architecture Guide
+# Hyperion Architecture Guide
 
 ## Overview
 
-TinyAI is an ultra-lightweight AI model system designed to run on minimal hardware, including legacy systems as old as Windows 95. The implementation focuses on extreme efficiency through 4-bit quantization, minimal memory footprint, and CPU-only execution.
+Hyperion is an ultra-lightweight AI model system designed to run on minimal hardware, including legacy systems as old as Windows 95. The implementation focuses on extreme efficiency through 4-bit quantization, minimal memory footprint, and CPU-only execution.
 
 ## System Architecture
 
 ### Component Structure
 ```
-TinyAI
+Hyperion
 ├── Core Layer - Foundation components
 │   ├── Picol Interpreter - Extended Tcl interpreter
 │   ├── Runtime Environment - Module loading, resource management
@@ -180,4 +180,4 @@ Memory is managed through several specialized components:
 - [API Reference](../api/README.md)
 - [Memory Management Guide](memory-management.md)
 - [Performance Guide](optimization.md)
-- [Deployment Guide](deployment.md) 
+- [Deployment Guide](deployment.md)

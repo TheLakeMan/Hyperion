@@ -44,7 +44,7 @@
 /**
  * Memory pool calculations for scratch memory
  */
-static size_t calculateScratchMemorySize(const TinyAIAttentionParams *params)
+static size_t calculateScratchMemorySize(const HyperionAttentionParams *params)
 {
     uint32_t hiddenDim = params->hiddenDim;
     uint32_t seqLength = params->seqLength;
@@ -63,20 +63,20 @@ static size_t calculateScratchMemorySize(const TinyAIAttentionParams *params)
 /**
  * Initialize self-attention structure
  */
-int tinyaiInitSelfAttention(TinyAISelfAttention *attention, const TinyAIAttentionParams *params)
+int hyperionInitSelfAttention(HyperionSelfAttention *attention, const HyperionAttentionParams *params)
 {
     if (!attention || !params) {
         return -1;
     }
 
     /* Copy parameters */
-    memcpy(&attention->params, params, sizeof(TinyAIAttentionParams));
+    memcpy(&attention->params, params, sizeof(HyperionAttentionParams));
 
     /* Initialize weight matrices to zeros */
-    memset(&attention->queryWeight, 0, sizeof(TinyAIMatrix4bit));
-    memset(&attention->keyWeight, 0, sizeof(TinyAIMatrix4bit));
-    memset(&attention->valueWeight, 0, sizeof(TinyAIMatrix4bit));
-    memset(&attention->outputWeight, 0, sizeof(TinyAIMatrix4bit));
+    memset(&attention->queryWeight, 0, sizeof(HyperionMatrix4bit));
+    memset(&attention->keyWeight, 0, sizeof(HyperionMatrix4bit));
+    memset(&attention->valueWeight, 0, sizeof(HyperionMatrix4bit));
+    memset(&attention->outputWeight, 0, sizeof(HyperionMatrix4bit));
 
     /* Initialize bias pointers to NULL */
     attention->queryBias  = NULL;
@@ -86,7 +86,7 @@ int tinyaiInitSelfAttention(TinyAISelfAttention *attention, const TinyAIAttentio
 
     /* Allocate scratch memory */
     size_t scratchSize       = calculateScratchMemorySize(params);
-    attention->scratchMemory = (float *)TINYAI_MALLOC(scratchSize);
+    attention->scratchMemory = (float *)HYPERION_MALLOC(scratchSize);
     if (!attention->scratchMemory) {
         return -1;
     }
@@ -97,7 +97,7 @@ int tinyaiInitSelfAttention(TinyAISelfAttention *attention, const TinyAIAttentio
 /**
  * Free self-attention resources
  */
-void tinyaiDestroySelfAttention(TinyAISelfAttention *attention)
+void hyperionDestroySelfAttention(HyperionSelfAttention *attention)
 {
     if (!attention) {
         return;
@@ -105,48 +105,48 @@ void tinyaiDestroySelfAttention(TinyAISelfAttention *attention)
 
     /* Free weight data if owned by this structure */
     if (attention->queryWeight.data) {
-        TINYAI_FREE(attention->queryWeight.data);
+        HYPERION_FREE(attention->queryWeight.data);
     }
     if (attention->keyWeight.data) {
-        TINYAI_FREE(attention->keyWeight.data);
+        HYPERION_FREE(attention->keyWeight.data);
     }
     if (attention->valueWeight.data) {
-        TINYAI_FREE(attention->valueWeight.data);
+        HYPERION_FREE(attention->valueWeight.data);
     }
     if (attention->outputWeight.data) {
-        TINYAI_FREE(attention->outputWeight.data);
+        HYPERION_FREE(attention->outputWeight.data);
     }
 
     /* Free biases if owned by this structure */
     if (attention->queryBias) {
-        TINYAI_FREE(attention->queryBias);
+        HYPERION_FREE(attention->queryBias);
     }
     if (attention->keyBias) {
-        TINYAI_FREE(attention->keyBias);
+        HYPERION_FREE(attention->keyBias);
     }
     if (attention->valueBias) {
-        TINYAI_FREE(attention->valueBias);
+        HYPERION_FREE(attention->valueBias);
     }
     if (attention->outputBias) {
-        TINYAI_FREE(attention->outputBias);
+        HYPERION_FREE(attention->outputBias);
     }
 
     /* Free scratch memory */
     if (attention->scratchMemory) {
-        TINYAI_FREE(attention->scratchMemory);
+        HYPERION_FREE(attention->scratchMemory);
     }
 
     /* Reset the structure */
-    memset(attention, 0, sizeof(TinyAISelfAttention));
+    memset(attention, 0, sizeof(HyperionSelfAttention));
 }
 
 /**
  * Set weights for self-attention
  */
-int tinyaiSetAttentionWeights(TinyAISelfAttention *attention, const TinyAIMatrix4bit *queryWeight,
-                              const TinyAIMatrix4bit *keyWeight,
-                              const TinyAIMatrix4bit *valueWeight,
-                              const TinyAIMatrix4bit *outputWeight, const float *queryBias,
+int hyperionSetAttentionWeights(HyperionSelfAttention *attention, const HyperionMatrix4bit *queryWeight,
+                              const HyperionMatrix4bit *keyWeight,
+                              const HyperionMatrix4bit *valueWeight,
+                              const HyperionMatrix4bit *outputWeight, const float *queryBias,
                               const float *keyBias, const float *valueBias, const float *outputBias)
 {
     if (!attention || !queryWeight || !keyWeight || !valueWeight || !outputWeight) {
@@ -157,16 +157,16 @@ int tinyaiSetAttentionWeights(TinyAISelfAttention *attention, const TinyAIMatrix
 
     /* Free existing weight data if needed */
     if (attention->queryWeight.data) {
-        TINYAI_FREE(attention->queryWeight.data);
+        HYPERION_FREE(attention->queryWeight.data);
     }
     if (attention->keyWeight.data) {
-        TINYAI_FREE(attention->keyWeight.data);
+        HYPERION_FREE(attention->keyWeight.data);
     }
     if (attention->valueWeight.data) {
-        TINYAI_FREE(attention->valueWeight.data);
+        HYPERION_FREE(attention->valueWeight.data);
     }
     if (attention->outputWeight.data) {
-        TINYAI_FREE(attention->outputWeight.data);
+        HYPERION_FREE(attention->outputWeight.data);
     }
 
     /* Calculate the size of each matrix in bytes */
@@ -177,15 +177,15 @@ int tinyaiSetAttentionWeights(TinyAISelfAttention *attention, const TinyAIMatrix
     size_t outputSize = (outputWeight->rows * outputWeight->cols + 1) / 2;
 
     /* Allocate and copy weight data */
-    attention->queryWeight.data  = (uint8_t *)TINYAI_MALLOC(querySize);
-    attention->keyWeight.data    = (uint8_t *)TINYAI_MALLOC(keySize);
-    attention->valueWeight.data  = (uint8_t *)TINYAI_MALLOC(valueSize);
-    attention->outputWeight.data = (uint8_t *)TINYAI_MALLOC(outputSize);
+    attention->queryWeight.data  = (uint8_t *)HYPERION_MALLOC(querySize);
+    attention->keyWeight.data    = (uint8_t *)HYPERION_MALLOC(keySize);
+    attention->valueWeight.data  = (uint8_t *)HYPERION_MALLOC(valueSize);
+    attention->outputWeight.data = (uint8_t *)HYPERION_MALLOC(outputSize);
 
     if (!attention->queryWeight.data || !attention->keyWeight.data ||
         !attention->valueWeight.data || !attention->outputWeight.data) {
         /* Clean up on error */
-        tinyaiDestroySelfAttention(attention);
+        hyperionDestroySelfAttention(attention);
         return -1;
     }
 
@@ -218,50 +218,50 @@ int tinyaiSetAttentionWeights(TinyAISelfAttention *attention, const TinyAIMatrix
 
     /* Free existing bias data if needed */
     if (attention->queryBias) {
-        TINYAI_FREE(attention->queryBias);
+        HYPERION_FREE(attention->queryBias);
     }
     if (attention->keyBias) {
-        TINYAI_FREE(attention->keyBias);
+        HYPERION_FREE(attention->keyBias);
     }
     if (attention->valueBias) {
-        TINYAI_FREE(attention->valueBias);
+        HYPERION_FREE(attention->valueBias);
     }
     if (attention->outputBias) {
-        TINYAI_FREE(attention->outputBias);
+        HYPERION_FREE(attention->outputBias);
     }
 
     /* Handle biases (optional) */
     if (queryBias) {
-        attention->queryBias = (float *)TINYAI_MALLOC(hiddenDim * sizeof(float));
+        attention->queryBias = (float *)HYPERION_MALLOC(hiddenDim * sizeof(float));
         if (!attention->queryBias) {
-            tinyaiDestroySelfAttention(attention);
+            hyperionDestroySelfAttention(attention);
             return -1;
         }
         memcpy(attention->queryBias, queryBias, hiddenDim * sizeof(float));
     }
 
     if (keyBias) {
-        attention->keyBias = (float *)TINYAI_MALLOC(hiddenDim * sizeof(float));
+        attention->keyBias = (float *)HYPERION_MALLOC(hiddenDim * sizeof(float));
         if (!attention->keyBias) {
-            tinyaiDestroySelfAttention(attention);
+            hyperionDestroySelfAttention(attention);
             return -1;
         }
         memcpy(attention->keyBias, keyBias, hiddenDim * sizeof(float));
     }
 
     if (valueBias) {
-        attention->valueBias = (float *)TINYAI_MALLOC(hiddenDim * sizeof(float));
+        attention->valueBias = (float *)HYPERION_MALLOC(hiddenDim * sizeof(float));
         if (!attention->valueBias) {
-            tinyaiDestroySelfAttention(attention);
+            hyperionDestroySelfAttention(attention);
             return -1;
         }
         memcpy(attention->valueBias, valueBias, hiddenDim * sizeof(float));
     }
 
     if (outputBias) {
-        attention->outputBias = (float *)TINYAI_MALLOC(hiddenDim * sizeof(float));
+        attention->outputBias = (float *)HYPERION_MALLOC(hiddenDim * sizeof(float));
         if (!attention->outputBias) {
-            tinyaiDestroySelfAttention(attention);
+            hyperionDestroySelfAttention(attention);
             return -1;
         }
         memcpy(attention->outputBias, outputBias, hiddenDim * sizeof(float));
@@ -273,7 +273,7 @@ int tinyaiSetAttentionWeights(TinyAISelfAttention *attention, const TinyAIMatrix
 /**
  * Calculate memory offsets for different components in scratch memory
  */
-static void getMemoryOffsets(const TinyAIAttentionParams *params, float **query, float **key,
+static void getMemoryOffsets(const HyperionAttentionParams *params, float **query, float **key,
                              float **value, float **scores, float **softmaxScores, float **context,
                              float *scratchMemory)
 {
@@ -294,9 +294,9 @@ static void getMemoryOffsets(const TinyAIAttentionParams *params, float **query,
  * SIMD-accelerated query-key-value projection using AVX2
  */
 #if defined(HAS_AVX2_SUPPORT)
-static int tinyaiSimdQKVProjectionAVX2(const float *input, const TinyAIMatrix4bit *queryWeight,
-                                       const TinyAIMatrix4bit *keyWeight,
-                                       const TinyAIMatrix4bit *valueWeight, const float *queryBias,
+static int hyperionSimdQKVProjectionAVX2(const float *input, const HyperionMatrix4bit *queryWeight,
+                                       const HyperionMatrix4bit *keyWeight,
+                                       const HyperionMatrix4bit *valueWeight, const float *queryBias,
                                        const float *keyBias, const float *valueBias, float *query,
                                        float *key, float *value, uint32_t seqLength,
                                        uint32_t hiddenDim, uint32_t numHeads, uint32_t headDim)
@@ -312,19 +312,19 @@ static int tinyaiSimdQKVProjectionAVX2(const float *input, const TinyAIMatrix4bi
         float *valueVec = value + i * hiddenDim;
 
         /* Perform matrix multiplication for query, key, value projections */
-        /* We'll use tinyaiSimdMatMul4Bit with AVX2 which will be automatically selected */
+        /* We'll use hyperionSimdMatMul4Bit with AVX2 which will be automatically selected */
         /* Query projection */
         float queryScale = queryWeight->scale;
-        tinyaiSimdMatMul4Bit(queryVec, queryWeight->data, inputVec, hiddenDim, hiddenDim,
+        hyperionSimdMatMul4Bit(queryVec, queryWeight->data, inputVec, hiddenDim, hiddenDim,
                              &queryScale);
 
         /* Key projection */
         float keyScale = keyWeight->scale;
-        tinyaiSimdMatMul4Bit(keyVec, keyWeight->data, inputVec, hiddenDim, hiddenDim, &keyScale);
+        hyperionSimdMatMul4Bit(keyVec, keyWeight->data, inputVec, hiddenDim, hiddenDim, &keyScale);
 
         /* Value projection */
         float valueScale = valueWeight->scale;
-        tinyaiSimdMatMul4Bit(valueVec, valueWeight->data, inputVec, hiddenDim, hiddenDim,
+        hyperionSimdMatMul4Bit(valueVec, valueWeight->data, inputVec, hiddenDim, hiddenDim,
                              &valueScale);
 
         /* Add biases if provided */
@@ -367,9 +367,9 @@ static int tinyaiSimdQKVProjectionAVX2(const float *input, const TinyAIMatrix4bi
  * SIMD-accelerated query-key-value projection using SSE2
  */
 #if defined(HAS_SSE2_SUPPORT)
-static int tinyaiSimdQKVProjectionSSE2(const float *input, const TinyAIMatrix4bit *queryWeight,
-                                       const TinyAIMatrix4bit *keyWeight,
-                                       const TinyAIMatrix4bit *valueWeight, const float *queryBias,
+static int hyperionSimdQKVProjectionSSE2(const float *input, const HyperionMatrix4bit *queryWeight,
+                                       const HyperionMatrix4bit *keyWeight,
+                                       const HyperionMatrix4bit *valueWeight, const float *queryBias,
                                        const float *keyBias, const float *valueBias, float *query,
                                        float *key, float *value, uint32_t seqLength,
                                        uint32_t hiddenDim, uint32_t numHeads, uint32_t headDim)
@@ -385,19 +385,19 @@ static int tinyaiSimdQKVProjectionSSE2(const float *input, const TinyAIMatrix4bi
         float *valueVec = value + i * hiddenDim;
 
         /* Perform matrix multiplication for query, key, value projections */
-        /* We'll use tinyaiSimdMatMul4Bit which will use SSE2 */
+        /* We'll use hyperionSimdMatMul4Bit which will use SSE2 */
         /* Query projection */
         float queryScale = queryWeight->scale;
-        tinyaiSimdMatMul4Bit(queryVec, queryWeight->data, inputVec, hiddenDim, hiddenDim,
+        hyperionSimdMatMul4Bit(queryVec, queryWeight->data, inputVec, hiddenDim, hiddenDim,
                              &queryScale);
 
         /* Key projection */
         float keyScale = keyWeight->scale;
-        tinyaiSimdMatMul4Bit(keyVec, keyWeight->data, inputVec, hiddenDim, hiddenDim, &keyScale);
+        hyperionSimdMatMul4Bit(keyVec, keyWeight->data, inputVec, hiddenDim, hiddenDim, &keyScale);
 
         /* Value projection */
         float valueScale = valueWeight->scale;
-        tinyaiSimdMatMul4Bit(valueVec, valueWeight->data, inputVec, hiddenDim, hiddenDim,
+        hyperionSimdMatMul4Bit(valueVec, valueWeight->data, inputVec, hiddenDim, hiddenDim,
                              &valueScale);
 
         /* Add biases if provided */
@@ -439,9 +439,9 @@ static int tinyaiSimdQKVProjectionSSE2(const float *input, const TinyAIMatrix4bi
 /**
  * Reference implementation of query-key-value projection
  */
-static int tinyaiQKVProjectionReference(const float *input, const TinyAIMatrix4bit *queryWeight,
-                                        const TinyAIMatrix4bit *keyWeight,
-                                        const TinyAIMatrix4bit *valueWeight, const float *queryBias,
+static int hyperionQKVProjectionReference(const float *input, const HyperionMatrix4bit *queryWeight,
+                                        const HyperionMatrix4bit *keyWeight,
+                                        const HyperionMatrix4bit *valueWeight, const float *queryBias,
                                         const float *keyBias, const float *valueBias, float *query,
                                         float *key, float *value, uint32_t seqLength,
                                         uint32_t hiddenDim, uint32_t numHeads, uint32_t headDim)
@@ -452,17 +452,17 @@ static int tinyaiQKVProjectionReference(const float *input, const TinyAIMatrix4b
         const float *inputVec = input + i * hiddenDim;
 
         /* Dequantize weight matrices */
-        TinyAIMatrixFP32 *queryWeightFP32 = tinyaiDequantize4bitToFP32(queryWeight);
-        TinyAIMatrixFP32 *keyWeightFP32   = tinyaiDequantize4bitToFP32(keyWeight);
-        TinyAIMatrixFP32 *valueWeightFP32 = tinyaiDequantize4bitToFP32(valueWeight);
+        HyperionMatrixFP32 *queryWeightFP32 = hyperionDequantize4bitToFP32(queryWeight);
+        HyperionMatrixFP32 *keyWeightFP32   = hyperionDequantize4bitToFP32(keyWeight);
+        HyperionMatrixFP32 *valueWeightFP32 = hyperionDequantize4bitToFP32(valueWeight);
 
         if (!queryWeightFP32 || !keyWeightFP32 || !valueWeightFP32) {
             if (queryWeightFP32)
-                tinyaiDestroyMatrixFP32(queryWeightFP32);
+                hyperionDestroyMatrixFP32(queryWeightFP32);
             if (keyWeightFP32)
-                tinyaiDestroyMatrixFP32(keyWeightFP32);
+                hyperionDestroyMatrixFP32(keyWeightFP32);
             if (valueWeightFP32)
-                tinyaiDestroyMatrixFP32(valueWeightFP32);
+                hyperionDestroyMatrixFP32(valueWeightFP32);
             return -1;
         }
 
@@ -499,9 +499,9 @@ static int tinyaiQKVProjectionReference(const float *input, const TinyAIMatrix4b
         }
 
         /* Clean up */
-        tinyaiDestroyMatrixFP32(queryWeightFP32);
-        tinyaiDestroyMatrixFP32(keyWeightFP32);
-        tinyaiDestroyMatrixFP32(valueWeightFP32);
+        hyperionDestroyMatrixFP32(queryWeightFP32);
+        hyperionDestroyMatrixFP32(keyWeightFP32);
+        hyperionDestroyMatrixFP32(valueWeightFP32);
     }
 
     return 0;
@@ -510,8 +510,8 @@ static int tinyaiQKVProjectionReference(const float *input, const TinyAIMatrix4b
 /**
  * SIMD-accelerated query-key-value projection (public API)
  */
-int tinyaiSimdQKVProjection(const float *input, const TinyAIMatrix4bit *queryWeight,
-                            const TinyAIMatrix4bit *keyWeight, const TinyAIMatrix4bit *valueWeight,
+int hyperionSimdQKVProjection(const float *input, const HyperionMatrix4bit *queryWeight,
+                            const HyperionMatrix4bit *keyWeight, const HyperionMatrix4bit *valueWeight,
                             const float *queryBias, const float *keyBias, const float *valueBias,
                             float *query, float *key, float *value, uint32_t seqLength,
                             uint32_t hiddenDim, uint32_t numHeads, uint32_t headDim)
@@ -525,7 +525,7 @@ int tinyaiSimdQKVProjection(const float *input, const TinyAIMatrix4bit *queryWei
     /* Use the most advanced SIMD version available */
 #if defined(HAS_AVX2_SUPPORT)
     if (g_hasAVX2) {
-        return tinyaiSimdQKVProjectionAVX2(input, queryWeight, keyWeight, valueWeight, queryBias,
+        return hyperionSimdQKVProjectionAVX2(input, queryWeight, keyWeight, valueWeight, queryBias,
                                            keyBias, valueBias, query, key, value, seqLength,
                                            hiddenDim, numHeads, headDim);
     }
@@ -533,14 +533,14 @@ int tinyaiSimdQKVProjection(const float *input, const TinyAIMatrix4bit *queryWei
 
 #if defined(HAS_SSE2_SUPPORT)
     if (g_hasSSE2) {
-        return tinyaiSimdQKVProjectionSSE2(input, queryWeight, keyWeight, valueWeight, queryBias,
+        return hyperionSimdQKVProjectionSSE2(input, queryWeight, keyWeight, valueWeight, queryBias,
                                            keyBias, valueBias, query, key, value, seqLength,
                                            hiddenDim, numHeads, headDim);
     }
 #endif
 
     /* Fallback to reference implementation */
-    return tinyaiQKVProjectionReference(input, queryWeight, keyWeight, valueWeight, queryBias,
+    return hyperionQKVProjectionReference(input, queryWeight, keyWeight, valueWeight, queryBias,
                                         keyBias, valueBias, query, key, value, seqLength, hiddenDim,
                                         numHeads, headDim);
 }
@@ -549,7 +549,7 @@ int tinyaiSimdQKVProjection(const float *input, const TinyAIMatrix4bit *queryWei
  * SIMD-accelerated attention score computation (Q*K^T) using AVX2
  */
 #if defined(HAS_AVX2_SUPPORT)
-static int tinyaiSimdAttentionScoresAVX2(const float *query, const float *key, float *scores,
+static int hyperionSimdAttentionScoresAVX2(const float *query, const float *key, float *scores,
                                          uint32_t seqLength, uint32_t numHeads, uint32_t headDim,
                                          float scaleFactor, bool useCausalMask)
 {
@@ -605,7 +605,7 @@ static int tinyaiSimdAttentionScoresAVX2(const float *query, const float *key, f
  * SIMD-accelerated attention score computation (Q*K^T) using SSE2
  */
 #if defined(HAS_SSE2_SUPPORT)
-static int tinyaiSimdAttentionScoresSSE2(const float *query, const float *key, float *scores,
+static int hyperionSimdAttentionScoresSSE2(const float *query, const float *key, float *scores,
                                          uint32_t seqLength, uint32_t numHeads, uint32_t headDim,
                                          float scaleFactor, bool useCausalMask)
 {
@@ -659,7 +659,7 @@ static int tinyaiSimdAttentionScoresSSE2(const float *query, const float *key, f
 /**
  * Reference implementation of attention score computation
  */
-static int tinyaiAttentionScoresReference(const float *query, const float *key, float *scores,
+static int hyperionAttentionScoresReference(const float *query, const float *key, float *scores,
                                           uint32_t seqLength, uint32_t numHeads, uint32_t headDim,
                                           float scaleFactor, bool useCausalMask)
 {
@@ -697,7 +697,7 @@ static int tinyaiAttentionScoresReference(const float *query, const float *key, 
 /**
  * SIMD-accelerated attention score computation (public API)
  */
-int tinyaiSimdAttentionScores(const float *query, const float *key, float *scores,
+int hyperionSimdAttentionScores(const float *query, const float *key, float *scores,
                               uint32_t seqLength, uint32_t numHeads, uint32_t headDim,
                               float scaleFactor, bool useCausalMask)
 {
@@ -710,34 +710,34 @@ int tinyaiSimdAttentionScores(const float *query, const float *key, float *score
     /* Use the most advanced SIMD version available */
 #if defined(HAS_AVX2_SUPPORT)
     if (g_hasAVX2) {
-        return tinyaiSimdAttentionScoresAVX2(query, key, scores, seqLength, numHeads, headDim,
+        return hyperionSimdAttentionScoresAVX2(query, key, scores, seqLength, numHeads, headDim,
                                              scaleFactor, useCausalMask);
     }
 #endif
 
 #if defined(HAS_SSE2_SUPPORT)
     if (g_hasSSE2) {
-        return tinyaiSimdAttentionScoresSSE2(query, key, scores, seqLength, numHeads, headDim,
+        return hyperionSimdAttentionScoresSSE2(query, key, scores, seqLength, numHeads, headDim,
                                              scaleFactor, useCausalMask);
     }
 #endif
 
     /* Fallback to reference implementation */
-    return tinyaiAttentionScoresReference(query, key, scores, seqLength, numHeads, headDim,
+    return hyperionAttentionScoresReference(query, key, scores, seqLength, numHeads, headDim,
                                           scaleFactor, useCausalMask);
 }
 
 /**
  * Implementation of the full self-attention forward pass (using the component functions above)
  */
-int tinyaiSelfAttentionForward(TinyAISelfAttention *attention, const float *input, float *output)
+int hyperionSelfAttentionForward(HyperionSelfAttention *attention, const float *input, float *output)
 {
     if (!attention || !input || !output) {
         return -1;
     }
 
     /* Get attention parameters */
-    TinyAIAttentionParams *params    = &attention->params;
+    HyperionAttentionParams *params    = &attention->params;
     uint32_t               seqLength = params->seqLength;
     uint32_t               hiddenDim = params->hiddenDim;
     uint32_t               numHeads  = params->numHeads;
@@ -749,24 +749,24 @@ int tinyaiSelfAttentionForward(TinyAISelfAttention *attention, const float *inpu
                      attention->scratchMemory);
 
     /* Perform QKV projection */
-    tinyaiSimdQKVProjection(input, &attention->queryWeight, &attention->keyWeight,
+    hyperionSimdQKVProjection(input, &attention->queryWeight, &attention->keyWeight,
                             &attention->valueWeight, attention->queryBias, attention->keyBias,
                             attention->valueBias, query, key, value, seqLength, hiddenDim, numHeads,
                             headDim);
 
     /* Compute attention scores (Q * K^T / sqrt(headDim)) */
     float scaleFactor = params->scaleFactor;
-    tinyaiSimdAttentionScores(query, key, scores, seqLength, numHeads, headDim, scaleFactor,
+    hyperionSimdAttentionScores(query, key, scores, seqLength, numHeads, headDim, scaleFactor,
                               params->useCausalMask);
 
     /* Apply softmax to attention scores */
-    tinyaiSimdAttentionSoftmax(scores, softmaxScores, seqLength, numHeads);
+    hyperionSimdAttentionSoftmax(scores, softmaxScores, seqLength, numHeads);
 
     /* Compute context vectors (softmax(QK^T) * V) */
-    tinyaiSimdAttentionContext(softmaxScores, value, context, seqLength, numHeads, headDim);
+    hyperionSimdAttentionContext(softmaxScores, value, context, seqLength, numHeads, headDim);
 
     /* Final output projection */
-    tinyaiSimdOutputProjection(context, &attention->outputWeight, attention->outputBias, output,
+    hyperionSimdOutputProjection(context, &attention->outputWeight, attention->outputBias, output,
                                seqLength, hiddenDim);
 
     return 0;
@@ -776,7 +776,7 @@ int tinyaiSelfAttentionForward(TinyAISelfAttention *attention, const float *inpu
  * SIMD-accelerated softmax computation using AVX2
  */
 #if defined(HAS_AVX2_SUPPORT)
-static int tinyaiSimdAttentionSoftmaxAVX2(const float *scores, float *softmaxScores,
+static int hyperionSimdAttentionSoftmaxAVX2(const float *scores, float *softmaxScores,
                                           uint32_t seqLength, uint32_t numHeads)
 {
     /* Process each attention head separately */
@@ -818,10 +818,6 @@ static int tinyaiSimdAttentionSoftmaxAVX2(const float *scores, float *softmaxSco
 
                     /* Use _mm256_exp_ps if available, otherwise approximate */
                     /* For simplicity, we use exp(x) = exp2f(x * log2(e)) */
-                    __m256 expVec;
-
-                    /* This is a simple approximation, in practice you would use
-                     * a more accurate approximation or library function */
                     float expResults[8];
                     float scaledValues[8];
                     _mm256_storeu_ps(scaledValues, scaled);
@@ -889,7 +885,7 @@ static int tinyaiSimdAttentionSoftmaxAVX2(const float *scores, float *softmaxSco
  * SIMD-accelerated softmax computation using SSE2
  */
 #if defined(HAS_SSE2_SUPPORT)
-static int tinyaiSimdAttentionSoftmaxSSE2(const float *scores, float *softmaxScores,
+static int hyperionSimdAttentionSoftmaxSSE2(const float *scores, float *softmaxScores,
                                           uint32_t seqLength, uint32_t numHeads)
 {
     /* Process each attention head separately */
@@ -988,7 +984,7 @@ static int tinyaiSimdAttentionSoftmaxSSE2(const float *scores, float *softmaxSco
 /**
  * Reference implementation of softmax computation for attention scores
  */
-static int tinyaiAttentionSoftmaxReference(const float *scores, float *softmaxScores,
+static int hyperionAttentionSoftmaxReference(const float *scores, float *softmaxScores,
                                            uint32_t seqLength, uint32_t numHeads)
 {
     /* Process each attention head separately */
@@ -1031,7 +1027,7 @@ static int tinyaiAttentionSoftmaxReference(const float *scores, float *softmaxSc
 /**
  * SIMD-accelerated softmax computation (public API)
  */
-int tinyaiSimdAttentionSoftmax(const float *scores, float *softmaxScores, uint32_t seqLength,
+int hyperionSimdAttentionSoftmax(const float *scores, float *softmaxScores, uint32_t seqLength,
                                uint32_t numHeads)
 {
     /* Check if SIMD is available and which version */
@@ -1043,25 +1039,25 @@ int tinyaiSimdAttentionSoftmax(const float *scores, float *softmaxScores, uint32
     /* Use the most advanced SIMD version available */
 #if defined(HAS_AVX2_SUPPORT)
     if (g_hasAVX2) {
-        return tinyaiSimdAttentionSoftmaxAVX2(scores, softmaxScores, seqLength, numHeads);
+        return hyperionSimdAttentionSoftmaxAVX2(scores, softmaxScores, seqLength, numHeads);
     }
 #endif
 
 #if defined(HAS_SSE2_SUPPORT)
     if (g_hasSSE2) {
-        return tinyaiSimdAttentionSoftmaxSSE2(scores, softmaxScores, seqLength, numHeads);
+        return hyperionSimdAttentionSoftmaxSSE2(scores, softmaxScores, seqLength, numHeads);
     }
 #endif
 
     /* Fallback to reference implementation */
-    return tinyaiAttentionSoftmaxReference(scores, softmaxScores, seqLength, numHeads);
+    return hyperionAttentionSoftmaxReference(scores, softmaxScores, seqLength, numHeads);
 }
 
 /**
  * SIMD-accelerated attention context computation using AVX2
  */
 #if defined(HAS_AVX2_SUPPORT)
-static int tinyaiSimdAttentionContextAVX2(const float *softmaxScores, const float *value,
+static int hyperionSimdAttentionContextAVX2(const float *softmaxScores, const float *value,
                                           float *context, uint32_t seqLength, uint32_t numHeads,
                                           uint32_t headDim)
 {
@@ -1112,7 +1108,7 @@ static int tinyaiSimdAttentionContextAVX2(const float *softmaxScores, const floa
  * SIMD-accelerated attention context computation using SSE2
  */
 #if defined(HAS_SSE2_SUPPORT)
-static int tinyaiSimdAttentionContextSSE2(const float *softmaxScores, const float *value,
+static int hyperionSimdAttentionContextSSE2(const float *softmaxScores, const float *value,
                                           float *context, uint32_t seqLength, uint32_t numHeads,
                                           uint32_t headDim)
 {
@@ -1138,19 +1134,12 @@ static int tinyaiSimdAttentionContextSSE2(const float *softmaxScores, const floa
                 float  weight    = scores[j];
                 __m128 weightVec = _mm_set1_ps(weight);
 
-                /* Process in chunks of 4 */
-                for (uint32_t d = 0; d < headDim; d += 4) {
-                    /* Load current context and value vectors */
-                    __m128 contextChunk = _mm_loadu_ps(contextVec + d);
-                    __m128 valueChunk   = _mm_loadu_ps(valueVec + d);
+                /* Multiply value by weight and add to context */
+                __m128 weightedValue = _mm_mul_ps(valueChunk, weightVec);
+                contextChunk         = _mm_add_ps(contextChunk, weightedValue);
 
-                    /* Multiply value by weight and add to context */
-                    __m128 weightedValue = _mm_mul_ps(valueChunk, weightVec);
-                    contextChunk         = _mm_add_ps(contextChunk, weightedValue);
-
-                    /* Store result back to context */
-                    _mm_storeu_ps(contextVec + d, contextChunk);
-                }
+                /* Store result back to context */
+                _mm_storeu_ps(contextVec + d, contextChunk);
             }
         }
     }
@@ -1162,7 +1151,7 @@ static int tinyaiSimdAttentionContextSSE2(const float *softmaxScores, const floa
 /**
  * Reference implementation of attention context computation
  */
-static int tinyaiAttentionContextReference(const float *softmaxScores, const float *value,
+static int hyperionAttentionContextReference(const float *softmaxScores, const float *value,
                                            float *context, uint32_t seqLength, uint32_t numHeads,
                                            uint32_t headDim)
 {
@@ -1201,7 +1190,7 @@ static int tinyaiAttentionContextReference(const float *softmaxScores, const flo
 /**
  * SIMD-accelerated attention context computation (public API)
  */
-int tinyaiSimdAttentionContext(const float *softmaxScores, const float *value, float *context,
+int hyperionSimdAttentionContext(const float *softmaxScores, const float *value, float *context,
                                uint32_t seqLength, uint32_t numHeads, uint32_t headDim)
 {
     /* Check if SIMD is available and which version */
@@ -1213,20 +1202,20 @@ int tinyaiSimdAttentionContext(const float *softmaxScores, const float *value, f
     /* Use the most advanced SIMD version available */
 #if defined(HAS_AVX2_SUPPORT)
     if (g_hasAVX2) {
-        return tinyaiSimdAttentionContextAVX2(softmaxScores, value, context, seqLength, numHeads,
+        return hyperionSimdAttentionContextAVX2(softmaxScores, value, context, seqLength, numHeads,
                                               headDim);
     }
 #endif
 
 #if defined(HAS_SSE2_SUPPORT)
     if (g_hasSSE2) {
-        return tinyaiSimdAttentionContextSSE2(softmaxScores, value, context, seqLength, numHeads,
+        return hyperionSimdAttentionContextSSE2(softmaxScores, value, context, seqLength, numHeads,
                                               headDim);
     }
 #endif
 
     /* Fallback to reference implementation */
-    return tinyaiAttentionContextReference(softmaxScores, value, context, seqLength, numHeads,
+    return hyperionAttentionContextReference(softmaxScores, value, context, seqLength, numHeads,
                                            headDim);
 }
 
@@ -1234,8 +1223,8 @@ int tinyaiSimdAttentionContext(const float *softmaxScores, const float *value, f
  * SIMD-accelerated output projection using AVX2
  */
 #if defined(HAS_AVX2_SUPPORT)
-static int tinyaiSimdOutputProjectionAVX2(const float            *context,
-                                          const TinyAIMatrix4bit *outputWeight,
+static int hyperionSimdOutputProjectionAVX2(const float            *context,
+                                          const HyperionMatrix4bit *outputWeight,
                                           const float *outputBias, float *output,
                                           uint32_t seqLength, uint32_t hiddenDim)
 {
@@ -1249,7 +1238,7 @@ static int tinyaiSimdOutputProjectionAVX2(const float            *context,
 
         /* Use SIMD matrix multiplication for projection */
         float scale = outputWeight->scale;
-        tinyaiSimdMatMul4Bit(outputVec, outputWeight->data, contextVec, hiddenDim, hiddenDim,
+        hyperionSimdMatMul4Bit(outputVec, outputWeight->data, contextVec, hiddenDim, hiddenDim,
                              &scale);
 
         /* Add bias if provided */
@@ -1277,8 +1266,8 @@ static int tinyaiSimdOutputProjectionAVX2(const float            *context,
  * SIMD-accelerated output projection using SSE2
  */
 #if defined(HAS_SSE2_SUPPORT)
-static int tinyaiSimdOutputProjectionSSE2(const float            *context,
-                                          const TinyAIMatrix4bit *outputWeight,
+static int hyperionSimdOutputProjectionSSE2(const float            *context,
+                                          const HyperionMatrix4bit *outputWeight,
                                           const float *outputBias, float *output,
                                           uint32_t seqLength, uint32_t hiddenDim)
 {
@@ -1292,14 +1281,13 @@ static int tinyaiSimdOutputProjectionSSE2(const float            *context,
 
         /* Use SIMD matrix multiplication for projection */
         float scale = outputWeight->scale;
-        tinyaiSimdMatMul4Bit(outputVec, outputWeight->data, contextVec, hiddenDim, hiddenDim,
+        hyperionSimdMatMul4Bit(outputVec, outputWeight->data, contextVec, hiddenDim, hiddenDim,
                              &scale);
 
         /* Add bias if provided */
         if (outputBias) {
             /* Process in chunks of 4 */
             for (uint32_t j = 0; j < hiddenDim; j += 4) {
-                /* Load bias and output vectors */
                 __m128 biasVec = _mm_loadu_ps(outputBias + j);
                 __m128 outVec  = _mm_loadu_ps(outputVec + j);
 
@@ -1319,8 +1307,8 @@ static int tinyaiSimdOutputProjectionSSE2(const float            *context,
 /**
  * Reference implementation of output projection
  */
-static int tinyaiOutputProjectionReference(const float            *context,
-                                           const TinyAIMatrix4bit *outputWeight,
+static int hyperionOutputProjectionReference(const float            *context,
+                                           const HyperionMatrix4bit *outputWeight,
                                            const float *outputBias, float *output,
                                            uint32_t seqLength, uint32_t hiddenDim)
 {
@@ -1333,7 +1321,7 @@ static int tinyaiOutputProjectionReference(const float            *context,
         float *outputVec = output + i * hiddenDim;
 
         /* Dequantize output weight matrix */
-        TinyAIMatrixFP32 *outputWeightFP32 = tinyaiDequantize4bitToFP32(outputWeight);
+        HyperionMatrixFP32 *outputWeightFP32 = hyperionDequantize4bitToFP32(outputWeight);
         if (!outputWeightFP32) {
             return -1;
         }
@@ -1350,7 +1338,7 @@ static int tinyaiOutputProjectionReference(const float            *context,
         }
 
         /* Clean up */
-        tinyaiDestroyMatrixFP32(outputWeightFP32);
+        hyperionDestroyMatrixFP32(outputWeightFP32);
     }
 
     return 0;
@@ -1359,7 +1347,7 @@ static int tinyaiOutputProjectionReference(const float            *context,
 /**
  * SIMD-accelerated output projection (public API)
  */
-int tinyaiSimdOutputProjection(const float *context, const TinyAIMatrix4bit *outputWeight,
+int hyperionSimdOutputProjection(const float *context, const HyperionMatrix4bit *outputWeight,
                                const float *outputBias, float *output, uint32_t seqLength,
                                uint32_t hiddenDim)
 {
@@ -1372,19 +1360,19 @@ int tinyaiSimdOutputProjection(const float *context, const TinyAIMatrix4bit *out
     /* Use the most advanced SIMD version available */
 #if defined(HAS_AVX2_SUPPORT)
     if (g_hasAVX2) {
-        return tinyaiSimdOutputProjectionAVX2(context, outputWeight, outputBias, output, seqLength,
+        return hyperionSimdOutputProjectionAVX2(context, outputWeight, outputBias, output, seqLength,
                                               hiddenDim);
     }
 #endif
 
 #if defined(HAS_SSE2_SUPPORT)
     if (g_hasSSE2) {
-        return tinyaiSimdOutputProjectionSSE2(context, outputWeight, outputBias, output, seqLength,
+        return hyperionSimdOutputProjectionSSE2(context, outputWeight, outputBias, output, seqLength,
                                               hiddenDim);
     }
 #endif
 
     /* Fallback to reference implementation */
-    return tinyaiOutputProjectionReference(context, outputWeight, outputBias, output, seqLength,
+    return hyperionOutputProjectionReference(context, outputWeight, outputBias, output, seqLength,
                                            hiddenDim);
 }

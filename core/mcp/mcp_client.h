@@ -1,13 +1,13 @@
 /**
  * @file mcp_client.h
- * @brief Model Context Protocol (MCP) client implementation for TinyAI
+ * @brief Model Context Protocol (MCP) client implementation for Hyperion
  *
  * This file defines the API for interacting with MCP servers, providing
- * hybrid local/remote execution capabilities for TinyAI.
+ * hybrid local/remote execution capabilities for Hyperion.
  */
 
-#ifndef TINYAI_MCP_CLIENT_H
-#define TINYAI_MCP_CLIENT_H
+#ifndef HYPERION_MCP_CLIENT_H
+#define HYPERION_MCP_CLIENT_H
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -20,33 +20,33 @@ extern "C" {
  * @brief Execution preference mode for hybrid operations
  */
 typedef enum {
-    TINYAI_EXEC_ALWAYS_LOCAL, /**< Always use local execution only */
-    TINYAI_EXEC_PREFER_LOCAL, /**< Prefer local, use MCP only when necessary */
-    TINYAI_EXEC_PREFER_MCP,   /**< Prefer MCP when available, fallback to local */
-    TINYAI_EXEC_CUSTOM_POLICY /**< Use custom policy defined per operation */
-} TinyAIMcpExecutionPreference;
+    HYPERION_EXEC_ALWAYS_LOCAL, /**< Always use local execution only */
+    HYPERION_EXEC_PREFER_LOCAL, /**< Prefer local, use MCP only when necessary */
+    HYPERION_EXEC_PREFER_MCP,   /**< Prefer MCP when available, fallback to local */
+    HYPERION_EXEC_CUSTOM_POLICY /**< Use custom policy defined per operation */
+} HyperionMcpExecutionPreference;
 
 /**
  * @brief MCP Server connection state
  */
 typedef enum {
-    TINYAI_MCP_DISCONNECTED, /**< Not connected to MCP server */
-    TINYAI_MCP_CONNECTING,   /**< Connection in progress */
-    TINYAI_MCP_CONNECTED,    /**< Successfully connected to MCP server */
-    TINYAI_MCP_ERROR         /**< Error connecting to MCP server */
-} TinyAIMcpConnectionState;
+    HYPERION_MCP_DISCONNECTED, /**< Not connected to MCP server */
+    HYPERION_MCP_CONNECTING,   /**< Connection in progress */
+    HYPERION_MCP_CONNECTED,    /**< Successfully connected to MCP server */
+    HYPERION_MCP_ERROR         /**< Error connecting to MCP server */
+} HyperionMcpConnectionState;
 
 /**
  * @brief MCP client configuration
  */
 typedef struct {
-    TinyAIMcpExecutionPreference execPreference;      /**< Execution preference */
+    HyperionMcpExecutionPreference execPreference;      /**< Execution preference */
     bool                         enableAutoDiscovery; /**< Automatically discover MCP servers */
     bool                         enableTelemetry;     /**< Allow sending telemetry data */
     int                          connectionTimeoutMs; /**< Connection timeout in milliseconds */
     int                          maxRetryAttempts;    /**< Maximum connection retry attempts */
     bool                         forceOffline;        /**< Force offline mode */
-} TinyAIMcpConfig;
+} HyperionMcpConfig;
 
 /**
  * @brief MCP server information
@@ -55,29 +55,29 @@ typedef struct {
     char                     serverName[64];           /**< Server name */
     char                     serverUrl[256];           /**< Server URL */
     char                     serverVersion[32];        /**< Server version */
-    TinyAIMcpConnectionState connectionState;          /**< Connection state */
+    HyperionMcpConnectionState connectionState;          /**< Connection state */
     char                     serverCapabilities[1024]; /**< JSON string of capabilities */
-} TinyAIMcpServerInfo;
+} HyperionMcpServerInfo;
 
 /**
  * @brief MCP client context
  */
-typedef struct TinyAIMcpClient TinyAIMcpClient;
+typedef struct HyperionMcpClient HyperionMcpClient;
 
 /**
  * @brief Create an MCP client instance
  *
  * @param config Client configuration
- * @return TinyAIMcpClient* Client instance or NULL on failure
+ * @return HyperionMcpClient* Client instance or NULL on failure
  */
-TinyAIMcpClient *tinyaiMcpCreateClient(const TinyAIMcpConfig *config);
+HyperionMcpClient *hyperionMcpCreateClient(const HyperionMcpConfig *config);
 
 /**
  * @brief Destroy an MCP client instance
  *
  * @param client Client instance
  */
-void tinyaiMcpDestroyClient(TinyAIMcpClient *client);
+void hyperionMcpDestroyClient(HyperionMcpClient *client);
 
 /**
  * @brief Connect to an MCP server
@@ -87,22 +87,22 @@ void tinyaiMcpDestroyClient(TinyAIMcpClient *client);
  * @return true if connection was successful or in progress
  * @return false if connection failed
  */
-bool tinyaiMcpConnect(TinyAIMcpClient *client, const char *serverUrl);
+bool hyperionMcpConnect(HyperionMcpClient *client, const char *serverUrl);
 
 /**
  * @brief Disconnect from an MCP server
  *
  * @param client Client instance
  */
-void tinyaiMcpDisconnect(TinyAIMcpClient *client);
+void hyperionMcpDisconnect(HyperionMcpClient *client);
 
 /**
  * @brief Get connection state
  *
  * @param client Client instance
- * @return TinyAIMcpConnectionState Current connection state
+ * @return HyperionMcpConnectionState Current connection state
  */
-TinyAIMcpConnectionState tinyaiMcpGetConnectionState(TinyAIMcpClient *client);
+HyperionMcpConnectionState hyperionMcpGetConnectionState(HyperionMcpClient *client);
 
 /**
  * @brief Check if MCP capabilities are available
@@ -111,7 +111,7 @@ TinyAIMcpConnectionState tinyaiMcpGetConnectionState(TinyAIMcpClient *client);
  * @return true if MCP is available and connected
  * @return false if MCP is unavailable
  */
-bool tinyaiMcpIsAvailable(TinyAIMcpClient *client);
+bool hyperionMcpIsAvailable(HyperionMcpClient *client);
 
 /**
  * @brief Get server information
@@ -121,7 +121,7 @@ bool tinyaiMcpIsAvailable(TinyAIMcpClient *client);
  * @return true if information was successfully retrieved
  * @return false on failure
  */
-bool tinyaiMcpGetServerInfo(TinyAIMcpClient *client, TinyAIMcpServerInfo *info);
+bool hyperionMcpGetServerInfo(HyperionMcpClient *client, HyperionMcpServerInfo *info);
 
 /**
  * @brief Check if MCP server supports a specific capability
@@ -131,7 +131,7 @@ bool tinyaiMcpGetServerInfo(TinyAIMcpClient *client, TinyAIMcpServerInfo *info);
  * @return true if capability is supported
  * @return false if capability is not supported or client is not connected
  */
-bool tinyaiMcpHasCapability(TinyAIMcpClient *client, const char *capability);
+bool hyperionMcpHasCapability(HyperionMcpClient *client, const char *capability);
 
 /**
  * @brief Call a remote MCP tool
@@ -143,7 +143,7 @@ bool tinyaiMcpHasCapability(TinyAIMcpClient *client, const char *capability);
  * @param resultSize Size of output buffer
  * @return int Number of bytes written to result buffer, or negative value on error
  */
-int tinyaiMcpCallTool(TinyAIMcpClient *client, const char *toolName, const char *arguments,
+int hyperionMcpCallTool(HyperionMcpClient *client, const char *toolName, const char *arguments,
                       char *result, int resultSize);
 
 /**
@@ -155,7 +155,7 @@ int tinyaiMcpCallTool(TinyAIMcpClient *client, const char *toolName, const char 
  * @param resultSize Size of output buffer
  * @return int Number of bytes written to result buffer, or negative value on error
  */
-int tinyaiMcpAccessResource(TinyAIMcpClient *client, const char *resourceUri, char *result,
+int hyperionMcpAccessResource(HyperionMcpClient *client, const char *resourceUri, char *result,
                             int resultSize);
 
 /**
@@ -164,16 +164,16 @@ int tinyaiMcpAccessResource(TinyAIMcpClient *client, const char *resourceUri, ch
  * @param client Client instance
  * @param preference Execution preference
  */
-void tinyaiMcpSetExecutionPreference(TinyAIMcpClient             *client,
-                                     TinyAIMcpExecutionPreference preference);
+void hyperionMcpSetExecutionPreference(HyperionMcpClient             *client,
+                                     HyperionMcpExecutionPreference preference);
 
 /**
  * @brief Get execution preference
  *
  * @param client Client instance
- * @return TinyAIMcpExecutionPreference Current execution preference
+ * @return HyperionMcpExecutionPreference Current execution preference
  */
-TinyAIMcpExecutionPreference tinyaiMcpGetExecutionPreference(TinyAIMcpClient *client);
+HyperionMcpExecutionPreference hyperionMcpGetExecutionPreference(HyperionMcpClient *client);
 
 /**
  * @brief Force offline mode (disable MCP capabilities)
@@ -181,7 +181,7 @@ TinyAIMcpExecutionPreference tinyaiMcpGetExecutionPreference(TinyAIMcpClient *cl
  * @param client Client instance
  * @param forceOffline Whether to force offline mode
  */
-void tinyaiMcpSetForceOffline(TinyAIMcpClient *client, bool forceOffline);
+void hyperionMcpSetForceOffline(HyperionMcpClient *client, bool forceOffline);
 
 /**
  * @brief Check if forced offline mode is enabled
@@ -190,17 +190,17 @@ void tinyaiMcpSetForceOffline(TinyAIMcpClient *client, bool forceOffline);
  * @return true if forced offline mode is enabled
  * @return false if forced offline mode is disabled
  */
-bool tinyaiMcpGetForceOffline(TinyAIMcpClient *client);
+bool hyperionMcpGetForceOffline(HyperionMcpClient *client);
 
 /**
  * @brief Get default MCP client configuration
  *
  * @param config Output configuration structure
  */
-void tinyaiMcpGetDefaultConfig(TinyAIMcpConfig *config);
+void hyperionMcpGetDefaultConfig(HyperionMcpConfig *config);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* TINYAI_MCP_CLIENT_H */
+#endif /* HYPERION_MCP_CLIENT_H */

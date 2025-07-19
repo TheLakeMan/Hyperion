@@ -1,10 +1,10 @@
 # Media Tagging Example
 
-This document explains how to use and customize the TinyAI media tagging example application.
+This document explains how to use and customize the Hyperion media tagging example application.
 
 ## Overview
 
-The TinyAI media tagging example demonstrates how to build a system that can automatically analyze and tag various types of media, including images, text, and audio. The example includes:
+The Hyperion media tagging example demonstrates how to build a system that can automatically analyze and tag various types of media, including images, text, and audio. The example includes:
 
 - Image tagging and scene recognition
 - Text content classification and keyword extraction
@@ -271,13 +271,13 @@ media_search_free(&results);
 media_db_close(db);
 ```
 
-### Integration with Other TinyAI Components
+### Integration with Other Hyperion Components
 
-Combine the media tagger with other TinyAI capabilities:
+Combine the media tagger with other Hyperion capabilities:
 
 ```c
 // Example: Integrating with document processor
-#include "tinyai/document_processor.h"
+#include "hyperion/document_processor.h"
 
 // Initialize models
 ImageTagger* img_tagger = image_tagger_init(image_model_path);

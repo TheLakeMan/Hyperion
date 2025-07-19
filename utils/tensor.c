@@ -5,23 +5,18 @@
 #include <string.h>
 
 // Tensor structure
-struct TinyAITensor {
+struct HyperionTensor {
     float                   *data;
     int                     *shape;
     int                      num_dims;
-    TinyAITensorDataType     dtype;
+    HyperionTensorDataType     dtype;
     size_t                   size;
     bool                     is_allocated;
-    struct TinyAIMemoryPool *memory_pool;
+    struct HyperionMemoryPool *memory_pool;
 };
 
 // Create a new tensor
-struct TinyAITensor *tinyaiCreateTensor(const int *shape, int num_dims, TinyAITensorDataType dtype)
-{
-    if (!shape || num_dims <= 0)
-        return NULL;
-
-    struct TinyAITensor *tensor = (struct TinyAITensor *)malloc(sizeof(struct TinyAITensor));
+    struct HyperionTensor *tensor = (struct HyperionTensor *)malloc(sizeof(struct HyperionTensor));
     if (!tensor)
         return NULL;
 
@@ -57,14 +52,7 @@ struct TinyAITensor *tinyaiCreateTensor(const int *shape, int num_dims, TinyAITe
 }
 
 // Create a tensor using a memory pool
-struct TinyAITensor *tinyaiCreateTensorWithPool(const int *shape, int num_dims,
-                                                TinyAITensorDataType     dtype,
-                                                struct TinyAIMemoryPool *pool)
-{
-    if (!shape || num_dims <= 0 || !pool)
-        return NULL;
-
-    struct TinyAITensor *tensor = (struct TinyAITensor *)malloc(sizeof(struct TinyAITensor));
+    struct HyperionTensor *tensor = (struct HyperionTensor *)malloc(sizeof(struct HyperionTensor));
     if (!tensor)
         return NULL;
 
@@ -83,7 +71,7 @@ struct TinyAITensor *tinyaiCreateTensorWithPool(const int *shape, int num_dims,
     memcpy(tensor->shape, shape, num_dims * sizeof(int));
 
     // Allocate data from pool
-    tensor->data = (float *)tinyaiMemoryPoolAlloc(pool, total_size * sizeof(float), 16);
+    tensor->data = (float *)hyperionMemoryPoolAlloc(pool, total_size * sizeof(float), 16);
     if (!tensor->data) {
         free(tensor->shape);
         free(tensor);
@@ -100,7 +88,7 @@ struct TinyAITensor *tinyaiCreateTensorWithPool(const int *shape, int num_dims,
 }
 
 // Free tensor resources
-void tinyaiFreeTensor(struct TinyAITensor *tensor)
+void hyperionFreeTensor(struct HyperionTensor *tensor)
 {
     if (!tensor)
         return;
@@ -109,7 +97,7 @@ void tinyaiFreeTensor(struct TinyAITensor *tensor)
         free(tensor->data);
     }
     else if (tensor->memory_pool) {
-        tinyaiMemoryPoolFree(tensor->memory_pool, tensor->data);
+        hyperionMemoryPoolFree(tensor->memory_pool, tensor->data);
     }
 
     free(tensor->shape);
@@ -117,19 +105,19 @@ void tinyaiFreeTensor(struct TinyAITensor *tensor)
 }
 
 // Get tensor shape
-const int *tinyaiGetTensorShape(const struct TinyAITensor *tensor)
+const int *hyperionGetTensorShape(const struct HyperionTensor *tensor)
 {
     return tensor ? tensor->shape : NULL;
 }
 
 // Get tensor data type
-TinyAITensorDataType tinyaiGetTensorDataType(const struct TinyAITensor *tensor)
+HyperionTensorDataType hyperionGetTensorDataType(const struct HyperionTensor *tensor)
 {
-    return tensor ? tensor->dtype : TINYAI_DTYPE_FLOAT32;
+    return tensor ? tensor->dtype : HYPERION_DTYPE_FLOAT32;
 }
 
 // Get tensor size in bytes
-size_t tinyaiGetTensorSize(const struct TinyAITensor *tensor)
+size_t hyperionGetTensorSize(const struct HyperionTensor *tensor)
 {
     if (!tensor)
         return 0;
@@ -137,7 +125,7 @@ size_t tinyaiGetTensorSize(const struct TinyAITensor *tensor)
 }
 
 // Copy tensor data
-bool tinyaiCopyTensor(const struct TinyAITensor *src, struct TinyAITensor *dst)
+bool hyperionCopyTensor(const struct HyperionTensor *src, struct HyperionTensor *dst)
 {
     if (!src || !dst || src->size != dst->size)
         return false;
@@ -147,7 +135,7 @@ bool tinyaiCopyTensor(const struct TinyAITensor *src, struct TinyAITensor *dst)
 }
 
 // Fill tensor with value
-void tinyaiFillTensor(struct TinyAITensor *tensor, float value)
+void hyperionFillTensor(struct HyperionTensor *tensor, float value)
 {
     if (!tensor)
         return;
@@ -158,8 +146,7 @@ void tinyaiFillTensor(struct TinyAITensor *tensor, float value)
 }
 
 // Add tensors
-bool tinyaiAddTensors(const struct TinyAITensor *a, const struct TinyAITensor *b,
-                      struct TinyAITensor *result)
+                      struct HyperionTensor *result)
 {
     if (!a || !b || !result || a->size != b->size || a->size != result->size) {
         return false;
@@ -173,8 +160,7 @@ bool tinyaiAddTensors(const struct TinyAITensor *a, const struct TinyAITensor *b
 }
 
 // Multiply tensors
-bool tinyaiMultiplyTensors(const struct TinyAITensor *a, const struct TinyAITensor *b,
-                           struct TinyAITensor *result)
+                           struct HyperionTensor *result)
 {
     if (!a || !b || !result || a->size != b->size || a->size != result->size) {
         return false;
@@ -188,8 +174,7 @@ bool tinyaiMultiplyTensors(const struct TinyAITensor *a, const struct TinyAITens
 }
 
 // Matrix multiplication
-bool tinyaiMatrixMultiply(const struct TinyAITensor *a, const struct TinyAITensor *b,
-                          struct TinyAITensor *result)
+                          struct HyperionTensor *result)
 {
     if (!a || !b || !result)
         return false;
@@ -223,25 +208,25 @@ bool tinyaiMatrixMultiply(const struct TinyAITensor *a, const struct TinyAITenso
 }
 
 // Apply activation function
-void tinyaiApplyActivation(struct TinyAITensor *tensor, TinyAIActivationType activation)
+void hyperionApplyActivation(struct HyperionTensor *tensor, HyperionActivationType activation)
 {
     if (!tensor)
         return;
 
     switch (activation) {
-    case TINYAI_ACTIVATION_RELU:
+    case HYPERION_ACTIVATION_RELU:
         for (size_t i = 0; i < tensor->size; i++) {
             tensor->data[i] = fmaxf(0.0f, tensor->data[i]);
         }
         break;
 
-    case TINYAI_ACTIVATION_SIGMOID:
+    case HYPERION_ACTIVATION_SIGMOID:
         for (size_t i = 0; i < tensor->size; i++) {
             tensor->data[i] = 1.0f / (1.0f + expf(-tensor->data[i]));
         }
         break;
 
-    case TINYAI_ACTIVATION_TANH:
+    case HYPERION_ACTIVATION_TANH:
         for (size_t i = 0; i < tensor->size; i++) {
             tensor->data[i] = tanhf(tensor->data[i]);
         }
@@ -253,10 +238,10 @@ void tinyaiApplyActivation(struct TinyAITensor *tensor, TinyAIActivationType act
 }
 
 // Get tensor data pointer
-float *tinyaiGetTensorData(struct TinyAITensor *tensor) { return tensor ? tensor->data : NULL; }
+float *hyperionGetTensorData(struct HyperionTensor *tensor) { return tensor ? tensor->data : NULL; }
 
 // Get tensor element
-float tinyaiGetTensorElement(const struct TinyAITensor *tensor, const int *indices)
+float hyperionGetTensorElement(const struct HyperionTensor *tensor, const int *indices)
 {
     if (!tensor || !indices)
         return 0.0f;
@@ -273,7 +258,7 @@ float tinyaiGetTensorElement(const struct TinyAITensor *tensor, const int *indic
 }
 
 // Set tensor element
-void tinyaiSetTensorElement(struct TinyAITensor *tensor, const int *indices, float value)
+void hyperionSetTensorElement(struct HyperionTensor *tensor, const int *indices, float value)
 {
     if (!tensor || !indices)
         return;

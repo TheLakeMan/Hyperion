@@ -3,7 +3,7 @@
 ## Foundation Analysis
 
 - **Operational Baseline**:
-  - **Core Platform**: TinyAI operates on minimal hardware including legacy systems (as old as Windows 95)
+  - **Core Platform**: Hyperion operates on minimal hardware including legacy systems (as old as Windows 95)
   - **Memory Footprint**: 50-100MB RAM target with 4-bit quantization and sparse matrices
   - **Modalities Coverage**: Text (complete), Image (complete), Audio (complete), Multimodal (complete)
   - **Hardware Abstraction**: SIMD acceleration with AVX2/AVX/SSE2 with automatic fallbacks
@@ -131,7 +131,7 @@
 
 ### 1. WebAssembly Integration (H1)
 
-TinyAI's minimal dependencies and C-based implementation make it an excellent candidate for WebAssembly compilation, enabling browser-based deployment.
+Hyperion's minimal dependencies and C-based implementation make it an excellent candidate for WebAssembly compilation, enabling browser-based deployment.
 
 **Implementation Path**:
 1. Create Emscripten build configuration in CMake
@@ -141,7 +141,7 @@ TinyAI's minimal dependencies and C-based implementation make it an excellent ca
 
 **Files to Create/Modify**:
 - `web/wasm_binding.c`
-- `web/tinyai.js`
+- `web/hyperion.js`
 - `CMakeLists.txt` (add WASM target)
 
 ### 2. Enhanced Hardware Abstraction (H2)

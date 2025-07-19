@@ -1,8 +1,8 @@
 @echo off
-REM TinyAI Priority Test Execution Script
+REM Hyperion Priority Test Execution Script
 REM This script runs tests in the priority order defined in the test plan
 
-echo ===== TinyAI Priority Test Execution =====
+echo ===== Hyperion Priority Test Execution =====
 echo.
 
 REM Create build directory if it doesn't exist
@@ -29,7 +29,7 @@ echo.
 
 REM 1. Core Memory Management Tests
 echo ------ Memory Management Tests ------
-Debug\tinyai_tests.exe memory
+Debug\hyperion_tests.exe memory
 if %ERRORLEVEL% neq 0 (
   echo ERROR: Memory management tests failed
   exit /b %ERRORLEVEL%
@@ -53,7 +53,7 @@ if %ERRORLEVEL% neq 0 (
 
 REM 2. 4-bit Quantization Tests
 echo ------ Quantization Tests ------
-Debug\tinyai_tests.exe quantize
+Debug\hyperion_tests.exe quantize
 if %ERRORLEVEL% neq 0 (
   echo ERROR: Quantization tests failed
   exit /b %ERRORLEVEL%
@@ -69,7 +69,7 @@ if %ERRORLEVEL% neq 0 (
 
 REM 3. SIMD Acceleration Tests
 echo ------ SIMD Acceleration Tests ------
-Debug\tinyai_tests.exe simd
+Debug\hyperion_tests.exe simd
 if %ERRORLEVEL% neq 0 (
   echo ERROR: SIMD acceleration tests failed
   exit /b %ERRORLEVEL%
@@ -93,7 +93,7 @@ if %ERRORLEVEL% neq 0 (
 
 REM 4. Text Generation Tests
 echo ------ Text Generation Tests ------
-Debug\tinyai_tests.exe generate
+Debug\hyperion_tests.exe generate
 if %ERRORLEVEL% neq 0 (
   echo ERROR: Text generation tests failed
   exit /b %ERRORLEVEL%

@@ -1,6 +1,6 @@
 /**
  * @file image_model.c
- * @brief Implementation of the image model functionality in TinyAI
+ * @brief Implementation of the image model functionality in Hyperion
  */
 
 #include "image_model.h"
@@ -53,10 +53,10 @@ struct Layer {
     size_t weightBytes; /* Size of weights in bytes */
     size_t biasBytes;   /* Size of biases in bytes */
     size_t outputBytes; /* Size of output in bytes */
-};
+} Layer;
 
 /* Define the Model structure */
-struct TinyAIImageModel {
+struct HyperionImageModel {
     int modelType;
     int inputWidth;
     int inputHeight;
@@ -78,7 +78,7 @@ struct TinyAIImageModel {
     int    numLabels;
 
     /* Preprocessing parameters */
-    TinyAIImagePreprocessParams preprocess;
+    HyperionImagePreprocessParams preprocess;
 };
 
 /* Private functions */
@@ -308,7 +308,7 @@ static bool initFlattenLayer(Layer *layer, int inputWidth, int inputHeight, int 
 /**
  * Create a MobileNet model
  */
-static TinyAIImageModel *createMobileNetModel(const TinyAIImageModelParams *params)
+static HyperionImageModel *createMobileNetModel(const HyperionImageModelParams *params)
 {
     if (!params || params->inputWidth <= 0 || params->inputHeight <= 0 ||
         params->inputChannels <= 0 || params->numClasses <= 0) {
@@ -316,15 +316,15 @@ static TinyAIImageModel *createMobileNetModel(const TinyAIImageModelParams *para
     }
 
     /* Allocate model structure */
-    TinyAIImageModel *model = (TinyAIImageModel *)malloc(sizeof(TinyAIImageModel));
+    HyperionImageModel *model = (HyperionImageModel *)malloc(sizeof(HyperionImageModel));
     if (!model) {
         fprintf(stderr, "Failed to allocate model structure\n");
         return NULL;
     }
 
     /* Initialize the model */
-    memset(model, 0, sizeof(TinyAIImageModel));
-    model->modelType       = TINYAI_IMAGE_MODEL_MOBILENET;
+    memset(model, 0, sizeof(HyperionImageModel));
+    model->modelType       = HYPERION_IMAGE_MODEL_MOBILENET;
     model->inputWidth      = params->inputWidth;
     model->inputHeight     = params->inputHeight;
     model->inputChannels   = params->inputChannels;
@@ -333,7 +333,7 @@ static TinyAIImageModel *createMobileNetModel(const TinyAIImageModelParams *para
     model->useSIMD         = params->useSIMD;
 
     /* Set default preprocessing parameters */
-    tinyaiImagePreprocessParamsDefault(&model->preprocess);
+    hyperionImagePreprocessParamsDefault(&model->preprocess);
     model->preprocess.targetWidth  = params->inputWidth;
     model->preprocess.targetHeight = params->inputHeight;
 
@@ -511,7 +511,7 @@ static TinyAIImageModel *createMobileNetModel(const TinyAIImageModelParams *para
     /* Allocate memory pool if needed */
     if (!model->memoryPool && !params->customParams) {
         model->memoryPool =
-            tinyaiMemoryPoolCreate(totalWeightBytes, totalActivationBytes, model->useSIMD);
+            hyperionMemoryPoolCreate(totalWeightBytes, totalActivationBytes, model->useSIMD);
         if (!model->memoryPool) {
             fprintf(stderr, "Failed to allocate memory pool\n");
             free(model);
@@ -529,7 +529,7 @@ static TinyAIImageModel *createMobileNetModel(const TinyAIImageModelParams *para
     /* Load weights if specified */
     if (params->weightsFile) {
         /* Load weights from file, handled by model_loader.c */
-        /* This will be implemented in tinyaiLoadModelWeights */
+        /* This will be implemented in hyperionLoadModelWeights */
     }
 
     /* Load labels if specified */
@@ -541,9 +541,9 @@ static TinyAIImageModel *createMobileNetModel(const TinyAIImageModelParams *para
 }
 
 /**
- * Create a TinyCNN model (simpler model for testing)
+ * Create a HyperionCNN model (simpler model for testing)
  */
-static TinyAIImageModel *createTinyCNNModel(const TinyAIImageModelParams *params)
+static HyperionImageModel *createHyperionCNNModel(const HyperionImageModelParams *params)
 {
     if (!params || params->inputWidth <= 0 || params->inputHeight <= 0 ||
         params->inputChannels <= 0 || params->numClasses <= 0) {
@@ -551,15 +551,15 @@ static TinyAIImageModel *createTinyCNNModel(const TinyAIImageModelParams *params
     }
 
     /* Allocate model structure */
-    TinyAIImageModel *model = (TinyAIImageModel *)malloc(sizeof(TinyAIImageModel));
+    HyperionImageModel *model = (HyperionImageModel *)malloc(sizeof(HyperionImageModel));
     if (!model) {
         fprintf(stderr, "Failed to allocate model structure\n");
         return NULL;
     }
 
     /* Initialize the model */
-    memset(model, 0, sizeof(TinyAIImageModel));
-    model->modelType       = TINYAI_IMAGE_MODEL_TINY_CNN;
+    memset(model, 0, sizeof(HyperionImageModel));
+    model->modelType       = HYPERION_IMAGE_MODEL_TINY_CNN;
     model->inputWidth      = params->inputWidth;
     model->inputHeight     = params->inputHeight;
     model->inputChannels   = params->inputChannels;
@@ -568,11 +568,11 @@ static TinyAIImageModel *createTinyCNNModel(const TinyAIImageModelParams *params
     model->useSIMD         = params->useSIMD;
 
     /* Set default preprocessing parameters */
-    tinyaiImagePreprocessParamsDefault(&model->preprocess);
+    hyperionImagePreprocessParamsDefault(&model->preprocess);
     model->preprocess.targetWidth  = params->inputWidth;
     model->preprocess.targetHeight = params->inputHeight;
 
-    /* Configure the TinyCNN architecture (simpler than MobileNet) */
+    /* Configure the HyperionCNN architecture (simpler than MobileNet) */
     int layerIdx    = 0;
     int curWidth    = params->inputWidth;
     int curHeight   = params->inputHeight;
@@ -659,7 +659,7 @@ static TinyAIImageModel *createTinyCNNModel(const TinyAIImageModelParams *params
     /* Allocate memory pool if needed */
     if (!model->memoryPool && !params->customParams) {
         model->memoryPool =
-            tinyaiMemoryPoolCreate(totalWeightBytes, totalActivationBytes, model->useSIMD);
+            hyperionMemoryPoolCreate(totalWeightBytes, totalActivationBytes, model->useSIMD);
         if (!model->memoryPool) {
             fprintf(stderr, "Failed to allocate memory pool\n");
             free(model);
@@ -674,6 +674,17 @@ static TinyAIImageModel *createTinyCNNModel(const TinyAIImageModelParams *params
         model->useExternalMemory = true;
     }
 
+    /* Load weights if specified */
+    if (params->weightsFile) {
+        /* Load weights from file, handled by model_loader.c */
+        /* This will be implemented in hyperionLoadModelWeights */
+    }
+
+    /* Load labels if specified */
+    if (params->labelsFile) {
+        /* TODO: Implement label loading from file */
+    }
+
     return model;
 }
 
@@ -684,25 +695,25 @@ static TinyAIImageModel *createTinyCNNModel(const TinyAIImageModelParams *params
  * @param params Parameters for model creation
  * @return Newly allocated model, or NULL on failure
  */
-TinyAIImageModel *tinyaiImageModelCreate(const TinyAIImageModelParams *params)
+HyperionImageModel *hyperionImageModelCreate(const HyperionImageModelParams *params)
 {
     if (!params) {
         return NULL;
     }
 
     switch (params->modelType) {
-    case TINYAI_IMAGE_MODEL_MOBILENET:
+    case HYPERION_IMAGE_MODEL_MOBILENET:
         return createMobileNetModel(params);
 
-    case TINYAI_IMAGE_MODEL_TINY_CNN:
-        return createTinyCNNModel(params);
+    case HYPERION_IMAGE_MODEL_TINY_CNN:
+        return createHyperionCNNModel(params);
 
-    case TINYAI_IMAGE_MODEL_EFFICIENTNET:
+    case HYPERION_IMAGE_MODEL_EFFICIENTNET:
         /* Not yet implemented */
         fprintf(stderr, "EfficientNet model not yet implemented\n");
         return NULL;
 
-    case TINYAI_IMAGE_MODEL_CUSTOM:
+    case HYPERION_IMAGE_MODEL_CUSTOM:
         /* Custom model implementation would go here */
         fprintf(stderr, "Custom model requires implementation\n");
         return NULL;
@@ -717,7 +728,7 @@ TinyAIImageModel *tinyaiImageModelCreate(const TinyAIImageModelParams *params)
  * Free an image model
  * @param model The model to free
  */
-void tinyaiImageModelFree(TinyAIImageModel *model)
+void hyperionImageModelFree(HyperionImageModel *model)
 {
     if (!model) {
         return;
@@ -735,7 +746,7 @@ void tinyaiImageModelFree(TinyAIImageModel *model)
 
     /* Free memory pool if we own it */
     if (model->memoryPool && !model->useExternalMemory) {
-        tinyaiMemoryPoolFree(model->memoryPool);
+        hyperionMemoryPoolFree(model->memoryPool);
     }
 
     /* Free the model structure */
@@ -750,8 +761,8 @@ void tinyaiImageModelFree(TinyAIImageModel *model)
  * @param results Array to store results (must be pre-allocated for topK results)
  * @return Number of results on success, negative on failure
  */
-int tinyaiImageModelClassify(TinyAIImageModel *model, const TinyAIImage *image, int topK,
-                             TinyAIImageClassResult *results)
+int hyperionImageModelClassify(HyperionImageModel *model, const HyperionImage *image, int topK,
+                             HyperionImageClassResult *results)
 {
     if (!model || !image || !results || topK <= 0) {
         return -1;
@@ -766,7 +777,7 @@ int tinyaiImageModelClassify(TinyAIImageModel *model, const TinyAIImage *image, 
     }
 
     /* Preprocess image if needed */
-    TinyAIImage *preprocessedImage = tinyaiImagePreprocess(image, &model->preprocess);
+    HyperionImage *preprocessedImage = hyperionImagePreprocess(image, &model->preprocess);
     if (!preprocessedImage) {
         fprintf(stderr, "Failed to preprocess image\n");
         free(imageData);
@@ -774,16 +785,16 @@ int tinyaiImageModelClassify(TinyAIImageModel *model, const TinyAIImage *image, 
     }
 
     /* Convert image to float array */
-    if (!tinyaiImageToFloatArray(preprocessedImage, imageData, true)) {
+    if (!hyperionImageToFloatArray(preprocessedImage, imageData, true)) {
         fprintf(stderr, "Failed to convert image to float array\n");
-        tinyaiImageFree(preprocessedImage);
+        hyperionImageFree(preprocessedImage);
         free(imageData);
         return -1;
     }
 
     /* If we created a new image for preprocessing, free it */
     if (preprocessedImage != image) {
-        tinyaiImageFree(preprocessedImage);
+        hyperionImageFree(preprocessedImage);
     }
 
     /* Allocate memory for model output */
@@ -795,7 +806,7 @@ int tinyaiImageModelClassify(TinyAIImageModel *model, const TinyAIImage *image, 
     }
 
     /* Run forward pass */
-    if (!tinyaiImageModelForwardPass(model, imageData, outputData)) {
+    if (!hyperionImageModelForwardPass(model, imageData, outputData)) {
         fprintf(stderr, "Forward pass failed\n");
         free(outputData);
         free(imageData);
@@ -856,7 +867,7 @@ int tinyaiImageModelClassify(TinyAIImageModel *model, const TinyAIImage *image, 
  * @param memoryPool Memory pool to use
  * @return true on success, false on failure
  */
-bool tinyaiImageModelSetMemoryPool(TinyAIImageModel *model, void *memoryPool)
+bool hyperionImageModelSetMemoryPool(HyperionImageModel *model, void *memoryPool)
 {
     if (!model || !memoryPool) {
         return false;
@@ -864,7 +875,7 @@ bool tinyaiImageModelSetMemoryPool(TinyAIImageModel *model, void *memoryPool)
 
     /* Free existing memory pool if we own it */
     if (model->memoryPool && !model->useExternalMemory) {
-        tinyaiMemoryPoolFree(model->memoryPool);
+        hyperionMemoryPoolFree(model->memoryPool);
     }
 
     model->memoryPool        = memoryPool;
@@ -879,7 +890,7 @@ bool tinyaiImageModelSetMemoryPool(TinyAIImageModel *model, void *memoryPool)
  * @param enable Whether to enable SIMD
  * @return true on success, false on failure
  */
-bool tinyaiImageModelEnableSIMD(TinyAIImageModel *model, bool enable)
+bool hyperionImageModelEnableSIMD(HyperionImageModel *model, bool enable)
 {
     if (!model) {
         return false;
@@ -889,7 +900,7 @@ bool tinyaiImageModelEnableSIMD(TinyAIImageModel *model, bool enable)
 
     /* If using our own memory pool, update it */
     if (model->memoryPool && !model->useExternalMemory) {
-        tinyaiMemoryPoolUpdateSIMD(model->memoryPool, enable);
+        hyperionMemoryPoolUpdateSIMD(model->memoryPool, enable);
     }
 
     return true;
@@ -902,7 +913,7 @@ bool tinyaiImageModelEnableSIMD(TinyAIImageModel *model, bool enable)
  * @param activationMemory Output parameter for activation memory (in bytes)
  * @return true on success, false on failure
  */
-bool tinyaiImageModelGetMemoryUsage(const TinyAIImageModel *model, size_t *weightMemory,
+bool hyperionImageModelGetMemoryUsage(const HyperionImageModel *model, size_t *weightMemory,
                                     size_t *activationMemory)
 {
     if (!model || !weightMemory || !activationMemory) {
@@ -935,8 +946,8 @@ bool tinyaiImageModelGetMemoryUsage(const TinyAIImageModel *model, size_t *weigh
  * @param params Output parameter for preprocessing parameters
  * @return true on success, false on failure
  */
-bool tinyaiImageModelGetPreprocessParams(const TinyAIImageModel      *model,
-                                         TinyAIImagePreprocessParams *params)
+bool hyperionImageModelGetPreprocessParams(const HyperionImageModel      *model,
+                                         HyperionImagePreprocessParams *params)
 {
     if (!model || !params) {
         return false;
@@ -949,4 +960,4 @@ bool tinyaiImageModelGetPreprocessParams(const TinyAIImageModel      *model,
 /**
  * Forward pass function declaration - implemented in forward_pass.c
  */
-bool tinyaiImageModelForwardPass(const TinyAIImageModel *model, const float *input, float *output);
+bool hyperionImageModelForwardPass(const HyperionImageModel *model, const float *input, float *output);

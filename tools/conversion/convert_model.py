@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-TinyAI Model Conversion Tool
+Hyperion Model Conversion Tool
 
 This tool converts models from popular deep learning frameworks to TinyAI format.
 Supported input formats:

@@ -1,6 +1,6 @@
-# Installing TinyAI
+# Installing Hyperion
 
-This guide walks you through the process of installing TinyAI on different platforms.
+This document walks you through the process of installing Hyperion on different platforms.
 
 ## System Requirements
 
@@ -31,14 +31,14 @@ This guide walks you through the process of installing TinyAI on different platf
 3. Add the bin directory to your PATH
 4. Open Command Prompt and verify installation:
    ```cmd
-   tinyai --version
+   hyperion --version
    ```
 
 #### Linux
 1. Download the latest .tar.gz release
 2. Extract the archive:
    ```bash
-   tar xzf tinyai-0.1.0.tar.gz
+   tar xzf hyperion-0.1.0.tar.gz
    ```
 3. Install dependencies:
    ```bash
@@ -50,19 +50,19 @@ This guide walks you through the process of installing TinyAI on different platf
    ```
 4. Add to PATH:
    ```bash
-   export PATH=$PATH:/path/to/tinyai/bin
+   export PATH=$PATH:/path/to/hyperion/bin
    ```
 5. Verify installation:
    ```bash
-   tinyai --version
+   hyperion --version
    ```
 
 #### macOS
 1. Download the latest .dmg file
-2. Mount the DMG and drag TinyAI to Applications
+2. Mount the DMG and drag Hyperion to Applications
 3. Open Terminal and verify installation:
    ```bash
-   tinyai --version
+   hyperion --version
    ```
 
 ### 2. Building from Source
@@ -75,8 +75,8 @@ This guide walks you through the process of installing TinyAI on different platf
 #### Steps
 1. Clone the repository:
    ```bash
-   git clone https://github.com/TheLakeMan/tinyai.git
-   cd tinyai
+   git clone https://github.com/TheLakeMan/hyperion.git
+   cd hyperion
    ```
 
 2. Create build directory:
@@ -118,13 +118,13 @@ Run the following commands to verify your installation:
 
 ```bash
 # Check version
-tinyai --version
+hyperion --version
 
 # Run self-test
-tinyai --self-test
+hyperion --self-test
 
 # Try a simple example
-tinyai --run-example hello
+hyperion --run-example hello
 ```
 
 ## Common Issues
@@ -155,4 +155,4 @@ tinyai --run-example hello
 
 - Read the [Quick Start Guide](quickstart.md)
 - Try the [Basic Usage Guide](basic-usage.md)
-- Explore [Examples](../examples/) 
+- Explore [Examples](../examples/)

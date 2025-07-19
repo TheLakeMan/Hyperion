@@ -1,5 +1,5 @@
 """
-TinyAI Cross-Platform Testing Framework
+Hyperion Cross-Platform Testing Framework
 
 This package provides utilities for testing the TinyAI framework across multiple platforms:
 - Run tests on various operating systems (Windows, Linux, macOS)

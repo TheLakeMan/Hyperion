@@ -32,9 +32,9 @@
 
 /* States for topological sorting */
 typedef enum {
-    TINYAI_NODE_NOT_VISITED = 0,
-    TINYAI_NODE_VISITING    = 1,
-    TINYAI_NODE_VISITED     = 2
+    HYPERION_NODE_NOT_VISITED = 0,
+    HYPERION_NODE_VISITING    = 1,
+    HYPERION_NODE_VISITED     = 2
 } NodeVisitState;
 
 /* Checkpoint record */
@@ -56,7 +56,7 @@ typedef struct {
 
 /* Layer in scheduler */
 typedef struct {
-    TinyAILayerDesc desc;
+    HyperionLayerDesc desc;
     int             id;
     int             numDependencies;
     int             dependencies[MAX_DEPS_PER_LAYER];
@@ -69,9 +69,9 @@ typedef struct {
 } Layer;
 
 /* Layer scheduler structure */
-struct TinyAILayerScheduler {
+struct HyperionLayerScheduler {
     /* Configuration */
-    TinyAILayerSchedulerConfig config;
+    HyperionLayerSchedulerConfig config;
 
     /* Layers and execution plan */
     Layer layers[MAX_LAYERS];
@@ -88,7 +88,7 @@ struct TinyAILayerScheduler {
     size_t workspaceSize;
 
     /* Execution statistics */
-    TinyAIExecutionStats stats;
+    HyperionExecutionStats stats;
 
     /* Execution state */
     bool             isPrepared;
@@ -129,18 +129,18 @@ static uint64_t getTimeNs()
 /**
  * Get default scheduler configuration
  */
-void tinyaiLayerSchedulerGetDefaultConfig(TinyAILayerSchedulerConfig *config)
+void hyperionLayerSchedulerGetDefaultConfig(HyperionLayerSchedulerConfig *config)
 {
     if (!config) {
         return;
     }
 
     /* Initialize with zeros */
-    memset(config, 0, sizeof(TinyAILayerSchedulerConfig));
+    memset(config, 0, sizeof(HyperionLayerSchedulerConfig));
 
     /* Set default values */
-    config->memoryStrategy         = TINYAI_MEM_STRATEGY_DEFAULT;
-    config->checkpointPolicy       = TINYAI_CHECKPOINT_SELECTIVE;
+    config->memoryStrategy         = HYPERION_MEM_STRATEGY_DEFAULT;
+    config->checkpointPolicy       = HYPERION_CHECKPOINT_SELECTIVE;
     config->maxMemory              = 0;               /* Unlimited */
     config->preferredWorkspaceSize = 4 * 1024 * 1024; /* 4 MB */
     config->allowInPlace           = true;
@@ -151,9 +151,9 @@ void tinyaiLayerSchedulerGetDefaultConfig(TinyAILayerSchedulerConfig *config)
 /**
  * Create a new layer scheduler
  */
-TinyAILayerScheduler *tinyaiLayerSchedulerCreate(const TinyAILayerSchedulerConfig *config)
+HyperionLayerScheduler *hyperionLayerSchedulerCreate(const HyperionLayerSchedulerConfig *config)
 {
-    TinyAILayerScheduler *scheduler;
+    HyperionLayerScheduler *scheduler;
 
     /* Validate config */
     if (!config) {
@@ -161,16 +161,16 @@ TinyAILayerScheduler *tinyaiLayerSchedulerCreate(const TinyAILayerSchedulerConfi
     }
 
     /* Allocate scheduler */
-    scheduler = (TinyAILayerScheduler *)malloc(sizeof(TinyAILayerScheduler));
+    scheduler = (HyperionLayerScheduler *)malloc(sizeof(HyperionLayerScheduler));
     if (!scheduler) {
         return NULL;
     }
 
     /* Initialize with zeros */
-    memset(scheduler, 0, sizeof(TinyAILayerScheduler));
+    memset(scheduler, 0, sizeof(HyperionLayerScheduler));
 
     /* Copy configuration */
-    memcpy(&scheduler->config, config, sizeof(TinyAILayerSchedulerConfig));
+    memcpy(&scheduler->config, config, sizeof(HyperionLayerSchedulerConfig));
 
     /* Initialize other fields */
     scheduler->numLayers            = 0;
@@ -189,7 +189,7 @@ TinyAILayerScheduler *tinyaiLayerSchedulerCreate(const TinyAILayerSchedulerConfi
 /**
  * Destroy a layer scheduler
  */
-void tinyaiLayerSchedulerDestroy(TinyAILayerScheduler *scheduler)
+void hyperionLayerSchedulerDestroy(HyperionLayerScheduler *scheduler)
 {
     int i;
 
@@ -230,7 +230,7 @@ void tinyaiLayerSchedulerDestroy(TinyAILayerScheduler *scheduler)
 /**
  * Add a layer to the scheduler
  */
-int tinyaiLayerSchedulerAddLayer(TinyAILayerScheduler *scheduler, const TinyAILayerDesc *layer)
+int hyperionLayerSchedulerAddLayer(HyperionLayerScheduler *scheduler, const HyperionLayerDesc *layer)
 {
     Layer *newLayer;
 
@@ -247,7 +247,7 @@ int tinyaiLayerSchedulerAddLayer(TinyAILayerScheduler *scheduler, const TinyAILa
     newLayer = &scheduler->layers[scheduler->numLayers];
 
     /* Copy layer descriptor */
-    memcpy(&newLayer->desc, layer, sizeof(TinyAILayerDesc));
+    memcpy(&newLayer->desc, layer, sizeof(HyperionLayerDesc));
 
     /* Initialize layer */
     newLayer->id               = scheduler->numLayers;
@@ -256,7 +256,7 @@ int tinyaiLayerSchedulerAddLayer(TinyAILayerScheduler *scheduler, const TinyAILa
     newLayer->shouldCheckpoint = false;
     newLayer->checkpointId     = -1;
     newLayer->visited          = false;
-    newLayer->visitState       = TINYAI_NODE_NOT_VISITED;
+    newLayer->visitState       = HYPERION_NODE_NOT_VISITED;
 
     /* Increment layer count */
     scheduler->numLayers++;
@@ -270,7 +270,7 @@ int tinyaiLayerSchedulerAddLayer(TinyAILayerScheduler *scheduler, const TinyAILa
 /**
  * Add a dependency between layers
  */
-int tinyaiLayerSchedulerAddDependency(TinyAILayerScheduler *scheduler, int sourceLayerId,
+int hyperionLayerSchedulerAddDependency(HyperionLayerScheduler *scheduler, int sourceLayerId,
                                       int targetLayerId)
 {
     Layer *sourceLayer, *targetLayer;
@@ -314,7 +314,7 @@ int tinyaiLayerSchedulerAddDependency(TinyAILayerScheduler *scheduler, int sourc
 /**
  * Add a node to the execution order in topological sort
  */
-static int addToExecutionOrder(TinyAILayerScheduler *scheduler, int layerId, int *order,
+static int addToExecutionOrder(HyperionLayerScheduler *scheduler, int layerId, int *order,
                                int *orderIndex)
 {
     int    i, depId;
@@ -333,17 +333,17 @@ static int addToExecutionOrder(TinyAILayerScheduler *scheduler, int layerId, int
     layer = &scheduler->layers[layerId];
 
     /* Check for cycles */
-    if (layer->visitState == TINYAI_NODE_VISITING) {
+    if (layer->visitState == HYPERION_NODE_VISITING) {
         return -1; /* Cycle detected */
     }
 
     /* Skip if already visited */
-    if (layer->visitState == TINYAI_NODE_VISITED) {
+    if (layer->visitState == HYPERION_NODE_VISITED) {
         return 0;
     }
 
     /* Mark as visiting */
-    layer->visitState = TINYAI_NODE_VISITING;
+    layer->visitState = HYPERION_NODE_VISITING;
 
     /* Visit all dependencies */
     for (i = 0; i < layer->numDependencies; i++) {
@@ -354,7 +354,7 @@ static int addToExecutionOrder(TinyAILayerScheduler *scheduler, int layerId, int
     }
 
     /* Mark as visited */
-    layer->visitState = TINYAI_NODE_VISITED;
+    layer->visitState = HYPERION_NODE_VISITED;
 
     /* Add to execution order */
     order[(*orderIndex)++] = layerId;
@@ -365,7 +365,7 @@ static int addToExecutionOrder(TinyAILayerScheduler *scheduler, int layerId, int
 /**
  * Generate execution order using topological sort
  */
-static int generateExecutionOrder(TinyAILayerScheduler *scheduler)
+static int generateExecutionOrder(HyperionLayerScheduler *scheduler)
 {
     int  i, ret, orderIndex = 0;
     int *order;
@@ -382,12 +382,12 @@ static int generateExecutionOrder(TinyAILayerScheduler *scheduler)
 
     /* Initialize visit state */
     for (i = 0; i < scheduler->numLayers; i++) {
-        scheduler->layers[i].visitState = TINYAI_NODE_NOT_VISITED;
+        scheduler->layers[i].visitState = HYPERION_NODE_NOT_VISITED;
     }
 
     /* Perform topological sort */
     for (i = 0; i < scheduler->numLayers; i++) {
-        if (scheduler->layers[i].visitState == TINYAI_NODE_NOT_VISITED) {
+        if (scheduler->layers[i].visitState == HYPERION_NODE_NOT_VISITED) {
             ret = addToExecutionOrder(scheduler, i, order, &orderIndex);
             if (ret != 0) {
                 free(order);
@@ -411,7 +411,7 @@ static int generateExecutionOrder(TinyAILayerScheduler *scheduler)
 /**
  * Determine which layers should be checkpointed
  */
-static void determineCheckpoints(TinyAILayerScheduler *scheduler)
+static void determineCheckpoints(HyperionLayerScheduler *scheduler)
 {
     int    i, j, layerId;
     Layer *layer;
@@ -427,11 +427,11 @@ static void determineCheckpoints(TinyAILayerScheduler *scheduler)
 
     /* Apply checkpoint policy */
     switch (scheduler->config.checkpointPolicy) {
-    case TINYAI_CHECKPOINT_NONE:
+    case HYPERION_CHECKPOINT_NONE:
         /* No checkpoints */
         break;
 
-    case TINYAI_CHECKPOINT_ALL:
+    case HYPERION_CHECKPOINT_ALL:
         /* Checkpoint all eligible layers */
         for (i = 0; i < scheduler->numLayers; i++) {
             layer = &scheduler->layers[i];
@@ -441,7 +441,7 @@ static void determineCheckpoints(TinyAILayerScheduler *scheduler)
         }
         break;
 
-    case TINYAI_CHECKPOINT_SELECTIVE:
+    case HYPERION_CHECKPOINT_SELECTIVE:
         /* Checkpoint layers with multiple dependents */
         for (i = 0; i < scheduler->executionOrderLength; i++) {
             layerId = scheduler->executionOrder[i];
@@ -453,7 +453,7 @@ static void determineCheckpoints(TinyAILayerScheduler *scheduler)
             }
 
             /* For memory-constrained strategies, also checkpoint layers with large outputs */
-            if (scheduler->config.memoryStrategy == TINYAI_MEM_STRATEGY_MIN_MEMORY) {
+            if (scheduler->config.memoryStrategy == HYPERION_MEM_STRATEGY_MIN_MEMORY) {
                 if (layer->desc.checkpointEligible && layer->desc.outputSize > (1024 * 1024)) {
                     layer->shouldCheckpoint = true;
                 }
@@ -473,7 +473,7 @@ static void determineCheckpoints(TinyAILayerScheduler *scheduler)
 /**
  * Estimate memory requirements for execution
  */
-static void estimateMemoryRequirements(TinyAILayerScheduler *scheduler, size_t *peakMemory,
+static void estimateMemoryRequirements(HyperionLayerScheduler *scheduler, size_t *peakMemory,
                                        size_t *totalMemory)
 {
     int    i, j, layerId;
@@ -582,7 +582,7 @@ static void estimateMemoryRequirements(TinyAILayerScheduler *scheduler, size_t *
 /**
  * Prepare execution records
  */
-static int prepareExecutionRecords(TinyAILayerScheduler *scheduler)
+static int prepareExecutionRecords(HyperionLayerScheduler *scheduler)
 {
     int    i, layerId;
     int    recordCount = 0;
@@ -634,7 +634,7 @@ static int prepareExecutionRecords(TinyAILayerScheduler *scheduler)
 /**
  * Prepare the scheduler for execution
  */
-int tinyaiLayerSchedulerPrepare(TinyAILayerScheduler *scheduler)
+int hyperionLayerSchedulerPrepare(HyperionLayerScheduler *scheduler)
 {
     size_t peakMemory, totalMemory;
     int    ret;
@@ -659,7 +659,7 @@ int tinyaiLayerSchedulerPrepare(TinyAILayerScheduler *scheduler)
     if (scheduler->config.maxMemory > 0 && peakMemory > scheduler->config.maxMemory) {
         /* Memory requirement exceeds budget */
         /* Try more aggressive checkpointing to reduce memory usage */
-        scheduler->config.checkpointPolicy = TINYAI_CHECKPOINT_ALL;
+        scheduler->config.checkpointPolicy = HYPERION_CHECKPOINT_ALL;
         determineCheckpoints(scheduler);
         estimateMemoryRequirements(scheduler, &peakMemory, &totalMemory);
 
@@ -695,7 +695,7 @@ int tinyaiLayerSchedulerPrepare(TinyAILayerScheduler *scheduler)
 /**
  * Find or create a checkpoint
  */
-static int findOrCreateCheckpoint(TinyAILayerScheduler *scheduler, int layerId, size_t size)
+static int findOrCreateCheckpoint(HyperionLayerScheduler *scheduler, int layerId, size_t size)
 {
     int i, checkpointId = -1;
 
@@ -742,7 +742,7 @@ static int findOrCreateCheckpoint(TinyAILayerScheduler *scheduler, int layerId, 
 /**
  * Execute a layer
  */
-static int executeLayer(TinyAILayerScheduler *scheduler, int layerId, void *inputData,
+static int executeLayer(HyperionLayerScheduler *scheduler, int layerId, void *inputData,
                         void *outputData)
 {
     Layer   *layer;
@@ -778,7 +778,7 @@ static int executeLayer(TinyAILayerScheduler *scheduler, int layerId, void *inpu
 /**
  * Create a checkpoint for a layer
  */
-static int createCheckpoint(TinyAILayerScheduler *scheduler, int layerId, void *outputData)
+static int createCheckpoint(HyperionLayerScheduler *scheduler, int layerId, void *outputData)
 {
     Layer *layer;
     int    checkpointId;
@@ -816,7 +816,7 @@ static int createCheckpoint(TinyAILayerScheduler *scheduler, int layerId, void *
 /**
  * Execute all layers in the scheduler
  */
-int tinyaiLayerSchedulerExecute(TinyAILayerScheduler *scheduler, void *inputData, void *outputData,
+int hyperionLayerSchedulerExecute(HyperionLayerScheduler *scheduler, void *inputData, void *outputData,
                                 void *userData)
 {
     int    i, j, layerId, dependencyId, checkpointId;
@@ -830,14 +830,14 @@ int tinyaiLayerSchedulerExecute(TinyAILayerScheduler *scheduler, void *inputData
 
     /* Check if scheduler is prepared */
     if (!scheduler->isPrepared) {
-        ret = tinyaiLayerSchedulerPrepare(scheduler);
+        ret = hyperionLayerSchedulerPrepare(scheduler);
         if (ret != 0) {
             return -1;
         }
     }
 
     /* Reset statistics */
-    memset(&scheduler->stats, 0, sizeof(TinyAIExecutionStats));
+    memset(&scheduler->stats, 0, sizeof(HyperionExecutionStats));
 
     /* Clear checkpoint active flags */
     for (i = 0; i < scheduler->numCheckpoints; i++) {
@@ -945,7 +945,7 @@ int tinyaiLayerSchedulerExecute(TinyAILayerScheduler *scheduler, void *inputData
 /**
  * Set checkpoint policy for a specific layer
  */
-int tinyaiLayerSchedulerSetLayerCheckpoint(TinyAILayerScheduler *scheduler, int layerId,
+int hyperionLayerSchedulerSetLayerCheckpoint(HyperionLayerScheduler *scheduler, int layerId,
                                            bool shouldCheckpoint)
 {
     if (!scheduler) {
@@ -969,20 +969,20 @@ int tinyaiLayerSchedulerSetLayerCheckpoint(TinyAILayerScheduler *scheduler, int 
 /**
  * Get execution statistics
  */
-void tinyaiLayerSchedulerGetStats(TinyAILayerScheduler *scheduler, TinyAIExecutionStats *stats)
+void hyperionLayerSchedulerGetStats(HyperionLayerScheduler *scheduler, HyperionExecutionStats *stats)
 {
     if (!scheduler || !stats) {
         return;
     }
 
     /* Copy statistics */
-    memcpy(stats, &scheduler->stats, sizeof(TinyAIExecutionStats));
+    memcpy(stats, &scheduler->stats, sizeof(HyperionExecutionStats));
 }
 
 /**
  * Reset scheduler state
  */
-void tinyaiLayerSchedulerReset(TinyAILayerScheduler *scheduler)
+void hyperionLayerSchedulerReset(HyperionLayerScheduler *scheduler)
 {
     int i;
 
@@ -1002,13 +1002,13 @@ void tinyaiLayerSchedulerReset(TinyAILayerScheduler *scheduler)
     }
 
     /* Reset statistics */
-    memset(&scheduler->stats, 0, sizeof(TinyAIExecutionStats));
+    memset(&scheduler->stats, 0, sizeof(HyperionExecutionStats));
 }
 
 /**
  * Estimate memory requirements
  */
-int tinyaiLayerSchedulerEstimateMemory(TinyAILayerScheduler *scheduler, size_t *peakMemory,
+int hyperionLayerSchedulerEstimateMemory(HyperionLayerScheduler *scheduler, size_t *peakMemory,
                                        size_t *totalMemory)
 {
     if (!scheduler || !peakMemory || !totalMemory) {
@@ -1017,7 +1017,7 @@ int tinyaiLayerSchedulerEstimateMemory(TinyAILayerScheduler *scheduler, size_t *
 
     /* Check if scheduler is prepared */
     if (!scheduler->isPrepared) {
-        int ret = tinyaiLayerSchedulerPrepare(scheduler);
+        int ret = hyperionLayerSchedulerPrepare(scheduler);
         if (ret != 0) {
             return -1;
         }
@@ -1032,8 +1032,8 @@ int tinyaiLayerSchedulerEstimateMemory(TinyAILayerScheduler *scheduler, size_t *
 /**
  * Set memory strategy
  */
-void tinyaiLayerSchedulerSetMemoryStrategy(TinyAILayerScheduler *scheduler,
-                                           TinyAIMemoryStrategy  strategy)
+void hyperionLayerSchedulerSetMemoryStrategy(HyperionLayerScheduler *scheduler,
+                                           HyperionMemoryStrategy  strategy)
 {
     if (!scheduler) {
         return;
@@ -1049,8 +1049,8 @@ void tinyaiLayerSchedulerSetMemoryStrategy(TinyAILayerScheduler *scheduler,
 /**
  * Set checkpoint policy
  */
-void tinyaiLayerSchedulerSetCheckpointPolicy(TinyAILayerScheduler  *scheduler,
-                                             TinyAICheckpointPolicy policy)
+void hyperionLayerSchedulerSetCheckpointPolicy(HyperionLayerScheduler  *scheduler,
+                                             HyperionCheckpointPolicy policy)
 {
     if (!scheduler) {
         return;
@@ -1066,7 +1066,7 @@ void tinyaiLayerSchedulerSetCheckpointPolicy(TinyAILayerScheduler  *scheduler,
 /**
  * Dump scheduler information for debugging
  */
-void tinyaiLayerSchedulerDump(TinyAILayerScheduler *scheduler)
+void hyperionLayerSchedulerDump(HyperionLayerScheduler *scheduler)
 {
     int i, j;
 

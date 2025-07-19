@@ -1,10 +1,10 @@
-# TinyAI Hybrid Capabilities
+# Hyperion Hybrid Capabilities
 
-TinyAI now supports hybrid local/remote execution through the Model Context Protocol (MCP). This document provides an overview of the hybrid capabilities, architecture, and usage.
+Hyperion now supports hybrid local/remote execution through the Model Context Protocol (MCP). This document provides an overview of the hybrid capabilities, architecture, and usage.
 
 ## Overview
 
-The hybrid capabilities enable TinyAI to transparently switch between local execution and remote execution via MCP servers. This provides several benefits:
+The hybrid capabilities enable Hyperion to transparently switch between local execution and remote execution via MCP servers. This provides several benefits:
 
 1. **Scalability**: Handle larger models than would be possible on the local device
 2. **Performance**: Offload computation to more powerful remote servers when needed

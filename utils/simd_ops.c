@@ -1,6 +1,6 @@
 /**
  * @file simd_ops.c
- * @brief Implementation of SIMD-accelerated operations for TinyAI
+ * @brief Implementation of SIMD-accelerated operations for Hyperion
  */
 
 #include "simd_ops.h"
@@ -72,7 +72,7 @@ static void detectSimdCapabilities()
     g_simdInitialized = true;
 }
 
-bool tinyaiSimdAvailable(void)
+bool hyperionSimdAvailable(void)
 {
     if (!g_simdInitialized) {
         detectSimdCapabilities();
@@ -276,7 +276,7 @@ static void matMul4BitAVX(float *out, const uint8_t *weights, const float *input
 #endif
 
 /* Public API implementation that selects the appropriate SIMD version */
-void tinyaiSimdMatMul4Bit(float *out, const uint8_t *weights, const float *input, int rows,
+void hyperionSimdMatMul4Bit(float *out, const uint8_t *weights, const float *input, int rows,
                           int cols, const float *scaleFactors)
 {
     if (!g_simdInitialized) {
@@ -370,7 +370,7 @@ void sigmoidActivateAVX2(float *inout, int size);
 #endif
 
 /* Public API for vector addition */
-void tinyaiSimdVecAdd(float *out, const float *a, const float *b, int size)
+void hyperionSimdVecAdd(float *out, const float *a, const float *b, int size)
 {
     if (!g_simdInitialized) {
         detectSimdCapabilities();
@@ -509,7 +509,7 @@ static void activateAVX(float *inout, int size, int activationType)
 #endif
 
 /* Public API for vector activation */
-void tinyaiSimdActivate(float *inout, int size, int activationType)
+void hyperionSimdActivate(float *inout, int size, int activationType)
 {
     if (!g_simdInitialized) {
         detectSimdCapabilities();
@@ -553,7 +553,7 @@ void tinyaiSimdActivate(float *inout, int size, int activationType)
 
 /* Implement simplified versions of remaining functions */
 
-void tinyaiSimdMatMul4BitMM(float *out, const uint8_t *a, const float *b, int rowsA, int colsA,
+void hyperionSimdMatMul4BitMM(float *out, const uint8_t *a, const float *b, int rowsA, int colsA,
                             int colsB, const float *scaleFactors)
 {
     /* Simplified implementation that calls matrix-vector multiply for each column of B */
@@ -568,7 +568,7 @@ void tinyaiSimdMatMul4BitMM(float *out, const uint8_t *a, const float *b, int ro
             }
 
             /* Multiply A by this column */
-            tinyaiSimdMatMul4Bit(temp, a, column, rowsA, colsA, scaleFactors);
+            hyperionSimdMatMul4Bit(temp, a, column, rowsA, colsA, scaleFactors);
 
             /* Store results in output */
             for (int rowA = 0; rowA < rowsA; rowA++) {
@@ -584,7 +584,7 @@ void tinyaiSimdMatMul4BitMM(float *out, const uint8_t *a, const float *b, int ro
         free(temp);
 }
 
-void tinyaiSimdDequantize4Bit(float *out, const uint8_t *in, int size, const float *scaleFactors)
+void hyperionSimdDequantize4Bit(float *out, const uint8_t *in, int size, const float *scaleFactors)
 {
     int bytesPerBlock = (size + 1) / 2;
 
@@ -604,7 +604,7 @@ void tinyaiSimdDequantize4Bit(float *out, const uint8_t *in, int size, const flo
     }
 }
 
-void tinyaiSimdQuantize4Bit(uint8_t *out, const float *in, int size, float *scaleFactors,
+void hyperionSimdQuantize4Bit(uint8_t *out, const float *in, int size, float *scaleFactors,
                             int blockSize)
 {
     if (!g_simdInitialized) {

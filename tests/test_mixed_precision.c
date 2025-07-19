@@ -1,6 +1,6 @@
 /**
  * @file test_mixed_precision.c
- * @brief Mixed precision quantization tests for TinyAI
+ * @brief Mixed precision quantization tests for Hyperion
  */
 
 #include "../utils/quantize_mixed.h"
@@ -77,7 +77,7 @@ static float *create_test_matrix(int rows, int cols, int pattern)
  * Compare original and dequantized matrices with precision-appropriate tolerance
  */
 static float compare_matrices(const float *original, const float *dequantized, int size,
-                              TinyAIMixedPrecType precision)
+                              HyperionMixedPrecType precision)
 {
     float max_error = 0.0f;
     float avg_error = 0.0f;
@@ -128,7 +128,7 @@ static void test_precision_quantization()
     const int cols = 128;
     const int size = rows * cols;
 
-    TinyAIMixedPrecType precisions[] = {TINYAI_MIXED_PREC_FP32, TINYAI_MIXED_PREC_FP16,
+    HyperionMixedPrecType precisions[] = {TINYAI_MIXED_PREC_FP32, TINYAI_MIXED_PREC_FP16,
                                         TINYAI_MIXED_PREC_INT8, TINYAI_MIXED_PREC_INT4,
                                         TINYAI_MIXED_PREC_INT2};
 
@@ -142,11 +142,11 @@ static void test_precision_quantization()
         float *original = create_test_matrix(rows, cols, pattern);
 
         for (int p = 0; p < 5; p++) {
-            TinyAIMixedPrecType precision = precisions[p];
+            HyperionMixedPrecType precision = precisions[p];
             printf("    Testing %s precision...\n", precision_names[p]);
 
             // Create mixed precision matrix
-            TinyAIMixedPrecMatrix *quantized = tinyaiCreateMixedPrecMatrix(
+            HyperionMixedPrecMatrix *quantized = hyperionCreateMixedPrecMatrix(
                 original, rows, cols, precision, 0.0f); // Auto threshold
 
             ASSERT(quantized != NULL, "Failed to create mixed precision matrix");
@@ -155,7 +155,7 @@ static void test_precision_quantization()
             float *dequantized = (float *)malloc(size * sizeof(float));
             ASSERT(dequantized != NULL, "Failed to allocate dequantized matrix");
 
-            bool success = tinyaiMixedPrecToFloat(quantized, dequantized);
+            bool success = hyperionMixedPrecToFloat(quantized, dequantized);
             ASSERT(success, "Failed to dequantize matrix");
 
             // Compare original and dequantized
@@ -164,7 +164,7 @@ static void test_precision_quantization()
 
             // Calculate memory savings
             size_t original_size     = size * sizeof(float);
-            size_t quantized_size    = tinyaiGetMixedPrecMatrixMemoryUsage(quantized);
+            size_t quantized_size    = hyperionGetMixedPrecMatrixMemoryUsage(quantized);
             float  compression_ratio = (float)original_size / quantized_size;
 
             printf("    Memory usage: Original=%zu bytes, Quantized=%zu bytes, Ratio=%.2fx\n",
@@ -172,7 +172,7 @@ static void test_precision_quantization()
 
             // Cleanup
             free(dequantized);
-            tinyaiFreeMixedPrecMatrix(quantized);
+            hyperionFreeMixedPrecMatrix(quantized);
         }
 
         free(original);
@@ -189,7 +189,7 @@ static void test_per_layer_mixed_precision()
     printf("Testing per-layer mixed precision configuration...\n");
 
     // Create a default config for 3 layers
-    TinyAIMixedPrecConfig *config = tinyaiCreateDefaultMixedPrecConfig(3);
+    HyperionMixedPrecConfig *config = hyperionCreateDefaultMixedPrecConfig(3);
     ASSERT(config != NULL, "Failed to create default mixed precision config");
 
     // Modify config to use different precisions per layer
@@ -216,19 +216,19 @@ static void test_per_layer_mixed_precision()
     float    *dummy = create_test_matrix(rows, cols, 0);
 
     // Create matrices with layer-specific precisions
-    TinyAIMixedPrecMatrix *layer1 = tinyaiCreateMixedPrecMatrix(
+    HyperionMixedPrecMatrix *layer1 = hyperionCreateMixedPrecMatrix(
         dummy, rows, cols, config->layerConfigs[0].weightPrecision, 0.0f);
-    TinyAIMixedPrecMatrix *layer2 = tinyaiCreateMixedPrecMatrix(
+    HyperionMixedPrecMatrix *layer2 = hyperionCreateMixedPrecMatrix(
         dummy, rows, cols, config->layerConfigs[1].weightPrecision, 0.0f);
-    TinyAIMixedPrecMatrix *layer3 = tinyaiCreateMixedPrecMatrix(
+    HyperionMixedPrecMatrix *layer3 = hyperionCreateMixedPrecMatrix(
         dummy, rows, cols, config->layerConfigs[2].weightPrecision, 0.0f);
 
     ASSERT(layer1 != NULL && layer2 != NULL && layer3 != NULL, "Failed to create layer matrices");
 
     // Compare memory usage
-    size_t layer1_size = tinyaiGetMixedPrecMatrixMemoryUsage(layer1);
-    size_t layer2_size = tinyaiGetMixedPrecMatrixMemoryUsage(layer2);
-    size_t layer3_size = tinyaiGetMixedPrecMatrixMemoryUsage(layer3);
+    size_t layer1_size = hyperionGetMixedPrecMatrixMemoryUsage(layer1);
+    size_t layer2_size = hyperionGetMixedPrecMatrixMemoryUsage(layer2);
+    size_t layer3_size = hyperionGetMixedPrecMatrixMemoryUsage(layer3);
 
     printf("    Layer 1 (INT8) size: %zu bytes\n", layer1_size);
     printf("    Layer 2 (INT4) size: %zu bytes\n", layer2_size);
@@ -239,11 +239,11 @@ static void test_per_layer_mixed_precision()
     ASSERT(layer3_size > layer2_size, "FP16 should use more memory than INT4");
 
     // Cleanup
-    tinyaiFreeMixedPrecMatrix(layer1);
-    tinyaiFreeMixedPrecMatrix(layer2);
-    tinyaiFreeMixedPrecMatrix(layer3);
+    hyperionFreeMixedPrecMatrix(layer1);
+    hyperionFreeMixedPrecMatrix(layer2);
+    hyperionFreeMixedPrecMatrix(layer3);
     free(dummy);
-    tinyaiFreeMixedPrecConfig(config);
+    hyperionFreeMixedPrecConfig(config);
 
     printf("  PASS: Per-layer mixed precision configuration tests\n");
 }
@@ -264,32 +264,32 @@ static void test_mixed_precision_operations()
     float *b_data = create_test_matrix(k, n, 1);
 
     // Create mixed precision matrices with different precisions
-    TinyAIMixedPrecMatrix *a_fp32 =
-        tinyaiCreateMixedPrecMatrix(a_data, m, k, TINYAI_MIXED_PREC_FP32, 0.0f);
-    TinyAIMixedPrecMatrix *a_int8 =
-        tinyaiCreateMixedPrecMatrix(a_data, m, k, TINYAI_MIXED_PREC_INT8, 0.0f);
-    TinyAIMixedPrecMatrix *a_int4 =
-        tinyaiCreateMixedPrecMatrix(a_data, m, k, TINYAI_MIXED_PREC_INT4, 0.0f);
+    HyperionMixedPrecMatrix *a_fp32 =
+        hyperionCreateMixedPrecMatrix(a_data, m, k, TINYAI_MIXED_PREC_FP32, 0.0f);
+    HyperionMixedPrecMatrix *a_int8 =
+        hyperionCreateMixedPrecMatrix(a_data, m, k, TINYAI_MIXED_PREC_INT8, 0.0f);
+    HyperionMixedPrecMatrix *a_int4 =
+        hyperionCreateMixedPrecMatrix(a_data, m, k, TINYAI_MIXED_PREC_INT4, 0.0f);
 
-    TinyAIMixedPrecMatrix *b_fp32 =
-        tinyaiCreateMixedPrecMatrix(b_data, k, n, TINYAI_MIXED_PREC_FP32, 0.0f);
-    TinyAIMixedPrecMatrix *b_int8 =
-        tinyaiCreateMixedPrecMatrix(b_data, k, n, TINYAI_MIXED_PREC_INT8, 0.0f);
-    TinyAIMixedPrecMatrix *b_int4 =
-        tinyaiCreateMixedPrecMatrix(b_data, k, n, TINYAI_MIXED_PREC_INT4, 0.0f);
+    HyperionMixedPrecMatrix *b_fp32 =
+        hyperionCreateMixedPrecMatrix(b_data, k, n, TINYAI_MIXED_PREC_FP32, 0.0f);
+    HyperionMixedPrecMatrix *b_int8 =
+        hyperionCreateMixedPrecMatrix(b_data, k, n, TINYAI_MIXED_PREC_INT8, 0.0f);
+    HyperionMixedPrecMatrix *b_int4 =
+        hyperionCreateMixedPrecMatrix(b_data, k, n, TINYAI_MIXED_PREC_INT4, 0.0f);
 
     ASSERT(a_fp32 != NULL && a_int8 != NULL && a_int4 != NULL, "Failed to create A matrices");
     ASSERT(b_fp32 != NULL && b_int8 != NULL && b_int4 != NULL, "Failed to create B matrices");
 
     // Allocate result matrices
-    TinyAIMixedPrecMatrix *c_fp32 = (TinyAIMixedPrecMatrix *)malloc(sizeof(TinyAIMixedPrecMatrix));
+    HyperionMixedPrecMatrix *c_fp32 = (HyperionMixedPrecMatrix *)malloc(sizeof(HyperionMixedPrecMatrix));
     c_fp32->rows                  = m;
     c_fp32->cols                  = n;
     c_fp32->precision             = TINYAI_MIXED_PREC_FP32;
     c_fp32->data                  = malloc(m * n * sizeof(float));
     c_fp32->dataSize              = m * n * sizeof(float);
 
-    TinyAIMixedPrecMatrix *c_int8 = (TinyAIMixedPrecMatrix *)malloc(sizeof(TinyAIMixedPrecMatrix));
+    HyperionMixedPrecMatrix *c_int8 = (HyperionMixedPrecMatrix *)malloc(sizeof(HyperionMixedPrecMatrix));
     c_int8->rows                  = m;
     c_int8->cols                  = n;
     c_int8->precision             = TINYAI_MIXED_PREC_INT8;
@@ -298,11 +298,11 @@ static void test_mixed_precision_operations()
 
     // Perform matrix multiplications
     printf("  Testing FP32 x FP32 matrix multiplication...\n");
-    bool fp32_success = tinyaiMixedPrecMatMul(a_fp32, b_fp32, c_fp32);
+    bool fp32_success = hyperionMixedPrecMatMul(a_fp32, b_fp32, c_fp32);
     ASSERT(fp32_success, "FP32 matrix multiplication failed");
 
     printf("  Testing INT8 x INT8 matrix multiplication...\n");
-    bool int8_success = tinyaiMixedPrecMatMul(a_int8, b_int8, c_int8);
+    bool int8_success = hyperionMixedPrecMatMul(a_int8, b_int8, c_int8);
     ASSERT(int8_success, "INT8 matrix multiplication failed");
 
     printf("  Testing INT4 x INT4 matrix multiplication...\n");
@@ -347,12 +347,12 @@ static void test_mixed_precision_operations()
     free(a_data);
     free(b_data);
 
-    tinyaiFreeMixedPrecMatrix(a_fp32);
-    tinyaiFreeMixedPrecMatrix(a_int8);
-    tinyaiFreeMixedPrecMatrix(a_int4);
-    tinyaiFreeMixedPrecMatrix(b_fp32);
-    tinyaiFreeMixedPrecMatrix(b_int8);
-    tinyaiFreeMixedPrecMatrix(b_int4);
+    hyperionFreeMixedPrecMatrix(a_fp32);
+    hyperionFreeMixedPrecMatrix(a_int8);
+    hyperionFreeMixedPrecMatrix(a_int4);
+    hyperionFreeMixedPrecMatrix(b_fp32);
+    hyperionFreeMixedPrecMatrix(b_int8);
+    hyperionFreeMixedPrecMatrix(b_int4);
 
     free(c_fp32->data);
     free(c_int8->data);

@@ -2,13 +2,13 @@
 
 ## Overview
 
-The Performance Tools API provides functions for monitoring and optimizing performance in TinyAI, including execution time tracking, memory usage monitoring, and optimization impact assessment.
+The Performance Tools API provides functions for monitoring and optimizing performance in Hyperion, including execution time tracking, memory usage monitoring, and optimization impact assessment.
 
 ## Performance Configuration
 
-### `tinyai_configure_performance()`
+### `hyperion_configure_performance()`
 ```c
-void tinyai_configure_performance(const TinyAIPerformanceConfig* config);
+void hyperion_configure_performance(const HyperionPerformanceConfig* config);
 ```
 Configures performance monitoring settings.
 
@@ -17,18 +17,18 @@ Configures performance monitoring settings.
 
 **Example:**
 ```c
-TinyAIPerformanceConfig perf_config = {
+HyperionPerformanceConfig perf_config = {
     .track_execution_time = true,
     .track_memory_usage = true,
     .track_cpu_usage = true,
     .track_cache_usage = true
 };
-tinyai_configure_performance(&perf_config);
+hyperion_configure_performance(&perf_config);
 ```
 
-### `tinyai_get_performance_config()`
+### `hyperion_get_performance_config()`
 ```c
-void tinyai_get_performance_config(TinyAIPerformanceConfig* config);
+void hyperion_get_performance_config(HyperionPerformanceConfig* config);
 ```
 Retrieves the current performance configuration.
 
@@ -37,21 +37,21 @@ Retrieves the current performance configuration.
 
 ## Performance Monitoring
 
-### `tinyai_start_performance_tracking()`
+### `hyperion_start_performance_tracking()`
 ```c
-void tinyai_start_performance_tracking(void);
+void hyperion_start_performance_tracking(void);
 ```
 Starts performance tracking.
 
-### `tinyai_stop_performance_tracking()`
+### `hyperion_stop_performance_tracking()`
 ```c
-void tinyai_stop_performance_tracking(void);
+void hyperion_stop_performance_tracking(void);
 ```
 Stops performance tracking.
 
-### `tinyai_get_performance_metrics()`
+### `hyperion_get_performance_metrics()`
 ```c
-void tinyai_get_performance_metrics(TinyAIPerformanceMetrics* metrics);
+void hyperion_get_performance_metrics(HyperionPerformanceMetrics* metrics);
 ```
 Retrieves current performance metrics.
 
@@ -60,26 +60,26 @@ Retrieves current performance metrics.
 
 **Example:**
 ```c
-TinyAIPerformanceMetrics metrics;
-tinyai_get_performance_metrics(&metrics);
+HyperionPerformanceMetrics metrics;
+hyperion_get_performance_metrics(&metrics);
 printf("Execution time: %f ms\n", metrics.execution_time);
 printf("Memory usage: %zu bytes\n", metrics.memory_usage);
 ```
 
 ## Performance Analysis
 
-### `tinyai_analyze_performance()`
+### `hyperion_analyze_performance()`
 ```c
-void tinyai_analyze_performance(TinyAIPerformanceAnalysis* analysis);
+void hyperion_analyze_performance(HyperionPerformanceAnalysis* analysis);
 ```
 Analyzes performance data and generates recommendations.
 
 **Parameters:**
 - `analysis`: Pointer to store analysis results
 
-### `tinyai_generate_performance_report()`
+### `hyperion_generate_performance_report()`
 ```c
-void tinyai_generate_performance_report(const char* filename);
+void hyperion_generate_performance_report(const char* filename);
 ```
 Generates a performance report and saves it to a file.
 
@@ -88,18 +88,18 @@ Generates a performance report and saves it to a file.
 
 ## Optimization Impact
 
-### `tinyai_measure_optimization_impact()`
+### `hyperion_measure_optimization_impact()`
 ```c
-void tinyai_measure_optimization_impact(TinyAIOptimizationImpact* impact);
+void hyperion_measure_optimization_impact(HyperionOptimizationImpact* impact);
 ```
 Measures the impact of optimizations.
 
 **Parameters:**
 - `impact`: Pointer to store impact metrics
 
-### `tinyai_get_optimization_recommendations()`
+### `hyperion_get_optimization_recommendations()`
 ```c
-void tinyai_get_optimization_recommendations(TinyAIOptimizationRecommendations* recs);
+void hyperion_get_optimization_recommendations(HyperionOptimizationRecommendations* recs);
 ```
 Gets optimization recommendations based on performance data.
 
@@ -108,7 +108,7 @@ Gets optimization recommendations based on performance data.
 
 ## Data Types
 
-### `TinyAIPerformanceConfig`
+### `HyperionPerformanceConfig`
 ```c
 typedef struct {
     bool track_execution_time;
@@ -116,11 +116,11 @@ typedef struct {
     bool track_cpu_usage;
     bool track_cache_usage;
     bool enable_analysis;
-} TinyAIPerformanceConfig;
+} HyperionPerformanceConfig;
 ```
 Performance configuration structure.
 
-### `TinyAIPerformanceMetrics`
+### `HyperionPerformanceMetrics`
 ```c
 typedef struct {
     double execution_time;
@@ -128,40 +128,40 @@ typedef struct {
     double cpu_usage;
     size_t cache_hits;
     size_t cache_misses;
-} TinyAIPerformanceMetrics;
+} HyperionPerformanceMetrics;
 ```
 Performance metrics structure.
 
-### `TinyAIPerformanceAnalysis`
+### `HyperionPerformanceAnalysis`
 ```c
 typedef struct {
     double speedup_factor;
     double memory_reduction;
     double cpu_efficiency;
     char* recommendations;
-} TinyAIPerformanceAnalysis;
+} HyperionPerformanceAnalysis;
 ```
 Performance analysis structure.
 
-### `TinyAIOptimizationImpact`
+### `HyperionOptimizationImpact`
 ```c
 typedef struct {
     double speedup;
     double memory_savings;
     double cpu_improvement;
     double cache_improvement;
-} TinyAIOptimizationImpact;
+} HyperionOptimizationImpact;
 ```
 Optimization impact structure.
 
-### `TinyAIOptimizationRecommendations`
+### `HyperionOptimizationRecommendations`
 ```c
 typedef struct {
     char* memory_optimizations;
     char* cpu_optimizations;
     char* cache_optimizations;
     char* general_recommendations;
-} TinyAIOptimizationRecommendations;
+} HyperionOptimizationRecommendations;
 ```
 Optimization recommendations structure.
 
@@ -179,52 +179,52 @@ Optimization recommendations structure.
 ### Performance Monitoring
 ```c
 // Configure performance tracking
-TinyAIPerformanceConfig perf_config = {
+HyperionPerformanceConfig perf_config = {
     .track_execution_time = true,
     .track_memory_usage = true
 };
-tinyai_configure_performance(&perf_config);
+hyperion_configure_performance(&perf_config);
 
 // Start tracking
-tinyai_start_performance_tracking();
+hyperion_start_performance_tracking();
 
 // Perform operations
 // ...
 
 // Get metrics
-TinyAIPerformanceMetrics metrics;
-tinyai_get_performance_metrics(&metrics);
+HyperionPerformanceMetrics metrics;
+hyperion_get_performance_metrics(&metrics);
 printf("Execution time: %f ms\n", metrics.execution_time);
 printf("Memory usage: %zu bytes\n", metrics.memory_usage);
 
 // Stop tracking
-tinyai_stop_performance_tracking();
+hyperion_stop_performance_tracking();
 ```
 
 ### Performance Analysis
 ```c
 // Analyze performance
-TinyAIPerformanceAnalysis analysis;
-tinyai_analyze_performance(&analysis);
+HyperionPerformanceAnalysis analysis;
+hyperion_analyze_performance(&analysis);
 printf("Speedup factor: %f\n", analysis.speedup_factor);
 printf("Memory reduction: %f%%\n", analysis.memory_reduction * 100);
 printf("Recommendations: %s\n", analysis.recommendations);
 
 // Generate report
-tinyai_generate_performance_report("performance_report.txt");
+hyperion_generate_performance_report("performance_report.txt");
 ```
 
 ### Optimization Impact
 ```c
 // Measure optimization impact
-TinyAIOptimizationImpact impact;
-tinyai_measure_optimization_impact(&impact);
+HyperionOptimizationImpact impact;
+hyperion_measure_optimization_impact(&impact);
 printf("Speedup: %f\n", impact.speedup);
 printf("Memory savings: %f%%\n", impact.memory_savings * 100);
 
 // Get recommendations
-TinyAIOptimizationRecommendations recs;
-tinyai_get_optimization_recommendations(&recs);
+HyperionOptimizationRecommendations recs;
+hyperion_get_optimization_recommendations(&recs);
 printf("Memory optimizations: %s\n", recs.memory_optimizations);
 printf("CPU optimizations: %s\n", recs.cpu_optimizations);
 ```
@@ -233,4 +233,4 @@ printf("CPU optimizations: %s\n", recs.cpu_optimizations);
 
 - [Core API](core.md)
 - [Memory Management API](memory.md)
-- [Models API](models.md) 
+- [Models API](models.md)

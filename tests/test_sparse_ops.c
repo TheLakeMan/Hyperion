@@ -59,7 +59,7 @@ static bool testCSRMatrixConversion()
     generateRandomSparseMatrix(dense, TEST_ROWS, TEST_COLS, SPARSITY);
 
     /* Convert to CSR format */
-    TinyAICSRMatrix *csr = tinyaiCreateCSRMatrixFromDense(dense, TEST_ROWS, TEST_COLS, THRESHOLD);
+    HyperionCSRMatrix *csr = hyperionCreateCSRMatrixFromDense(dense, TEST_ROWS, TEST_COLS, THRESHOLD);
     if (!csr) {
         printf("Failed to create CSR matrix\n");
         free(dense);
@@ -70,15 +70,15 @@ static bool testCSRMatrixConversion()
     float *denseCopy = (float *)malloc(TEST_ROWS * TEST_COLS * sizeof(float));
     if (!denseCopy) {
         printf("Memory allocation failed\n");
-        tinyaiCSRMatrixFree(csr);
+        hyperionCSRMatrixFree(csr);
         free(dense);
         return false;
     }
 
-    if (!tinyaiCSRMatrixToDense(csr, denseCopy)) {
+    if (!hyperionCSRMatrixToDense(csr, denseCopy)) {
         printf("Failed to convert CSR matrix back to dense format\n");
         free(denseCopy);
-        tinyaiCSRMatrixFree(csr);
+        hyperionCSRMatrixFree(csr);
         free(dense);
         return false;
     }
@@ -111,12 +111,12 @@ static bool testCSRMatrixConversion()
     }
 
     /* Calculate compression ratio */
-    float compressionRatio = tinyaiCSRMatrixCompressionRatio(csr);
+    float compressionRatio = hyperionCSRMatrixCompressionRatio(csr);
     printf("CSR compression ratio: %.2f\n", compressionRatio);
 
     /* Clean up */
     free(denseCopy);
-    tinyaiCSRMatrixFree(csr);
+    hyperionCSRMatrixFree(csr);
     free(dense);
 
     return success;
@@ -138,8 +138,8 @@ static bool test4BitCSRMatrixConversion()
     generateRandomSparseMatrix(dense, TEST_ROWS, TEST_COLS, SPARSITY);
 
     /* Convert to 4-bit quantized CSR format */
-    TinyAICSRMatrix4Bit *csr =
-        tinyaiCreateCSRMatrix4BitFromDense(dense, TEST_ROWS, TEST_COLS, THRESHOLD);
+    HyperionCSRMatrix4Bit *csr =
+        hyperionCreateCSRMatrix4BitFromDense(dense, TEST_ROWS, TEST_COLS, THRESHOLD);
     if (!csr) {
         printf("Failed to create 4-bit quantized CSR matrix\n");
         free(dense);
@@ -150,15 +150,15 @@ static bool test4BitCSRMatrixConversion()
     float *denseCopy = (float *)malloc(TEST_ROWS * TEST_COLS * sizeof(float));
     if (!denseCopy) {
         printf("Memory allocation failed\n");
-        tinyaiCSRMatrix4BitFree(csr);
+        hyperionCSRMatrix4BitFree(csr);
         free(dense);
         return false;
     }
 
-    if (!tinyaiCSRMatrix4BitToDense(csr, denseCopy)) {
+    if (!hyperionCSRMatrix4BitToDense(csr, denseCopy)) {
         printf("Failed to convert 4-bit quantized CSR matrix back to dense format\n");
         free(denseCopy);
-        tinyaiCSRMatrix4BitFree(csr);
+        hyperionCSRMatrix4BitFree(csr);
         free(dense);
         return false;
     }
@@ -208,12 +208,12 @@ static bool test4BitCSRMatrixConversion()
     }
 
     /* Calculate compression ratio */
-    float compressionRatio = tinyaiCSRMatrix4BitCompressionRatio(csr);
+    float compressionRatio = hyperionCSRMatrix4BitCompressionRatio(csr);
     printf("4-bit quantized CSR compression ratio: %.2f\n", compressionRatio);
 
     /* Clean up */
     free(denseCopy);
-    tinyaiCSRMatrix4BitFree(csr);
+    hyperionCSRMatrix4BitFree(csr);
     free(dense);
 
     return success;
@@ -246,7 +246,7 @@ static bool testCSRMatrixVectorMul()
     generateRandomVector(x, TEST_COLS);
 
     /* Convert to CSR format */
-    TinyAICSRMatrix *csr = tinyaiCreateCSRMatrixFromDense(dense, TEST_ROWS, TEST_COLS, THRESHOLD);
+    HyperionCSRMatrix *csr = hyperionCreateCSRMatrixFromDense(dense, TEST_ROWS, TEST_COLS, THRESHOLD);
     if (!csr) {
         printf("Failed to create CSR matrix\n");
         free(x);
@@ -259,7 +259,7 @@ static bool testCSRMatrixVectorMul()
     float *y2 = (float *)malloc(TEST_ROWS * sizeof(float));
     if (!y1 || !y2) {
         printf("Memory allocation failed\n");
-        tinyaiCSRMatrixFree(csr);
+        hyperionCSRMatrixFree(csr);
         free(x);
         free(dense);
         if (y1)
@@ -278,11 +278,11 @@ static bool testCSRMatrixVectorMul()
     }
 
     /* Calculate result using CSR matrix-vector multiplication */
-    if (!tinyaiCSRMatrixVectorMul(csr, x, y2)) {
+    if (!hyperionCSRMatrixVectorMul(csr, x, y2)) {
         printf("Failed to perform CSR matrix-vector multiplication\n");
         free(y2);
         free(y1);
-        tinyaiCSRMatrixFree(csr);
+        hyperionCSRMatrixFree(csr);
         free(x);
         free(dense);
         return false;
@@ -312,7 +312,7 @@ static bool testCSRMatrixVectorMul()
     float *y3 = (float *)malloc(TEST_ROWS * sizeof(float));
     if (y3) {
         /* Calculate result using SIMD-accelerated CSR matrix-vector multiplication */
-        if (tinyaiCSRMatrixVectorMulSIMD(csr, x, y3)) {
+        if (hyperionCSRMatrixVectorMulSIMD(csr, x, y3)) {
             /* Calculate mean squared error */
             float mse_simd = 0.0f;
             for (int i = 0; i < TEST_ROWS; i++) {
@@ -339,7 +339,7 @@ static bool testCSRMatrixVectorMul()
     /* Clean up */
     free(y2);
     free(y1);
-    tinyaiCSRMatrixFree(csr);
+    hyperionCSRMatrixFree(csr);
     free(x);
     free(dense);
 
@@ -373,8 +373,8 @@ static bool test4BitCSRMatrixVectorMul()
     generateRandomVector(x, TEST_COLS);
 
     /* Convert to 4-bit quantized CSR format */
-    TinyAICSRMatrix4Bit *csr =
-        tinyaiCreateCSRMatrix4BitFromDense(dense, TEST_ROWS, TEST_COLS, THRESHOLD);
+    HyperionCSRMatrix4Bit *csr =
+        hyperionCreateCSRMatrix4BitFromDense(dense, TEST_ROWS, TEST_COLS, THRESHOLD);
     if (!csr) {
         printf("Failed to create 4-bit quantized CSR matrix\n");
         free(x);
@@ -387,7 +387,7 @@ static bool test4BitCSRMatrixVectorMul()
     float *y2 = (float *)malloc(TEST_ROWS * sizeof(float));
     if (!y1 || !y2) {
         printf("Memory allocation failed\n");
-        tinyaiCSRMatrix4BitFree(csr);
+        hyperionCSRMatrix4BitFree(csr);
         free(x);
         free(dense);
         if (y1)
@@ -406,11 +406,11 @@ static bool test4BitCSRMatrixVectorMul()
     }
 
     /* Calculate result using 4-bit quantized CSR matrix-vector multiplication */
-    if (!tinyaiCSRMatrix4BitVectorMul(csr, x, y2)) {
+    if (!hyperionCSRMatrix4BitVectorMul(csr, x, y2)) {
         printf("Failed to perform 4-bit quantized CSR matrix-vector multiplication\n");
         free(y2);
         free(y1);
-        tinyaiCSRMatrix4BitFree(csr);
+        hyperionCSRMatrix4BitFree(csr);
         free(x);
         free(dense);
         return false;
@@ -443,7 +443,7 @@ static bool test4BitCSRMatrixVectorMul()
     if (y3) {
         /* Calculate result using SIMD-accelerated 4-bit quantized CSR matrix-vector multiplication
          */
-        if (tinyaiCSRMatrix4BitVectorMulSIMD(csr, x, y3)) {
+        if (hyperionCSRMatrix4BitVectorMulSIMD(csr, x, y3)) {
             /* Calculate mean squared error */
             float mse_simd = 0.0f;
             for (int i = 0; i < TEST_ROWS; i++) {
@@ -471,7 +471,7 @@ static bool test4BitCSRMatrixVectorMul()
     /* Clean up */
     free(y2);
     free(y1);
-    tinyaiCSRMatrix4BitFree(csr);
+    hyperionCSRMatrix4BitFree(csr);
     free(x);
     free(dense);
 

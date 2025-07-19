@@ -75,9 +75,9 @@ async function generateText(prompt) {
 
     // Create a basic mock response
     const responses = [
-        `TinyAI is processing: "${prompt}"\n\nThis is a mock response since the actual TinyAI model backend is not running. In a real implementation, this would connect to the C-based web server that loads the TinyAI model and tokenizer.`,
-        `Response to: "${prompt}"\n\nThis is a demonstration of the TinyAI web interface. The actual text generation would require compiling and running the backend server implemented in interface/web_server.c with all its dependencies.`,
-        `Prompt: "${prompt}"\n\nTinyAI is an ultra-lightweight AI model designed for efficient inference on resource-constrained devices. This is a mock response for demonstration purposes.`
+        `Hyperion is processing: "${prompt}"\n\nThis is a mock response since the actual Hyperion model backend is not running. In a real implementation, this would connect to the C-based web server that loads the Hyperion model and tokenizer.`,
+        `Response to: "${prompt}"\n\nThis is a demonstration of the Hyperion web interface. The actual text generation would require compiling and running the backend server implemented in interface/web_server.c with all its dependencies.`,
+        `Prompt: "${prompt}"\n\nHyperion is an ultra-lightweight AI model designed for efficient inference on resource-constrained devices. This is a mock response for demonstration purposes.`
     ];
 
     // Return a random response from the array

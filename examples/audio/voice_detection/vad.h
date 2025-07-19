@@ -1,13 +1,13 @@
 /**
  * @file vad.h
- * @brief Voice Activity Detection for TinyAI
+ * @brief Voice Activity Detection for Hyperion
  *
  * This header defines the voice activity detection functionality
- * for TinyAI, supporting energy-based and zero-crossing detection.
+ * for Hyperion, supporting energy-based and zero-crossing detection.
  */
 
-#ifndef TINYAI_VAD_H
-#define TINYAI_VAD_H
+#ifndef HYPERION_VAD_H
+#define HYPERION_VAD_H
 
 #include "../../../models/audio/audio_model.h"
 #include "../../../models/audio/audio_utils.h"
@@ -31,13 +31,13 @@ typedef struct {
     float zcrThreshold;    /* Zero-crossing rate threshold */
     bool  smoothing;       /* Whether to apply smoothing */
     int   hangoverFrames;  /* Number of hangover frames */
-} TinyAIVADConfig;
+} HyperionVADConfig;
 
 /**
  * Voice activity detection state
  */
 typedef struct {
-    TinyAIVADConfig config;          /* VAD configuration */
+    HyperionVADConfig config;          /* VAD configuration */
     int             sampleRate;      /* Sample rate of audio */
     int             samplesPerFrame; /* Number of samples per frame */
     int             samplesPerShift; /* Number of samples per shift */
@@ -52,13 +52,13 @@ typedef struct {
     float           runningEnergy;   /* Running average of energy */
     float           runningZcr;      /* Running average of ZCR */
     int             frameCount;      /* Number of frames processed */
-} TinyAIVADState;
+} HyperionVADState;
 
 /**
  * Initialize VAD configuration with default values
  * @param config Configuration structure to initialize
  */
-void tinyaiVADInitConfig(TinyAIVADConfig *config);
+void hyperionVADInitConfig(HyperionVADConfig *config);
 
 /**
  * Create a new VAD state
@@ -66,20 +66,20 @@ void tinyaiVADInitConfig(TinyAIVADConfig *config);
  * @param sampleRate Sample rate of audio in Hz
  * @return New VAD state, or NULL on failure
  */
-TinyAIVADState *tinyaiVADCreate(const TinyAIVADConfig *config, int sampleRate);
+HyperionVADState *hyperionVADCreate(const HyperionVADConfig *config, int sampleRate);
 
 /**
  * Free VAD state
  * @param state VAD state to free
  */
-void tinyaiVADFree(TinyAIVADState *state);
+void hyperionVADFree(HyperionVADState *state);
 
 /**
  * Reset VAD state
  * @param state VAD state to reset
  * @return true on success, false on failure
  */
-bool tinyaiVADReset(TinyAIVADState *state);
+bool hyperionVADReset(HyperionVADState *state);
 
 /**
  * Process a frame of audio samples
@@ -89,7 +89,7 @@ bool tinyaiVADReset(TinyAIVADState *state);
  * @param activity Output voice activity (true = voice, false = silence)
  * @return true on success, false on failure
  */
-bool tinyaiVADProcessFrame(TinyAIVADState *state, const float *samples, int numSamples,
+bool hyperionVADProcessFrame(HyperionVADState *state, const float *samples, int numSamples,
                            bool *activity);
 
 /**
@@ -100,7 +100,7 @@ bool tinyaiVADProcessFrame(TinyAIVADState *state, const float *samples, int numS
  * @param activitySize Output size of activity array
  * @return true on success, false on failure
  */
-bool tinyaiVADProcessAudio(TinyAIVADState *state, const TinyAIAudioData *audio, bool **activity,
+bool hyperionVADProcessAudio(HyperionVADState *state, const HyperionAudioData *audio, bool **activity,
                            int *activitySize);
 
 /**
@@ -109,10 +109,10 @@ bool tinyaiVADProcessAudio(TinyAIVADState *state, const TinyAIAudioData *audio, 
  * @param activitySize Size of activity array
  * @param width Width of visualization in characters
  */
-void tinyaiVADVisualize(const bool *activity, int activitySize, int width);
+void hyperionVADVisualize(const bool *activity, int activitySize, int width);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* TINYAI_VAD_H */
+#endif /* HYPERION_VAD_H */

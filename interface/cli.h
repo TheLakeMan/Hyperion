@@ -1,11 +1,11 @@
 /**
- * TinyAI Command Line Interface Header
+ * Hyperion Command Line Interface Header
  *
- * This header defines the command-line interface for TinyAI.
+ * This header defines the command-line interface for Hyperion.
  */
 
-#ifndef TINYAI_CLI_H
-#define TINYAI_CLI_H
+#ifndef HYPERION_CLI_H
+#define HYPERION_CLI_H
 
 #include "../core/mcp/mcp_client.h"
 #include "../models/text/generate.h"
@@ -15,25 +15,25 @@
 /* ----------------- Constants ----------------- */
 
 /* Maximum command length */
-#define TINYAI_CLI_MAX_COMMAND_LENGTH 1024
+#define HYPERION_CLI_MAX_COMMAND_LENGTH 1024
 
 /* Maximum number of arguments */
-#define TINYAI_CLI_MAX_ARGS 64
+#define HYPERION_CLI_MAX_ARGS 64
 
 /* Maximum number of commands */
-#define TINYAI_CLI_MAX_COMMANDS 32
+#define HYPERION_CLI_MAX_COMMANDS 32
 
 /* Command exit codes */
-#define TINYAI_CLI_EXIT_SUCCESS 0
-#define TINYAI_CLI_EXIT_ERROR 1
-#define TINYAI_CLI_EXIT_QUIT 2
+#define HYPERION_CLI_EXIT_SUCCESS 0
+#define HYPERION_CLI_EXIT_ERROR 1
+#define HYPERION_CLI_EXIT_QUIT 2
 
 /* ----------------- Types ----------------- */
 
 /**
  * Command handler function type
  */
-typedef int (*TinyAICommandHandler)(int argc, char **argv, void *context);
+typedef int (*HyperionCommandHandler)(int argc, char **argv, void *context);
 
 /**
  * Command structure
@@ -42,22 +42,22 @@ typedef struct {
     const char          *name;        /* Command name */
     const char          *description; /* Command description */
     const char          *usage;       /* Command usage */
-    TinyAICommandHandler handler;     /* Command handler */
-} TinyAICommand;
+    HyperionCommandHandler handler;     /* Command handler */
+} HyperionCommand;
 
 /**
  * CLI context structure
  */
 typedef struct {
     /* Model and tokenizer */
-    TinyAIModel     *model;         /* Current model */
-    TinyAITokenizer *tokenizer;     /* Current tokenizer */
+    HyperionModel     *model;         /* Current model */
+    HyperionTokenizer *tokenizer;     /* Current tokenizer */
     char            *modelPath;     /* Current model path */
     char            *tokenizerPath; /* Current tokenizer path */
 
     /* MCP and hybrid generation */
-    TinyAIMcpClient      *mcpClient;    /* MCP client (if connected) */
-    TinyAIHybridGenerate *hybridGen;    /* Hybrid generation context */
+    HyperionMcpClient      *mcpClient;    /* MCP client (if connected) */
+    HyperionHybridGenerate *hybridGen;    /* Hybrid generation context */
     char                 *mcpServerUrl; /* MCP server URL */
     int                   useHybrid;    /* Whether to use hybrid generation */
     int                   forceRemote;  /* Force remote execution for next generation */
@@ -66,8 +66,8 @@ typedef struct {
     /* CLI state */
     int                    interactive; /* Whether in interactive mode */
     int                    verbose;     /* Verbosity level */
-    TinyAIGenerationParams params;      /* Current generation parameters */
-} TinyAICLIContext;
+    HyperionGenerationParams params;      /* Current generation parameters */
+} HyperionCLIContext;
 
 /* ----------------- API Functions ----------------- */
 
@@ -77,14 +77,14 @@ typedef struct {
  * @param context CLI context
  * @return 0 on success, non-zero on error
  */
-int tinyaiCLIInit(TinyAICLIContext *context);
+int hyperionCLIInit(HyperionCLIContext *context);
 
 /**
  * Clean up the CLI
  *
  * @param context CLI context
  */
-void tinyaiCLICleanup(TinyAICLIContext *context);
+void hyperionCLICleanup(HyperionCLIContext *context);
 
 /**
  * Parse command-line arguments
@@ -94,7 +94,7 @@ void tinyaiCLICleanup(TinyAICLIContext *context);
  * @param argv Argument array
  * @return 0 on success, non-zero on error
  */
-int tinyaiCLIParseArgs(TinyAICLIContext *context, int argc, char **argv);
+int hyperionCLIParseArgs(HyperionCLIContext *context, int argc, char **argv);
 
 /**
  * Run the CLI
@@ -104,7 +104,7 @@ int tinyaiCLIParseArgs(TinyAICLIContext *context, int argc, char **argv);
  * @param argv Argument array
  * @return Exit code
  */
-int tinyaiCLIRun(TinyAICLIContext *context, int argc, char **argv);
+int hyperionCLIRun(HyperionCLIContext *context, int argc, char **argv);
 
 /**
  * Run the interactive shell
@@ -112,7 +112,7 @@ int tinyaiCLIRun(TinyAICLIContext *context, int argc, char **argv);
  * @param context CLI context
  * @return Exit code
  */
-int tinyaiCLIRunShell(TinyAICLIContext *context);
+int hyperionCLIRunShell(HyperionCLIContext *context);
 
 /**
  * Process a single command
@@ -121,7 +121,7 @@ int tinyaiCLIRunShell(TinyAICLIContext *context);
  * @param command Command line
  * @return Exit code
  */
-int tinyaiCLIProcessCommand(TinyAICLIContext *context, const char *command);
+int hyperionCLIProcessCommand(HyperionCLIContext *context, const char *command);
 
 /**
  * Register a command
@@ -132,8 +132,8 @@ int tinyaiCLIProcessCommand(TinyAICLIContext *context, const char *command);
  * @param handler Command handler
  * @return 0 on success, non-zero on error
  */
-int tinyaiCLIRegisterCommand(const char *name, const char *description, const char *usage,
-                             TinyAICommandHandler handler);
+int hyperionCLIRegisterCommand(const char *name, const char *description, const char *usage,
+                             HyperionCommandHandler handler);
 
 /**
  * Print help information
@@ -142,53 +142,53 @@ int tinyaiCLIRegisterCommand(const char *name, const char *description, const ch
  * @param command Command name (NULL for general help)
  * @return 0 on success, non-zero on error
  */
-int tinyaiCLIPrintHelp(TinyAICLIContext *context, const char *command);
+int hyperionCLIPrintHelp(HyperionCLIContext *context, const char *command);
 
 /* ----------------- Built-in Command Handlers ----------------- */
 
 /**
  * Help command handler
  */
-int tinyaiCommandHelp(int argc, char **argv, void *context);
+int hyperionCommandHelp(int argc, char **argv, void *context);
 
 /**
  * Version command handler
  */
-int tinyaiCommandVersion(int argc, char **argv, void *context);
+int hyperionCommandVersion(int argc, char **argv, void *context);
 
 /**
  * Generate command handler
  */
-int tinyaiCommandGenerate(int argc, char **argv, void *context);
+int hyperionCommandGenerate(int argc, char **argv, void *context);
 
 /**
  * Tokenize command handler
  */
-int tinyaiCommandTokenize(int argc, char **argv, void *context);
+int hyperionCommandTokenize(int argc, char **argv, void *context);
 
 /**
  * Model command handler
  */
-int tinyaiCommandModel(int argc, char **argv, void *context);
+int hyperionCommandModel(int argc, char **argv, void *context);
 
 /**
  * Config command handler
  */
-int tinyaiCommandConfig(int argc, char **argv, void *context);
+int hyperionCommandConfig(int argc, char **argv, void *context);
 
 /**
  * Exit command handler
  */
-int tinyaiCommandExit(int argc, char **argv, void *context);
+int hyperionCommandExit(int argc, char **argv, void *context);
 
 /**
  * MCP command handler for Model Context Protocol operations
  */
-int tinyaiCommandMcp(int argc, char **argv, void *context);
+int hyperionCommandMcp(int argc, char **argv, void *context);
 
 /**
  * Hybrid command handler for controlling hybrid local/remote execution
  */
-int tinyaiCommandHybrid(int argc, char **argv, void *context);
+int hyperionCommandHybrid(int argc, char **argv, void *context);
 
-#endif /* TINYAI_CLI_H */
+#endif /* HYPERION_CLI_H */

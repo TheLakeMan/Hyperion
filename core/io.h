@@ -1,43 +1,43 @@
 /**
- * TinyAI I/O System Header
+ * Hyperion I/O System Header
  * 
- * This header defines the I/O system for TinyAI, providing cross-platform
+ * This header defines the I/O system for Hyperion, providing cross-platform
  * file operations for loading models and saving configurations.
  */
 
-#ifndef TINYAI_IO_H
-#define TINYAI_IO_H
+#ifndef HYPERION_IO_H
+#define HYPERION_IO_H
 
 #include <stddef.h>
 #include <stdint.h>
 
 /* ----------------- File Mode Flags ----------------- */
 
-#define TINYAI_FILE_READ        0x01    /* Open for reading */
-#define TINYAI_FILE_WRITE       0x02    /* Open for writing */
-#define TINYAI_FILE_APPEND      0x04    /* Open for appending */
-#define TINYAI_FILE_BINARY      0x08    /* Open in binary mode */
-#define TINYAI_FILE_CREATE      0x10    /* Create if doesn't exist */
-#define TINYAI_FILE_TRUNCATE    0x20    /* Truncate if exists */
+#define HYPERION_FILE_READ        0x01    /* Open for reading */
+#define HYPERION_FILE_WRITE       0x02    /* Open for writing */
+#define HYPERION_FILE_APPEND      0x04    /* Open for appending */
+#define HYPERION_FILE_BINARY      0x08    /* Open in binary mode */
+#define HYPERION_FILE_CREATE      0x10    /* Create if doesn't exist */
+#define HYPERION_FILE_TRUNCATE    0x20    /* Truncate if exists */
 
 /* ----------------- File Error Codes ----------------- */
 
-#define TINYAI_IO_SUCCESS       0       /* Operation successful */
-#define TINYAI_IO_ERROR        -1       /* Generic I/O error */
-#define TINYAI_IO_NOT_FOUND    -2       /* File not found */
-#define TINYAI_IO_ACCESS       -3       /* Permission denied */
-#define TINYAI_IO_EXISTS       -4       /* File already exists */
-#define TINYAI_IO_INVALID      -5       /* Invalid argument */
-#define TINYAI_IO_NO_MEMORY    -6       /* Out of memory */
-#define TINYAI_IO_EOF          -7       /* End of file */
+#define HYPERION_IO_SUCCESS       0       /* Operation successful */
+#define HYPERION_IO_ERROR        -1       /* Generic I/O error */
+#define HYPERION_IO_NOT_FOUND    -2       /* File not found */
+#define HYPERION_IO_ACCESS       -3       /* Permission denied */
+#define HYPERION_IO_EXISTS       -4       /* File already exists */
+#define HYPERION_IO_INVALID      -5       /* Invalid argument */
+#define HYPERION_IO_NO_MEMORY    -6       /* Out of memory */
+#define HYPERION_IO_EOF          -7       /* End of file */
 
 /* ----------------- Type Definitions ----------------- */
 
 /* File handle type */
-typedef struct TinyAIFile TinyAIFile;
+typedef struct HyperionFile HyperionFile;
 
 /* Directory handle type */
-typedef struct TinyAIDir TinyAIDir;
+typedef struct HyperionDir HyperionDir;
 
 /* File information structure */
 typedef struct {
@@ -46,7 +46,7 @@ typedef struct {
     uint64_t modTime;       /* Last modification time */
     uint32_t mode;          /* File mode */
     int isDirectory;        /* Whether it's a directory */
-} TinyAIFileInfo;
+} HyperionFileInfo;
 
 /* ----------------- System Functions ----------------- */
 
@@ -55,19 +55,19 @@ typedef struct {
  * 
  * @return 0 on success, non-zero on error
  */
-int tinyaiIOInit();
+int hyperionIOInit();
 
 /**
  * Clean up I/O system
  */
-void tinyaiIOCleanup();
+void hyperionIOCleanup();
 
 /**
  * Get last I/O error code
  * 
  * @return Last error code
  */
-int tinyaiIOGetLastError();
+int hyperionIOGetLastError();
 
 /**
  * Get error message for error code
@@ -75,7 +75,7 @@ int tinyaiIOGetLastError();
  * @param error Error code
  * @return Error message string
  */
-const char* tinyaiIOGetErrorString(int error);
+const char* hyperionIOGetErrorString(int error);
 
 /* ----------------- File Operations ----------------- */
 
@@ -86,14 +86,14 @@ const char* tinyaiIOGetErrorString(int error);
  * @param mode File mode flags
  * @return File handle or NULL on error
  */
-TinyAIFile* tinyaiOpenFile(const char *path, int mode);
+HyperionFile* hyperionOpenFile(const char *path, int mode);
 
 /**
  * Close a file
  * 
  * @param file File handle
  */
-void tinyaiCloseFile(TinyAIFile *file);
+void hyperionCloseFile(HyperionFile *file);
 
 /**
  * Read from a file
@@ -103,7 +103,7 @@ void tinyaiCloseFile(TinyAIFile *file);
  * @param size Number of bytes to read
  * @return Number of bytes read or negative error code
  */
-int64_t tinyaiReadFile(TinyAIFile *file, void *buffer, size_t size);
+int64_t hyperionReadFile(HyperionFile *file, void *buffer, size_t size);
 
 /**
  * Write to a file
@@ -113,7 +113,7 @@ int64_t tinyaiReadFile(TinyAIFile *file, void *buffer, size_t size);
  * @param size Number of bytes to write
  * @return Number of bytes written or negative error code
  */
-int64_t tinyaiWriteFile(TinyAIFile *file, const void *buffer, size_t size);
+int64_t hyperionWriteFile(HyperionFile *file, const void *buffer, size_t size);
 
 /**
  * Read a line from a file
@@ -123,7 +123,7 @@ int64_t tinyaiWriteFile(TinyAIFile *file, const void *buffer, size_t size);
  * @param size Buffer size
  * @return Number of bytes read or negative error code
  */
-int tinyaiReadLine(TinyAIFile *file, char *buffer, size_t size);
+int hyperionReadLine(HyperionFile *file, char *buffer, size_t size);
 
 /**
  * Seek to position in file
@@ -133,7 +133,7 @@ int tinyaiReadLine(TinyAIFile *file, char *buffer, size_t size);
  * @param whence Seek origin (0=start, 1=current, 2=end)
  * @return New position or negative error code
  */
-int64_t tinyaiSeekFile(TinyAIFile *file, int64_t offset, int whence);
+int64_t hyperionSeekFile(HyperionFile *file, int64_t offset, int whence);
 
 /**
  * Get current position in file
@@ -141,7 +141,7 @@ int64_t tinyaiSeekFile(TinyAIFile *file, int64_t offset, int whence);
  * @param file File handle
  * @return Current position or negative error code
  */
-int64_t tinyaiTellFile(TinyAIFile *file);
+int64_t hyperionTellFile(HyperionFile *file);
 
 /**
  * Flush file buffers
@@ -149,7 +149,7 @@ int64_t tinyaiTellFile(TinyAIFile *file);
  * @param file File handle
  * @return 0 on success, negative error code on failure
  */
-int tinyaiFlushFile(TinyAIFile *file);
+int hyperionFlushFile(HyperionFile *file);
 
 /**
  * Check if end of file
@@ -157,7 +157,7 @@ int tinyaiFlushFile(TinyAIFile *file);
  * @param file File handle
  * @return 1 if EOF, 0 if not, negative error code on failure
  */
-int tinyaiEOF(TinyAIFile *file);
+int hyperionEOF(HyperionFile *file);
 
 /* ----------------- File System Operations ----------------- */
 
@@ -167,7 +167,7 @@ int tinyaiEOF(TinyAIFile *file);
  * @param path File path
  * @return 1 if exists, 0 if not, negative error code on failure
  */
-int tinyaiFileExists(const char *path);
+int hyperionFileExists(const char *path);
 
 /**
  * Delete a file
@@ -175,7 +175,7 @@ int tinyaiFileExists(const char *path);
  * @param path File path
  * @return 0 on success, negative error code on failure
  */
-int tinyaiDeleteFile(const char *path);
+int hyperionDeleteFile(const char *path);
 
 /**
  * Rename a file
@@ -184,7 +184,7 @@ int tinyaiDeleteFile(const char *path);
  * @param newPath New file path
  * @return 0 on success, negative error code on failure
  */
-int tinyaiRenameFile(const char *oldPath, const char *newPath);
+int hyperionRenameFile(const char *oldPath, const char *newPath);
 
 /**
  * Get file information
@@ -193,14 +193,14 @@ int tinyaiRenameFile(const char *oldPath, const char *newPath);
  * @param info File information structure
  * @return 0 on success, negative error code on failure
  */
-int tinyaiGetFileInfo(const char *path, TinyAIFileInfo *info);
+int hyperionGetFileInfo(const char *path, HyperionFileInfo *info);
 
 /**
  * Free file information structure
  * 
  * @param info File information structure
  */
-void tinyaiFreeFileInfo(TinyAIFileInfo *info);
+void hyperionFreeFileInfo(HyperionFileInfo *info);
 
 /* ----------------- Directory Operations ----------------- */
 
@@ -210,7 +210,7 @@ void tinyaiFreeFileInfo(TinyAIFileInfo *info);
  * @param path Directory path
  * @return 0 on success, negative error code on failure
  */
-int tinyaiCreateDir(const char *path);
+int hyperionCreateDir(const char *path);
 
 /**
  * Delete a directory
@@ -219,7 +219,7 @@ int tinyaiCreateDir(const char *path);
  * @param recursive Whether to delete recursively
  * @return 0 on success, negative error code on failure
  */
-int tinyaiDeleteDir(const char *path, int recursive);
+int hyperionDeleteDir(const char *path, int recursive);
 
 /**
  * Open a directory for reading
@@ -227,14 +227,14 @@ int tinyaiDeleteDir(const char *path, int recursive);
  * @param path Directory path
  * @return Directory handle or NULL on error
  */
-TinyAIDir* tinyaiOpenDir(const char *path);
+HyperionDir* hyperionOpenDir(const char *path);
 
 /**
  * Close a directory
  * 
  * @param dir Directory handle
  */
-void tinyaiCloseDir(TinyAIDir *dir);
+void hyperionCloseDir(HyperionDir *dir);
 
 /**
  * Read next directory entry
@@ -244,7 +244,7 @@ void tinyaiCloseDir(TinyAIDir *dir);
  * @param size Buffer size
  * @return 1 if entry read, 0 if no more entries, negative error code on failure
  */
-int tinyaiReadDir(TinyAIDir *dir, char *name, size_t size);
+int hyperionReadDir(HyperionDir *dir, char *name, size_t size);
 
 /**
  * Get current working directory
@@ -253,24 +253,25 @@ int tinyaiReadDir(TinyAIDir *dir, char *name, size_t size);
  * @param size Buffer size
  * @return 0 on success, negative error code on failure
  */
-int tinyaiGetCWD(char *buffer, size_t size);
+int hyperionGetCWD(char *buffer, size_t size);
 
 /**
  * Change current working directory
  * 
  * @param path New directory path
+ * 
  * @return 0 on success, negative error code on failure
  */
-int tinyaiSetCWD(const char *path);
+int hyperionSetCWD(const char *path);
 
 /* ----------------- Path Operations ----------------- */
 
 /**
  * Get path separator
  * 
- * @return Path separator character ('/' or '\')
+ * @return Path separator character ('/' or '\\')
  */
-char tinyaiGetPathSeparator();
+char hyperionGetPathSeparator();
 
 /**
  * Join path components
@@ -281,7 +282,7 @@ char tinyaiGetPathSeparator();
  * @param ... Path components
  * @return 0 on success, negative error code on failure
  */
-int tinyaiJoinPath(char *buffer, size_t size, int count, ...);
+int hyperionJoinPath(char *buffer, size_t size, int count, ...);
 
 /**
  * Get file name from path
@@ -289,7 +290,7 @@ int tinyaiJoinPath(char *buffer, size_t size, int count, ...);
  * @param path File path
  * @return File name
  */
-const char* tinyaiGetFileName(const char *path);
+const char* hyperionGetFileName(const char *path);
 
 /**
  * Get file extension from path
@@ -297,7 +298,7 @@ const char* tinyaiGetFileName(const char *path);
  * @param path File path
  * @return File extension
  */
-const char* tinyaiGetFileExt(const char *path);
+const char* hyperionGetFileExt(const char *path);
 
 /**
  * Get directory name from path
@@ -307,7 +308,7 @@ const char* tinyaiGetFileExt(const char *path);
  * @param size Buffer size
  * @return 0 on success, negative error code on failure
  */
-int tinyaiGetDirName(const char *path, char *buffer, size_t size);
+int hyperionGetDirName(const char *path, char *buffer, size_t size);
 
 /**
  * Get absolute path
@@ -317,6 +318,6 @@ int tinyaiGetDirName(const char *path, char *buffer, size_t size);
  * @param size Buffer size
  * @return 0 on success, negative error code on failure
  */
-int tinyaiGetAbsPath(const char *path, char *buffer, size_t size);
+int hyperionGetAbsPath(const char *path, char *buffer, size_t size);
 
-#endif /* TINYAI_IO_H */
+#endif /* HYPERION_IO_H */

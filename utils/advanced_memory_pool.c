@@ -1,6 +1,6 @@
 /**
  * @file advanced_memory_pool.c
- * @brief Implementation of advanced memory pooling system for TinyAI
+ * @brief Implementation of advanced memory pooling system for Hyperion
  */
 
 #include "advanced_memory_pool.h"
@@ -73,9 +73,9 @@
 typedef struct {
     void                  *ptr;
     size_t                 size;
-    TinyAIMemoryPool      *sourcePool;
-    TinyAIPoolUsagePattern usage;
-    TinyAIPoolSizeClass    sizeClass;
+    HyperionMemoryPool      *sourcePool;
+    HyperionPoolUsagePattern usage;
+    HyperionPoolSizeClass    sizeClass;
 } AllocationCacheEntry;
 
 /* Tensor operation descriptor */
@@ -89,12 +89,12 @@ typedef struct {
 } TensorOpDescriptor;
 
 /* Advanced memory pool structure */
-struct TinyAIAdvancedMemoryPool {
+struct HyperionAdvancedMemoryPool {
     /* The actual memory pools organized by usage and size */
-    TinyAIMemoryPool *pools[TINYAI_POOL_USAGE_COUNT][TINYAI_POOL_SIZE_COUNT];
+    HyperionMemoryPool *pools[HYPERION_POOL_USAGE_COUNT][HYPERION_POOL_SIZE_COUNT];
 
     /* Configuration */
-    TinyAIAdvancedPoolConfig config;
+    HyperionAdvancedPoolConfig config;
 
     /* Allocation cache for fast lookup */
     AllocationCacheEntry allocationCache[ALLOCATION_CACHE_SIZE];
@@ -126,86 +126,86 @@ struct TinyAIAdvancedMemoryPool {
 };
 
 /* Helper functions prototypes */
-static TinyAIPoolSizeClass   getSizeClass(size_t size, const TinyAIAdvancedPoolConfig *config);
-static TinyAIMemoryPool     *getAppropriatePool(TinyAIAdvancedMemoryPool *pool, size_t size,
-                                                TinyAIPoolUsagePattern usage);
-static void                  updateMemoryPressure(TinyAIAdvancedMemoryPool *pool);
-static void                  addToCache(TinyAIAdvancedMemoryPool *pool, void *ptr, size_t size,
-                                        TinyAIMemoryPool *sourcePool, TinyAIPoolUsagePattern usage,
-                                        TinyAIPoolSizeClass sizeClass);
-static AllocationCacheEntry *findInCache(TinyAIAdvancedMemoryPool *pool, void *ptr);
-static void                  removeFromCache(TinyAIAdvancedMemoryPool *pool, void *ptr);
+static HyperionPoolSizeClass   getSizeClass(size_t size, const HyperionAdvancedPoolConfig *config);
+static HyperionMemoryPool     *getAppropriatePool(HyperionAdvancedMemoryPool *pool, size_t size,
+                                                HyperionPoolUsagePattern usage);
+static void                  updateMemoryPressure(HyperionAdvancedMemoryPool *pool);
+static void                  addToCache(HyperionAdvancedMemoryPool *pool, void *ptr, size_t size,
+                                        HyperionMemoryPool *sourcePool, HyperionPoolUsagePattern usage,
+                                        HyperionPoolSizeClass sizeClass);
+static AllocationCacheEntry *findInCache(HyperionAdvancedMemoryPool *pool, void *ptr);
+static void                  removeFromCache(HyperionAdvancedMemoryPool *pool, void *ptr);
 static double                getCurrentTimeMs();
 
 /**
  * Get default advanced memory pool configuration
  */
-void tinyaiAdvancedPoolGetDefaultConfig(TinyAIAdvancedPoolConfig *config)
+void hyperionAdvancedPoolGetDefaultConfig(HyperionAdvancedPoolConfig *config)
 {
     if (!config) {
         return;
     }
 
     /* Initialize with zeros */
-    memset(config, 0, sizeof(TinyAIAdvancedPoolConfig));
+    memset(config, 0, sizeof(HyperionAdvancedPoolConfig));
 
     /* Get default base config */
-    tinyaiMemoryPoolGetDefaultConfig(&config->baseConfig);
+    hyperionMemoryPoolGetDefaultConfig(&config->baseConfig);
 
     /* Set size class limits */
-    config->sizeClassLimits[TINYAI_POOL_SIZE_TINY]   = SIZE_TINY_LIMIT;
-    config->sizeClassLimits[TINYAI_POOL_SIZE_SMALL]  = SIZE_SMALL_LIMIT;
-    config->sizeClassLimits[TINYAI_POOL_SIZE_MEDIUM] = SIZE_MEDIUM_LIMIT;
-    config->sizeClassLimits[TINYAI_POOL_SIZE_LARGE]  = SIZE_LARGE_LIMIT;
-    config->sizeClassLimits[TINYAI_POOL_SIZE_XLARGE] = SIZE_XLARGE_LIMIT;
-    config->sizeClassLimits[TINYAI_POOL_SIZE_HUGE]   = (size_t)-1; /* No upper limit */
+    config->sizeClassLimits[HYPERION_POOL_SIZE_TINY]   = SIZE_TINY_LIMIT;
+    config->sizeClassLimits[HYPERION_POOL_SIZE_SMALL]  = SIZE_SMALL_LIMIT;
+    config->sizeClassLimits[HYPERION_POOL_SIZE_MEDIUM] = SIZE_MEDIUM_LIMIT;
+    config->sizeClassLimits[HYPERION_POOL_SIZE_LARGE]  = SIZE_LARGE_LIMIT;
+    config->sizeClassLimits[HYPERION_POOL_SIZE_XLARGE] = SIZE_XLARGE_LIMIT;
+    config->sizeClassLimits[HYPERION_POOL_SIZE_HUGE]   = (size_t)-1; /* No upper limit */
 
     /* Set initial capacities */
     /* Weights pools */
-    config->initialCapacity[TINYAI_POOL_USAGE_WEIGHTS][TINYAI_POOL_SIZE_TINY] =
+    config->initialCapacity[HYPERION_POOL_USAGE_WEIGHTS][HYPERION_POOL_SIZE_TINY] =
         WEIGHTS_TINY_CAPACITY;
-    config->initialCapacity[TINYAI_POOL_USAGE_WEIGHTS][TINYAI_POOL_SIZE_SMALL] =
+    config->initialCapacity[HYPERION_POOL_USAGE_WEIGHTS][HYPERION_POOL_SIZE_SMALL] =
         WEIGHTS_SMALL_CAPACITY;
-    config->initialCapacity[TINYAI_POOL_USAGE_WEIGHTS][TINYAI_POOL_SIZE_MEDIUM] =
+    config->initialCapacity[HYPERION_POOL_USAGE_WEIGHTS][HYPERION_POOL_SIZE_MEDIUM] =
         WEIGHTS_MEDIUM_CAPACITY;
-    config->initialCapacity[TINYAI_POOL_USAGE_WEIGHTS][TINYAI_POOL_SIZE_LARGE] =
+    config->initialCapacity[HYPERION_POOL_USAGE_WEIGHTS][HYPERION_POOL_SIZE_LARGE] =
         WEIGHTS_LARGE_CAPACITY;
-    config->initialCapacity[TINYAI_POOL_USAGE_WEIGHTS][TINYAI_POOL_SIZE_XLARGE] =
+    config->initialCapacity[HYPERION_POOL_USAGE_WEIGHTS][HYPERION_POOL_SIZE_XLARGE] =
         WEIGHTS_XLARGE_CAPACITY;
-    config->initialCapacity[TINYAI_POOL_USAGE_WEIGHTS][TINYAI_POOL_SIZE_HUGE] =
+    config->initialCapacity[HYPERION_POOL_USAGE_WEIGHTS][HYPERION_POOL_SIZE_HUGE] =
         WEIGHTS_HUGE_CAPACITY;
 
     /* Activations pools */
-    config->initialCapacity[TINYAI_POOL_USAGE_ACTIVATIONS][TINYAI_POOL_SIZE_TINY] =
+    config->initialCapacity[HYPERION_POOL_USAGE_ACTIVATIONS][HYPERION_POOL_SIZE_TINY] =
         ACTIVATIONS_TINY_CAPACITY;
-    config->initialCapacity[TINYAI_POOL_USAGE_ACTIVATIONS][TINYAI_POOL_SIZE_SMALL] =
+    config->initialCapacity[HYPERION_POOL_USAGE_ACTIVATIONS][HYPERION_POOL_SIZE_SMALL] =
         ACTIVATIONS_SMALL_CAPACITY;
-    config->initialCapacity[TINYAI_POOL_USAGE_ACTIVATIONS][TINYAI_POOL_SIZE_MEDIUM] =
+    config->initialCapacity[HYPERION_POOL_USAGE_ACTIVATIONS][HYPERION_POOL_SIZE_MEDIUM] =
         ACTIVATIONS_MEDIUM_CAPACITY;
-    config->initialCapacity[TINYAI_POOL_USAGE_ACTIVATIONS][TINYAI_POOL_SIZE_LARGE] =
+    config->initialCapacity[HYPERION_POOL_USAGE_ACTIVATIONS][HYPERION_POOL_SIZE_LARGE] =
         ACTIVATIONS_LARGE_CAPACITY;
-    config->initialCapacity[TINYAI_POOL_USAGE_ACTIVATIONS][TINYAI_POOL_SIZE_XLARGE] =
+    config->initialCapacity[HYPERION_POOL_USAGE_ACTIVATIONS][HYPERION_POOL_SIZE_XLARGE] =
         ACTIVATIONS_XLARGE_CAPACITY;
-    config->initialCapacity[TINYAI_POOL_USAGE_ACTIVATIONS][TINYAI_POOL_SIZE_HUGE] =
+    config->initialCapacity[HYPERION_POOL_USAGE_ACTIVATIONS][HYPERION_POOL_SIZE_HUGE] =
         ACTIVATIONS_HUGE_CAPACITY;
 
     /* General pools */
-    config->initialCapacity[TINYAI_POOL_USAGE_GENERAL][TINYAI_POOL_SIZE_TINY] =
+    config->initialCapacity[HYPERION_POOL_USAGE_GENERAL][HYPERION_POOL_SIZE_TINY] =
         GENERAL_TINY_CAPACITY;
-    config->initialCapacity[TINYAI_POOL_USAGE_GENERAL][TINYAI_POOL_SIZE_SMALL] =
+    config->initialCapacity[HYPERION_POOL_USAGE_GENERAL][HYPERION_POOL_SIZE_SMALL] =
         GENERAL_SMALL_CAPACITY;
-    config->initialCapacity[TINYAI_POOL_USAGE_GENERAL][TINYAI_POOL_SIZE_MEDIUM] =
+    config->initialCapacity[HYPERION_POOL_USAGE_GENERAL][HYPERION_POOL_SIZE_MEDIUM] =
         GENERAL_MEDIUM_CAPACITY;
-    config->initialCapacity[TINYAI_POOL_USAGE_GENERAL][TINYAI_POOL_SIZE_LARGE] =
+    config->initialCapacity[HYPERION_POOL_USAGE_GENERAL][HYPERION_POOL_SIZE_LARGE] =
         GENERAL_LARGE_CAPACITY;
-    config->initialCapacity[TINYAI_POOL_USAGE_GENERAL][TINYAI_POOL_SIZE_XLARGE] =
+    config->initialCapacity[HYPERION_POOL_USAGE_GENERAL][HYPERION_POOL_SIZE_XLARGE] =
         GENERAL_XLARGE_CAPACITY;
-    config->initialCapacity[TINYAI_POOL_USAGE_GENERAL][TINYAI_POOL_SIZE_HUGE] =
+    config->initialCapacity[HYPERION_POOL_USAGE_GENERAL][HYPERION_POOL_SIZE_HUGE] =
         GENERAL_HUGE_CAPACITY;
 
     /* Set max capacities (for now, just multiply initial by MAX_CAPACITY_MULTIPLIER) */
-    for (int usage = 0; usage < TINYAI_POOL_USAGE_COUNT; usage++) {
-        for (int size = 0; size < TINYAI_POOL_SIZE_COUNT; size++) {
+    for (int usage = 0; usage < HYPERION_POOL_USAGE_COUNT; usage++) {
+        for (int size = 0; size < HYPERION_POOL_SIZE_COUNT; size++) {
             config->maxCapacity[usage][size] =
                 config->initialCapacity[usage][size] * MAX_CAPACITY_MULTIPLIER;
         }
@@ -221,28 +221,28 @@ void tinyaiAdvancedPoolGetDefaultConfig(TinyAIAdvancedPoolConfig *config)
 /**
  * Create a new advanced memory pool system
  */
-TinyAIAdvancedMemoryPool *tinyaiAdvancedPoolCreate(const TinyAIAdvancedPoolConfig *config)
+HyperionAdvancedMemoryPool *hyperionAdvancedPoolCreate(const HyperionAdvancedPoolConfig *config)
 {
     if (!config) {
         return NULL;
     }
 
     /* Allocate the advanced pool structure */
-    TinyAIAdvancedMemoryPool *advPool =
-        (TinyAIAdvancedMemoryPool *)malloc(sizeof(TinyAIAdvancedMemoryPool));
+    HyperionAdvancedMemoryPool *advPool =
+        (HyperionAdvancedMemoryPool *)malloc(sizeof(HyperionAdvancedMemoryPool));
     if (!advPool) {
         return NULL;
     }
 
     /* Initialize the structure */
-    memset(advPool, 0, sizeof(TinyAIAdvancedMemoryPool));
+    memset(advPool, 0, sizeof(HyperionAdvancedMemoryPool));
 
     /* Copy configuration */
-    memcpy(&advPool->config, config, sizeof(TinyAIAdvancedPoolConfig));
+    memcpy(&advPool->config, config, sizeof(HyperionAdvancedPoolConfig));
 
     /* Create individual pools for each usage/size combination */
-    for (int usage = 0; usage < TINYAI_POOL_USAGE_COUNT; usage++) {
-        for (int size = 0; size < TINYAI_POOL_SIZE_COUNT; size++) {
+    for (int usage = 0; usage < HYPERION_POOL_USAGE_COUNT; usage++) {
+        for (int size = 0; size < HYPERION_POOL_SIZE_COUNT; size++) {
             /* Skip creation of pools with zero capacity */
             if (config->initialCapacity[usage][size] == 0) {
                 advPool->pools[usage][size] = NULL;
@@ -250,37 +250,37 @@ TinyAIAdvancedMemoryPool *tinyaiAdvancedPoolCreate(const TinyAIAdvancedPoolConfi
             }
 
             /* Configure this pool */
-            TinyAIMemoryPoolConfig poolConfig = config->baseConfig;
+            HyperionMemoryPoolConfig poolConfig = config->baseConfig;
             poolConfig.initialCapacity        = config->initialCapacity[usage][size];
             poolConfig.maxCapacity            = config->maxCapacity[usage][size];
 
             /* Adjust block size based on size class for efficiency */
             switch (size) {
-            case TINYAI_POOL_SIZE_TINY:
+            case HYPERION_POOL_SIZE_TINY:
                 poolConfig.blockSize = 16; /* Small blocks */
                 break;
-            case TINYAI_POOL_SIZE_SMALL:
+            case HYPERION_POOL_SIZE_SMALL:
                 poolConfig.blockSize = 32;
                 break;
-            case TINYAI_POOL_SIZE_MEDIUM:
+            case HYPERION_POOL_SIZE_MEDIUM:
                 poolConfig.blockSize = 64;
                 break;
-            case TINYAI_POOL_SIZE_LARGE:
+            case HYPERION_POOL_SIZE_LARGE:
                 poolConfig.blockSize = 128;
                 break;
-            case TINYAI_POOL_SIZE_XLARGE:
+            case HYPERION_POOL_SIZE_XLARGE:
                 poolConfig.blockSize = 256;
                 break;
-            case TINYAI_POOL_SIZE_HUGE:
+            case HYPERION_POOL_SIZE_HUGE:
                 poolConfig.blockSize = 512; /* Larger blocks */
                 break;
             }
 
             /* Create the pool */
-            advPool->pools[usage][size] = tinyaiMemoryPoolCreate(&poolConfig);
+            advPool->pools[usage][size] = hyperionMemoryPoolCreate(&poolConfig);
             if (!advPool->pools[usage][size]) {
                 /* Failed to create pool, clean up and return NULL */
-                tinyaiAdvancedPoolDestroy(advPool);
+                hyperionAdvancedPoolDestroy(advPool);
                 return NULL;
             }
         }
@@ -300,17 +300,17 @@ TinyAIAdvancedMemoryPool *tinyaiAdvancedPoolCreate(const TinyAIAdvancedPoolConfi
 /**
  * Destroy an advanced memory pool and free all its resources
  */
-void tinyaiAdvancedPoolDestroy(TinyAIAdvancedMemoryPool *pool)
+void hyperionAdvancedPoolDestroy(HyperionAdvancedMemoryPool *pool)
 {
     if (!pool) {
         return;
     }
 
     /* Destroy all individual pools */
-    for (int usage = 0; usage < TINYAI_POOL_USAGE_COUNT; usage++) {
-        for (int size = 0; size < TINYAI_POOL_SIZE_COUNT; size++) {
+    for (int usage = 0; usage < HYPERION_POOL_USAGE_COUNT; usage++) {
+        for (int size = 0; size < HYPERION_POOL_SIZE_COUNT; size++) {
             if (pool->pools[usage][size]) {
-                tinyaiMemoryPoolDestroy(pool->pools[usage][size]);
+                hyperionMemoryPoolDestroy(pool->pools[usage][size]);
                 pool->pools[usage][size] = NULL;
             }
         }
@@ -353,32 +353,32 @@ static double getCurrentTimeMs()
 /**
  * Determine the size class for a given allocation size
  */
-static TinyAIPoolSizeClass getSizeClass(size_t size, const TinyAIAdvancedPoolConfig *config)
+static HyperionPoolSizeClass getSizeClass(size_t size, const HyperionAdvancedPoolConfig *config)
 {
-    for (int i = 0; i < TINYAI_POOL_SIZE_COUNT - 1; i++) {
+    for (int i = 0; i < HYPERION_POOL_SIZE_COUNT - 1; i++) {
         if (size <= config->sizeClassLimits[i]) {
-            return (TinyAIPoolSizeClass)i;
+            return (HyperionPoolSizeClass)i;
         }
     }
-    return TINYAI_POOL_SIZE_HUGE;
+    return HYPERION_POOL_SIZE_HUGE;
 }
 
 /**
  * Get the appropriate pool for a given size and usage
  */
-static TinyAIMemoryPool *getAppropriatePool(TinyAIAdvancedMemoryPool *pool, size_t size,
-                                            TinyAIPoolUsagePattern usage)
+static HyperionMemoryPool *getAppropriatePool(HyperionAdvancedMemoryPool *pool, size_t size,
+                                            HyperionPoolUsagePattern usage)
 {
-    TinyAIPoolSizeClass sizeClass = getSizeClass(size, &pool->config);
+    HyperionPoolSizeClass sizeClass = getSizeClass(size, &pool->config);
     return pool->pools[usage][sizeClass];
 }
 
 /**
  * Add an allocation to the cache
  */
-static void addToCache(TinyAIAdvancedMemoryPool *pool, void *ptr, size_t size,
-                       TinyAIMemoryPool *sourcePool, TinyAIPoolUsagePattern usage,
-                       TinyAIPoolSizeClass sizeClass)
+static void addToCache(HyperionAdvancedMemoryPool *pool, void *ptr, size_t size,
+                       HyperionMemoryPool *sourcePool, HyperionPoolUsagePattern usage,
+                       HyperionPoolSizeClass sizeClass)
 {
     if (pool->cacheSize >= ALLOCATION_CACHE_SIZE) {
         /* Cache is full, remove oldest entry (simple FIFO for now) */
@@ -402,7 +402,7 @@ static void addToCache(TinyAIAdvancedMemoryPool *pool, void *ptr, size_t size,
 /**
  * Find an allocation in the cache
  */
-static AllocationCacheEntry *findInCache(TinyAIAdvancedMemoryPool *pool, void *ptr)
+static AllocationCacheEntry *findInCache(HyperionAdvancedMemoryPool *pool, void *ptr)
 {
     for (int i = 0; i < pool->cacheSize; i++) {
         if (pool->allocationCache[i].ptr == ptr) {
@@ -415,7 +415,7 @@ static AllocationCacheEntry *findInCache(TinyAIAdvancedMemoryPool *pool, void *p
 /**
  * Remove an allocation from the cache
  */
-static void removeFromCache(TinyAIAdvancedMemoryPool *pool, void *ptr)
+static void removeFromCache(HyperionAdvancedMemoryPool *pool, void *ptr)
 {
     int found = -1;
 
@@ -439,17 +439,17 @@ static void removeFromCache(TinyAIAdvancedMemoryPool *pool, void *ptr)
 /**
  * Update memory pressure metric
  */
-static void updateMemoryPressure(TinyAIAdvancedMemoryPool *pool)
+static void updateMemoryPressure(HyperionAdvancedMemoryPool *pool)
 {
     size_t totalUsed     = 0;
     size_t totalCapacity = 0;
 
     /* Calculate total usage across all pools */
-    for (int usage = 0; usage < TINYAI_POOL_USAGE_COUNT; usage++) {
-        for (int size = 0; size < TINYAI_POOL_SIZE_COUNT; size++) {
+    for (int usage = 0; usage < HYPERION_POOL_USAGE_COUNT; usage++) {
+        for (int size = 0; size < HYPERION_POOL_SIZE_COUNT; size++) {
             if (pool->pools[usage][size]) {
-                TinyAIMemoryPoolStats stats;
-                tinyaiMemoryPoolGetStats(pool->pools[usage][size], &stats);
+                HyperionMemoryPoolStats stats;
+                hyperionMemoryPoolGetStats(pool->pools[usage][size], &stats);
 
                 totalUsed += stats.totalUsed;
                 totalCapacity += stats.totalAllocated;
@@ -474,10 +474,10 @@ static void updateMemoryPressure(TinyAIAdvancedMemoryPool *pool)
 /**
  * Allocate memory from the appropriate pool based on size and usage pattern
  */
-void *tinyaiAdvancedPoolAlloc(TinyAIAdvancedMemoryPool *pool, size_t size, size_t alignment,
-                              TinyAIPoolUsagePattern usage)
+void *hyperionAdvancedPoolAlloc(HyperionAdvancedMemoryPool *pool, size_t size, size_t alignment,
+                              HyperionPoolUsagePattern usage)
 {
-    if (!pool || size == 0 || usage >= TINYAI_POOL_USAGE_COUNT) {
+    if (!pool || size == 0 || usage >= HYPERION_POOL_USAGE_COUNT) {
         return NULL;
     }
 
@@ -485,12 +485,12 @@ void *tinyaiAdvancedPoolAlloc(TinyAIAdvancedMemoryPool *pool, size_t size, size_
     double startTime = getCurrentTimeMs();
 
     /* Get the appropriate pool */
-    TinyAIPoolSizeClass sizeClass = getSizeClass(size, &pool->config);
-    TinyAIMemoryPool   *memPool   = pool->pools[usage][sizeClass];
+    HyperionPoolSizeClass sizeClass = getSizeClass(size, &pool->config);
+    HyperionMemoryPool   *memPool   = pool->pools[usage][sizeClass];
 
     if (!memPool) {
         /* Try to use general pool as fallback */
-        memPool = pool->pools[TINYAI_POOL_USAGE_GENERAL][sizeClass];
+        memPool = pool->pools[HYPERION_POOL_USAGE_GENERAL][sizeClass];
         if (!memPool) {
             /* No suitable pool found */
             return NULL;
@@ -501,7 +501,7 @@ void *tinyaiAdvancedPoolAlloc(TinyAIAdvancedMemoryPool *pool, size_t size, size_
     }
 
     /* Allocate memory */
-    void *ptr = tinyaiMemoryPoolAlloc(memPool, size, alignment);
+    void *ptr = hyperionMemoryPoolAlloc(memPool, size, alignment);
 
     if (ptr) {
         /* Add to cache for faster lookups */
@@ -522,13 +522,13 @@ void *tinyaiAdvancedPoolAlloc(TinyAIAdvancedMemoryPool *pool, size_t size, size_
         pool->outOfMemoryEventOccurred = true;
 
         /* Try with general pool as fallback if not already tried */
-        if (usage != TINYAI_POOL_USAGE_GENERAL) {
-            memPool = pool->pools[TINYAI_POOL_USAGE_GENERAL][sizeClass];
+        if (usage != HYPERION_POOL_USAGE_GENERAL) {
+            memPool = pool->pools[HYPERION_POOL_USAGE_GENERAL][sizeClass];
             if (memPool) {
-                ptr = tinyaiMemoryPoolAlloc(memPool, size, alignment);
+                ptr = hyperionMemoryPoolAlloc(memPool, size, alignment);
                 if (ptr) {
                     /* Add to cache */
-                    addToCache(pool, ptr, size, memPool, TINYAI_POOL_USAGE_GENERAL, sizeClass);
+                    addToCache(pool, ptr, size, memPool, HYPERION_POOL_USAGE_GENERAL, sizeClass);
 
                     /* Update statistics */
                     pool->allocCount++;
@@ -551,7 +551,7 @@ void *tinyaiAdvancedPoolAlloc(TinyAIAdvancedMemoryPool *pool, size_t size, size_
 /**
  * Free memory allocated from advanced pool
  */
-void tinyaiAdvancedPoolFree(TinyAIAdvancedMemoryPool *pool, void *ptr)
+void hyperionAdvancedPoolFree(HyperionAdvancedMemoryPool *pool, void *ptr)
 {
     if (!pool || !ptr) {
         return;
@@ -565,7 +565,7 @@ void tinyaiAdvancedPoolFree(TinyAIAdvancedMemoryPool *pool, void *ptr)
 
     if (entry) {
         /* Cache hit - use the source pool information */
-        tinyaiMemoryPoolFree(entry->sourcePool, ptr);
+        hyperionMemoryPoolFree(entry->sourcePool, ptr);
 
         /* Remove from cache */
         removeFromCache(pool, ptr);
@@ -581,12 +581,12 @@ void tinyaiAdvancedPoolFree(TinyAIAdvancedMemoryPool *pool, void *ptr)
         bool found = false;
 
         /* Try each pool until we find the one that contains this pointer */
-        for (int usage = 0; usage < TINYAI_POOL_USAGE_COUNT && !found; usage++) {
-            for (int size = 0; size < TINYAI_POOL_SIZE_COUNT && !found; size++) {
-                TinyAIMemoryPool *memPool = pool->pools[usage][size];
-                if (memPool && tinyaiMemoryPoolContains(memPool, ptr)) {
+        for (int usage = 0; usage < HYPERION_POOL_USAGE_COUNT && !found; usage++) {
+            for (int size = 0; size < HYPERION_POOL_SIZE_COUNT && !found; size++) {
+                HyperionMemoryPool *memPool = pool->pools[usage][size];
+                if (memPool && hyperionMemoryPoolContains(memPool, ptr)) {
                     /* Found the pool, free the memory */
-                    tinyaiMemoryPoolFree(memPool, ptr);
+                    hyperionMemoryPoolFree(memPool, ptr);
 
                     /* Update statistics */
                     pool->freeCount++;
@@ -614,8 +614,8 @@ void tinyaiAdvancedPoolFree(TinyAIAdvancedMemoryPool *pool, void *ptr)
 /**
  * Reallocate memory from advanced pool
  */
-void *tinyaiAdvancedPoolRealloc(TinyAIAdvancedMemoryPool *pool, void *ptr, size_t size,
-                                size_t alignment, TinyAIPoolUsagePattern usage)
+void *hyperionAdvancedPoolRealloc(HyperionAdvancedMemoryPool *pool, void *ptr, size_t size,
+                                size_t alignment, HyperionPoolUsagePattern usage)
 {
     if (!pool) {
         return NULL;
@@ -623,12 +623,12 @@ void *tinyaiAdvancedPoolRealloc(TinyAIAdvancedMemoryPool *pool, void *ptr, size_
 
     /* If ptr is NULL, this is equivalent to alloc */
     if (!ptr) {
-        return tinyaiAdvancedPoolAlloc(pool, size, alignment, usage);
+        return hyperionAdvancedPoolAlloc(pool, size, alignment, usage);
     }
 
     /* If size is 0, this is equivalent to free */
     if (size == 0) {
-        tinyaiAdvancedPoolFree(pool, ptr);
+        hyperionAdvancedPoolFree(pool, ptr);
         return NULL;
     }
 
@@ -637,12 +637,12 @@ void *tinyaiAdvancedPoolRealloc(TinyAIAdvancedMemoryPool *pool, void *ptr, size_
 
     if (entry) {
         /* Cache hit - we know which pool it came from */
-        TinyAIPoolSizeClass newSizeClass = getSizeClass(size, &pool->config);
+        HyperionPoolSizeClass newSizeClass = getSizeClass(size, &pool->config);
 
         /* Check if we need to switch pools */
         if (newSizeClass != entry->sizeClass || usage != entry->usage) {
             /* Size or usage pattern changed, allocate from new pool and copy data */
-            void *newPtr = tinyaiAdvancedPoolAlloc(pool, size, alignment, usage);
+            void *newPtr = hyperionAdvancedPoolAlloc(pool, size, alignment, usage);
             if (!newPtr) {
                 return NULL; /* Allocation failed */
             }
@@ -652,7 +652,7 @@ void *tinyaiAdvancedPoolRealloc(TinyAIAdvancedMemoryPool *pool, void *ptr, size_
             memcpy(newPtr, ptr, copySize);
 
             /* Free old allocation */
-            tinyaiAdvancedPoolFree(pool, ptr);
+            hyperionAdvancedPoolFree(pool, ptr);
 
             /* Track pool switch */
             pool->poolSwitches++;
@@ -661,7 +661,7 @@ void *tinyaiAdvancedPoolRealloc(TinyAIAdvancedMemoryPool *pool, void *ptr, size_
         }
         else {
             /* Same pool, use its realloc directly */
-            void *newPtr = tinyaiMemoryPoolRealloc(entry->sourcePool, ptr, size, alignment);
+            void *newPtr = hyperionMemoryPoolRealloc(entry->sourcePool, ptr, size, alignment);
             if (!newPtr) {
                 return NULL; /* Reallocation failed */
             }
@@ -684,17 +684,17 @@ void *tinyaiAdvancedPoolRealloc(TinyAIAdvancedMemoryPool *pool, void *ptr, size_
         pool->cacheMisses++;
 
         /* Find which pool this pointer belongs to */
-        TinyAIMemoryPool      *sourcePool      = NULL;
-        TinyAIPoolUsagePattern sourceUsage     = TINYAI_POOL_USAGE_GENERAL;
-        TinyAIPoolSizeClass    sourceSizeClass = TINYAI_POOL_SIZE_TINY;
+        HyperionMemoryPool      *sourcePool      = NULL;
+        HyperionPoolUsagePattern sourceUsage     = HYPERION_POOL_USAGE_GENERAL;
+        HyperionPoolSizeClass    sourceSizeClass = HYPERION_POOL_SIZE_TINY;
 
-        for (int u = 0; u < TINYAI_POOL_USAGE_COUNT && !sourcePool; u++) {
-            for (int s = 0; s < TINYAI_POOL_SIZE_COUNT && !sourcePool; s++) {
-                TinyAIMemoryPool *memPool = pool->pools[u][s];
-                if (memPool && tinyaiMemoryPoolContains(memPool, ptr)) {
+        for (int u = 0; u < HYPERION_POOL_USAGE_COUNT && !sourcePool; u++) {
+            for (int s = 0; s < HYPERION_POOL_SIZE_COUNT && !sourcePool; s++) {
+                HyperionMemoryPool *memPool = pool->pools[u][s];
+                if (memPool && hyperionMemoryPoolContains(memPool, ptr)) {
                     sourcePool      = memPool;
-                    sourceUsage     = (TinyAIPoolUsagePattern)u;
-                    sourceSizeClass = (TinyAIPoolSizeClass)s;
+                    sourceUsage     = (HyperionPoolUsagePattern)u;
+                    sourceSizeClass = (HyperionPoolSizeClass)s;
                     break;
                 }
             }
@@ -706,12 +706,12 @@ void *tinyaiAdvancedPoolRealloc(TinyAIAdvancedMemoryPool *pool, void *ptr, size_
         }
 
         /* Determine new size class */
-        TinyAIPoolSizeClass newSizeClass = getSizeClass(size, &pool->config);
+        HyperionPoolSizeClass newSizeClass = getSizeClass(size, &pool->config);
 
         /* Check if we need to switch pools */
         if (newSizeClass != sourceSizeClass || usage != sourceUsage) {
             /* Size or usage pattern changed, allocate from new pool and copy data */
-            void *newPtr = tinyaiAdvancedPoolAlloc(pool, size, alignment, usage);
+            void *newPtr = hyperionAdvancedPoolAlloc(pool, size, alignment, usage);
             if (!newPtr) {
                 return NULL; /* Allocation failed */
             }
@@ -721,11 +721,11 @@ void *tinyaiAdvancedPoolRealloc(TinyAIAdvancedMemoryPool *pool, void *ptr, size_
                 (sourceSizeClass > 0) ? pool->config.sizeClassLimits[sourceSizeClass - 1] : 0;
 
             /* Copy data from old location to new location */
-            size_t copySize = (size < origSize) ? size : origSize;
+            size_t copySize = (size < entry->size) ? size : origSize;
             memcpy(newPtr, ptr, copySize);
 
             /* Free old allocation */
-            tinyaiMemoryPoolFree(sourcePool, ptr);
+            hyperionMemoryPoolFree(sourcePool, ptr);
 
             /* Track pool switch */
             pool->poolSwitches++;
@@ -734,7 +734,7 @@ void *tinyaiAdvancedPoolRealloc(TinyAIAdvancedMemoryPool *pool, void *ptr, size_
         }
         else {
             /* Same pool, use its realloc directly */
-            void *newPtr = tinyaiMemoryPoolRealloc(sourcePool, ptr, size, alignment);
+            void *newPtr = hyperionMemoryPoolRealloc(sourcePool, ptr, size, alignment);
             if (!newPtr) {
                 return NULL; /* Reallocation failed */
             }
@@ -752,26 +752,30 @@ void *tinyaiAdvancedPoolRealloc(TinyAIAdvancedMemoryPool *pool, void *ptr, size_
 /**
  * Get statistics for the advanced memory pool
  */
-void tinyaiAdvancedPoolGetStats(TinyAIAdvancedMemoryPool *pool, TinyAIAdvancedPoolStats *stats)
+void hyperionAdvancedPoolGetStats(HyperionAdvancedMemoryPool *pool, HyperionAdvancedPoolStats *stats)
 {
     if (!pool || !stats) {
         return;
     }
 
     /* Clear stats structure */
-    memset(stats, 0, sizeof(TinyAIAdvancedPoolStats));
+    memset(stats, 0, sizeof(HyperionAdvancedPoolStats));
 
     /* Gather statistics from all pools */
-    for (int usage = 0; usage < TINYAI_POOL_USAGE_COUNT; usage++) {
-        for (int size = 0; size < TINYAI_POOL_SIZE_COUNT; size++) {
-            TinyAIMemoryPool *memPool = pool->pools[usage][size];
+    for (int usage = 0; usage < HYPERION_POOL_USAGE_COUNT; usage++) {
+        for (int size = 0; size < HYPERION_POOL_SIZE_COUNT; size++) {
+            HyperionMemoryPool *memPool = pool->pools[usage][size];
             if (memPool) {
-                tinyaiMemoryPoolGetStats(memPool, &stats->poolStats[usage][size]);
+                HyperionMemoryPoolStats poolStats;
+                hyperionMemoryPoolGetStats(memPool, &poolStats);
 
                 /* Accumulate summary stats */
-                stats->totalAllocated += stats->poolStats[usage][size].totalAllocated;
-                stats->totalUsed += stats->poolStats[usage][size].totalUsed;
-                stats->totalWasted += stats->poolStats[usage][size].totalWasted;
+                stats->totalAllocated += poolStats.totalAllocated;
+                stats->totalUsed += poolStats.totalUsed;
+                stats->totalWasted += poolStats.totalWasted;
+
+                /* Copy individual pool stats */
+                memcpy(&stats->poolStats[usage][size], &poolStats, sizeof(HyperionMemoryPoolStats));
             }
         }
     }
@@ -797,17 +801,17 @@ void tinyaiAdvancedPoolGetStats(TinyAIAdvancedMemoryPool *pool, TinyAIAdvancedPo
 /**
  * Reset all pools in the advanced memory pool system
  */
-void tinyaiAdvancedPoolReset(TinyAIAdvancedMemoryPool *pool)
+void hyperionAdvancedPoolReset(HyperionAdvancedMemoryPool *pool)
 {
     if (!pool) {
         return;
     }
 
     /* Reset all individual pools */
-    for (int usage = 0; usage < TINYAI_POOL_USAGE_COUNT; usage++) {
-        for (int size = 0; size < TINYAI_POOL_SIZE_COUNT; size++) {
+    for (int usage = 0; usage < HYPERION_POOL_USAGE_COUNT; usage++) {
+        for (int size = 0; size < HYPERION_POOL_SIZE_COUNT; size++) {
             if (pool->pools[usage][size]) {
-                tinyaiMemoryPoolReset(pool->pools[usage][size]);
+                hyperionMemoryPoolReset(pool->pools[usage][size]);
             }
         }
     }
@@ -830,23 +834,23 @@ void tinyaiAdvancedPoolReset(TinyAIAdvancedMemoryPool *pool)
 /**
  * Optimize the memory pool distribution based on usage patterns
  */
-bool tinyaiAdvancedPoolOptimize(TinyAIAdvancedMemoryPool *pool)
+bool hyperionAdvancedPoolOptimize(HyperionAdvancedMemoryPool *pool)
 {
     if (!pool || !pool->config.enableAutoResize) {
         return false;
     }
 
     /* Analyze usage patterns for each pool */
-    for (int usage = 0; usage < TINYAI_POOL_USAGE_COUNT; usage++) {
-        for (int size = 0; size < TINYAI_POOL_SIZE_COUNT; size++) {
-            TinyAIMemoryPool *memPool = pool->pools[usage][size];
+    for (int usage = 0; usage < HYPERION_POOL_USAGE_COUNT; usage++) {
+        for (int size = 0; size < HYPERION_POOL_SIZE_COUNT; size++) {
+            HyperionMemoryPool *memPool = pool->pools[usage][size];
             if (!memPool) {
                 continue;
             }
 
             /* Get current stats */
-            TinyAIMemoryPoolStats stats;
-            tinyaiMemoryPoolGetStats(memPool, &stats);
+            HyperionMemoryPoolStats stats;
+            hyperionMemoryPoolGetStats(memPool, &stats);
 
             /* Calculate usage ratio */
             float usageRatio = (float)stats.totalUsed / stats.totalAllocated;
@@ -857,7 +861,7 @@ bool tinyaiAdvancedPoolOptimize(TinyAIAdvancedMemoryPool *pool)
                 size_t growSize = stats.totalAllocated / 2; /* Grow by 50% */
 
                 /* Create a new config with increased capacity */
-                TinyAIMemoryPoolConfig newConfig = pool->config.baseConfig;
+                HyperionMemoryPoolConfig newConfig = pool->config.baseConfig;
                 newConfig.initialCapacity        = stats.totalAllocated + growSize;
 
                 /* Check if growing would exceed max capacity */
@@ -869,11 +873,11 @@ bool tinyaiAdvancedPoolOptimize(TinyAIAdvancedMemoryPool *pool)
                 /* Only grow if there's actually room to grow */
                 if (newConfig.initialCapacity > stats.totalAllocated) {
                     /* Create a new pool with increased capacity */
-                    TinyAIMemoryPool *newPool = tinyaiMemoryPoolCreate(&newConfig);
+                    HyperionMemoryPool *newPool = hyperionMemoryPoolCreate(&newConfig);
                     if (newPool) {
                         /* Transfer all allocations to the new pool (this is expensive) */
                         /* For now, just keep using the old pool and let the system handle it */
-                        tinyaiMemoryPoolDestroy(newPool);
+                        hyperionMemoryPoolDestroy(newPool);
                     }
                 }
             }
@@ -885,7 +889,7 @@ bool tinyaiAdvancedPoolOptimize(TinyAIAdvancedMemoryPool *pool)
 
             /* If configured, compact the pool to reduce fragmentation */
             if (pool->config.aggressiveDefrag) {
-                tinyaiMemoryPoolCompact(memPool);
+                hyperionMemoryPoolCompact(memPool);
             }
         }
     }
@@ -896,7 +900,7 @@ bool tinyaiAdvancedPoolOptimize(TinyAIAdvancedMemoryPool *pool)
 /**
  * Register a tensor operation with the memory pool
  */
-bool tinyaiAdvancedPoolRegisterTensorOp(TinyAIAdvancedMemoryPool *pool, int opType,
+bool hyperionAdvancedPoolRegisterTensorOp(HyperionAdvancedMemoryPool *pool, int opType,
                                         const size_t *inputSizes, int numInputs,
                                         const size_t *outputSizes, int numOutputs)
 {
@@ -943,7 +947,7 @@ bool tinyaiAdvancedPoolRegisterTensorOp(TinyAIAdvancedMemoryPool *pool, int opTy
 /**
  * Find a registered tensor operation
  */
-static TensorOpDescriptor *findTensorOp(TinyAIAdvancedMemoryPool *pool, int opType)
+static TensorOpDescriptor *findTensorOp(HyperionAdvancedMemoryPool *pool, int opType)
 {
     for (int i = 0; i < pool->numTensorOps; i++) {
         if (pool->tensorOps[i].opType == opType) {
@@ -956,7 +960,7 @@ static TensorOpDescriptor *findTensorOp(TinyAIAdvancedMemoryPool *pool, int opTy
 /**
  * Allocate memory optimized for a specific tensor operation
  */
-void *tinyaiAdvancedPoolAllocForTensorOp(TinyAIAdvancedMemoryPool *pool, int opType, bool isInput,
+void *hyperionAdvancedPoolAllocForTensorOp(HyperionAdvancedMemoryPool *pool, int opType, bool isInput,
                                          int tensorIndex, size_t size)
 {
     if (!pool || !pool->config.optimizeForTensorOps || size == 0) {
@@ -967,7 +971,7 @@ void *tinyaiAdvancedPoolAllocForTensorOp(TinyAIAdvancedMemoryPool *pool, int opT
     TensorOpDescriptor *op = findTensorOp(pool, opType);
     if (!op) {
         /* Operation not found, fall back to regular allocation */
-        return tinyaiAdvancedPoolAlloc(pool, size, 32, TINYAI_POOL_USAGE_ACTIVATIONS);
+        return hyperionAdvancedPoolAlloc(pool, size, 32, HYPERION_POOL_USAGE_ACTIVATIONS);
     }
 
     /* Check if the tensor index is valid */
@@ -989,7 +993,7 @@ void *tinyaiAdvancedPoolAllocForTensorOp(TinyAIAdvancedMemoryPool *pool, int opT
     }
 
     /* Allocate memory for this tensor */
-    void *memory = tinyaiAdvancedPoolAlloc(pool, size, 32, TINYAI_POOL_USAGE_ACTIVATIONS);
+    void *memory = hyperionAdvancedPoolAlloc(pool, size, 32, HYPERION_POOL_USAGE_ACTIVATIONS);
     if (!memory) {
         return NULL;
     }
@@ -1003,7 +1007,7 @@ void *tinyaiAdvancedPoolAllocForTensorOp(TinyAIAdvancedMemoryPool *pool, int opT
 /**
  * Enable or disable thread safety for the pool
  */
-void tinyaiAdvancedPoolSetThreadSafety(TinyAIAdvancedMemoryPool *pool, bool enable)
+void hyperionAdvancedPoolSetThreadSafety(HyperionAdvancedMemoryPool *pool, bool enable)
 {
     if (pool) {
         pool->threadSafetyEnabled = enable;
@@ -1013,7 +1017,7 @@ void tinyaiAdvancedPoolSetThreadSafety(TinyAIAdvancedMemoryPool *pool, bool enab
 /**
  * Set memory pressure callback function
  */
-void tinyaiAdvancedPoolSetPressureCallback(TinyAIAdvancedMemoryPool *pool,
+void hyperionAdvancedPoolSetPressureCallback(HyperionAdvancedMemoryPool *pool,
                                            void (*callback)(void *userData, uint8_t pressureLevel),
                                            void *userData)
 {
@@ -1026,7 +1030,7 @@ void tinyaiAdvancedPoolSetPressureCallback(TinyAIAdvancedMemoryPool *pool,
 /**
  * Dump advanced memory pool information for debugging
  */
-void tinyaiAdvancedPoolDump(TinyAIAdvancedMemoryPool *pool, bool dumpAllocations)
+void hyperionAdvancedPoolDump(HyperionAdvancedMemoryPool *pool, bool dumpAllocations)
 {
     if (!pool) {
         return;
@@ -1044,17 +1048,17 @@ void tinyaiAdvancedPoolDump(TinyAIAdvancedMemoryPool *pool, bool dumpAllocations
 
     /* Print statistics for each pool */
     printf("\n=== Individual Pool Statistics ===\n");
-    const char *usageNames[TINYAI_POOL_USAGE_COUNT] = {"Weights", "Activations", "General"};
+    const char *usageNames[HYPERION_POOL_USAGE_COUNT] = {"Weights", "Activations", "General"};
 
-    const char *sizeNames[TINYAI_POOL_SIZE_COUNT] = {"Tiny",  "Small",   "Medium",
+    const char *sizeNames[HYPERION_POOL_SIZE_COUNT] = {"Hyperion",  "Small",   "Medium",
                                                      "Large", "X-Large", "Huge"};
 
-    for (int usage = 0; usage < TINYAI_POOL_USAGE_COUNT; usage++) {
-        for (int size = 0; size < TINYAI_POOL_SIZE_COUNT; size++) {
-            TinyAIMemoryPool *memPool = pool->pools[usage][size];
+    for (int usage = 0; usage < HYPERION_POOL_USAGE_COUNT; usage++) {
+        for (int size = 0; size < HYPERION_POOL_SIZE_COUNT; size++) {
+            HyperionMemoryPool *memPool = pool->pools[usage][size];
             if (memPool) {
-                TinyAIMemoryPoolStats stats;
-                tinyaiMemoryPoolGetStats(memPool, &stats);
+                HyperionMemoryPoolStats stats;
+                hyperionMemoryPoolGetStats(memPool, &stats);
 
                 printf("\n  %s-%s Pool:\n", usageNames[usage], sizeNames[size]);
                 printf("    Total allocated: %zu bytes\n", stats.totalAllocated);
@@ -1067,7 +1071,7 @@ void tinyaiAdvancedPoolDump(TinyAIAdvancedMemoryPool *pool, bool dumpAllocations
                 if (dumpAllocations) {
                     /* Delegate to the memory pool's dump function */
                     printf("\n    Allocations:\n");
-                    tinyaiMemoryPoolDump(memPool, true);
+                    hyperionMemoryPoolDump(memPool, true);
                 }
             }
         }

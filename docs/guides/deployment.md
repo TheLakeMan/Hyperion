@@ -1,14 +1,14 @@
-# TinyAI Deployment Guide
+# Hyperion Deployment Guide
 
 ## Overview
 
-This guide covers the deployment of TinyAI models in production environments, including packaging, version management, and deployment verification.
+This guide covers the deployment of Hyperion models in production environments, including packaging, version management, and deployment verification.
 
 ## Model Packaging
 
 ### Model Format
 
-TinyAI models are packaged in a custom format that includes:
+Hyperion models are packaged in a custom format that includes:
 - Model architecture definition
 - Quantized weights
 - Configuration parameters
@@ -18,19 +18,19 @@ TinyAI models are packaged in a custom format that includes:
 
 ```bash
 # Package a model
-tinyai package model --input model_dir --output model.tinyai
+hyperion package model --input model_dir --output model.hyperion
 
 # Extract a packaged model
-tinyai extract model --input model.tinyai --output model_dir
+hyperion extract model --input model.hyperion --output model_dir
 
 # Verify model package
-tinyai verify model --input model.tinyai
+hyperion verify model --input model.hyperion
 ```
 
 ### Package Structure
 
 ```
-model.tinyai/
+model.hyperion/
 ├── manifest.json        # Model metadata and configuration
 ├── architecture.json    # Model architecture definition
 ├── weights/            # Quantized weights directory
@@ -47,7 +47,7 @@ model.tinyai/
 
 ### Version Control
 
-TinyAI uses semantic versioning (MAJOR.MINOR.PATCH):
+Hyperion uses semantic versioning (MAJOR.MINOR.PATCH):
 - MAJOR: Incompatible API changes
 - MINOR: Backward-compatible functionality additions
 - PATCH: Backward-compatible bug fixes
@@ -56,15 +56,15 @@ TinyAI uses semantic versioning (MAJOR.MINOR.PATCH):
 
 ```bash
 # Check model version
-tinyai version check model.tinyai
+hyperion version check model.hyperion
 
 # Update model version
-tinyai version update model.tinyai --major
-tinyai version update model.tinyai --minor
-tinyai version update model.tinyai --patch
+hyperion version update model.hyperion --major
+hyperion version update model.hyperion --minor
+hyperion version update model.hyperion --patch
 
 # Compare model versions
-tinyai version compare model_v1.tinyai model_v2.tinyai
+hyperion version compare model_v1.hyperion model_v2.hyperion
 ```
 
 ### Version Migration
@@ -112,39 +112,39 @@ tinyai version compare model_v1.tinyai model_v2.tinyai
 
 1. **Backup Current Version**
    ```bash
-   tinyai backup model --name current_model --output backup/
+   hyperion backup model --name current_model --output backup/
    ```
 
 2. **Deploy New Version**
    ```bash
-   tinyai deploy model --input model.tinyai --config deployment.json
+   hyperion deploy model --input model.hyperion --config deployment.json
    ```
 
 3. **Verify Deployment**
    ```bash
-   tinyai verify deployment --model model.tinyai --config verification.json
+   hyperion verify deployment --model model.hyperion --config verification.json
    ```
 
 4. **Monitor Performance**
    ```bash
-   tinyai monitor model --model model.tinyai --metrics metrics.json
+   hyperion monitor model --model model.hyperion --metrics metrics.json
    ```
 
 ### Rollback Procedure
 
 1. **Trigger Rollback**
    ```bash
-   tinyai rollback model --backup backup/current_model --reason "Performance issues"
+   hyperion rollback model --backup backup/current_model --reason "Performance issues"
    ```
 
 2. **Verify Rollback**
    ```bash
-   tinyai verify deployment --model backup/current_model
+   hyperion verify deployment --model backup/current_model
    ```
 
 3. **Document Rollback**
    ```bash
-   tinyai log rollback --backup backup/current_model --reason "Performance issues"
+   hyperion log rollback --backup backup/current_model --reason "Performance issues"
    ```
 
 ## Deployment Verification
@@ -153,16 +153,16 @@ tinyai version compare model_v1.tinyai model_v2.tinyai
 
 ```bash
 # Verify model integrity
-tinyai verify integrity model.tinyai
+hyperion verify integrity model.hyperion
 
 # Verify model performance
-tinyai verify performance model.tinyai --dataset test_data/
+hyperion verify performance model.hyperion --dataset test_data/
 
 # Verify memory usage
-tinyai verify memory model.tinyai --config memory_config.json
+hyperion verify memory model.hyperion --config memory_config.json
 
 # Verify compatibility
-tinyai verify compatibility model.tinyai --platform target_platform
+hyperion verify compatibility model.hyperion --platform target_platform
 ```
 
 ### Verification Metrics
@@ -189,17 +189,17 @@ tinyai verify compatibility model.tinyai --platform target_platform
 
 1. **Performance Monitoring**
    ```bash
-   tinyai monitor performance --model model.tinyai --interval 60
+   hyperion monitor performance --model model.hyperion --interval 60
    ```
 
 2. **Resource Monitoring**
    ```bash
-   tinyai monitor resources --model model.tinyai --interval 30
+   hyperion monitor resources --model model.hyperion --interval 30
    ```
 
 3. **Error Monitoring**
    ```bash
-   tinyai monitor errors --model model.tinyai --log errors.log
+   hyperion monitor errors --model model.hyperion --log errors.log
    ```
 
 ## Best Practices
@@ -252,4 +252,4 @@ tinyai verify compatibility model.tinyai --platform target_platform
    - Verify platform support
    - Check dependency versions
    - Review API compatibility
-   - Test on target platform 
+   - Test on target platform

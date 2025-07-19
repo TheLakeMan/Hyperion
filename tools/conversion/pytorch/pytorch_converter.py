@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PyTorch to TinyAI Model Converter
+PyTorch to Hyperion Model Converter
 
 This module converts PyTorch models to TinyAI format.
 It handles:

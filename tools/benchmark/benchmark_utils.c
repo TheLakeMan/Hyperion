@@ -15,11 +15,11 @@
 #endif
 #endif
 
-// Current version of TinyAI framework
+// Current version of Hyperion framework
 #define TINYAI_VERSION "0.1.0"
 
 // Initialize benchmark configuration with default values
-void tinyai_init_benchmark_config(TinyAIBenchmarkConfig *config)
+void hyperion_init_benchmark_config(HyperionBenchmarkConfig *config)
 {
     if (!config)
         return;
@@ -48,7 +48,7 @@ void tinyai_init_benchmark_config(TinyAIBenchmarkConfig *config)
 }
 
 // Initialize benchmark result structure
-void tinyai_init_benchmark_result(TinyAIBenchmarkResult *result)
+void hyperion_init_benchmark_result(HyperionBenchmarkResult *result)
 {
     if (!result)
         return;
@@ -76,7 +76,7 @@ void tinyai_init_benchmark_result(TinyAIBenchmarkResult *result)
     result->samples_per_second = 0.0;
 
     // Initialize framework identification
-    strcpy(result->framework_name, "TinyAI");
+    strcpy(result->framework_name, "Hyperion");
     strcpy(result->framework_version, TINYAI_VERSION);
     memset(result->model_name, 0, sizeof(result->model_name));
     memset(result->device_name, 0, sizeof(result->device_name));
@@ -86,7 +86,7 @@ void tinyai_init_benchmark_result(TinyAIBenchmarkResult *result)
 }
 
 // Start benchmark timing
-void tinyai_benchmark_start_timer(struct timespec *start_time)
+void hyperion_benchmark_start_timer(struct timespec *start_time)
 {
     if (!start_time)
         return;
@@ -101,7 +101,7 @@ void tinyai_benchmark_start_timer(struct timespec *start_time)
 }
 
 // Stop benchmark timing and calculate elapsed time in ms
-double tinyai_benchmark_stop_timer(struct timespec *start_time)
+double hyperion_benchmark_stop_timer(struct timespec *start_time)
 {
     if (!start_time)
         return 0.0;
@@ -122,7 +122,7 @@ double tinyai_benchmark_stop_timer(struct timespec *start_time)
 }
 
 // Export benchmark results to CSV
-bool tinyai_export_benchmark_csv(const TinyAIBenchmarkResult *result, const char *filepath)
+bool hyperion_export_benchmark_csv(const HyperionBenchmarkResult *result, const char *filepath)
 {
     if (!result || !filepath)
         return false;
@@ -189,7 +189,7 @@ bool tinyai_export_benchmark_csv(const TinyAIBenchmarkResult *result, const char
 }
 
 // Export benchmark results to JSON
-bool tinyai_export_benchmark_json(const TinyAIBenchmarkResult *result, const char *filepath)
+bool hyperion_export_benchmark_json(const HyperionBenchmarkResult *result, const char *filepath)
 {
     if (!result || !filepath)
         return false;
@@ -283,7 +283,7 @@ bool tinyai_export_benchmark_json(const TinyAIBenchmarkResult *result, const cha
 }
 
 // Print benchmark results to console
-void tinyai_print_benchmark_results(const TinyAIBenchmarkResult *result)
+void hyperion_print_benchmark_results(const HyperionBenchmarkResult *result)
 {
     if (!result)
         return;
@@ -347,33 +347,33 @@ void tinyai_print_benchmark_results(const TinyAIBenchmarkResult *result)
 }
 
 // Compare benchmark results with other frameworks
-void tinyai_compare_benchmark_results(const TinyAIBenchmarkResult *tinyai_result,
-                                      const TinyAIBenchmarkResult *other_results,
+void hyperion_compare_benchmark_results(const HyperionBenchmarkResult *hyperion_result,
+                                      const HyperionBenchmarkResult *other_results,
                                       int                          num_other_results)
 {
-    if (!tinyai_result || !other_results || num_other_results <= 0)
+    if (!hyperion_result || !other_results || num_other_results <= 0)
         return;
 
     printf("\n===== BENCHMARK COMPARISON =====\n");
-    printf("Model: %s\n\n", tinyai_result->model_name);
+    printf("Model: %s\n\n", hyperion_result->model_name);
 
     // Print header
     printf("%-15s %-15s %-15s %-15s %-15s %-15s\n", "Framework", "Avg Time (ms)", "Memory (MB)",
            "Samples/sec", "Speedup", "Size Ratio");
     printf("-------------------------------------------------------------------------------\n");
 
-    // Print TinyAI results (baseline)
-    printf("%-15s %-15.2f %-15.2f %-15.2f %-15s %-15s\n", tinyai_result->framework_name,
-           tinyai_result->avg_inference_time_ms,
-           tinyai_result->peak_memory_bytes / (1024.0 * 1024.0), tinyai_result->samples_per_second,
+    // Print Hyperion results (baseline)
+    printf("%-15s %-15.2f %-15.2f %-15.2f %-15s %-15s\n", hyperion_result->framework_name,
+           hyperion_result->avg_inference_time_ms,
+           hyperion_result->peak_memory_bytes / (1024.0 * 1024.0), hyperion_result->samples_per_second,
            "1.00x", "1.00x");
 
     // Print other frameworks
     for (int i = 0; i < num_other_results; i++) {
         double time_speedup =
-            tinyai_result->avg_inference_time_ms / other_results[i].avg_inference_time_ms;
+            hyperion_result->avg_inference_time_ms / other_results[i].avg_inference_time_ms;
         double memory_ratio =
-            tinyai_result->peak_memory_bytes / (double)other_results[i].peak_memory_bytes;
+            hyperion_result->peak_memory_bytes / (double)other_results[i].peak_memory_bytes;
 
         printf("%-15s %-15.2f %-15.2f %-15.2f %-15.2fx %-15.2fx\n", other_results[i].framework_name,
                other_results[i].avg_inference_time_ms,
@@ -385,7 +385,7 @@ void tinyai_compare_benchmark_results(const TinyAIBenchmarkResult *tinyai_result
 }
 
 // Platform-specific memory measurement functions
-size_t tinyai_measure_current_memory_usage(void)
+size_t hyperion_measure_current_memory_usage(void)
 {
 #ifdef _WIN32
     PROCESS_MEMORY_COUNTERS pmc;
@@ -428,7 +428,7 @@ size_t tinyai_measure_current_memory_usage(void)
 #endif
 }
 
-size_t tinyai_measure_peak_memory_usage(void)
+size_t hyperion_measure_peak_memory_usage(void)
 {
 #ifdef _WIN32
     PROCESS_MEMORY_COUNTERS pmc;
@@ -439,7 +439,7 @@ size_t tinyai_measure_peak_memory_usage(void)
 #elif defined(__APPLE__)
     // macOS doesn't provide a direct way to get peak memory,
     // so we'll have to track it manually in the benchmarking code
-    return tinyai_measure_current_memory_usage();
+    return hyperion_measure_current_memory_usage();
 #else
     // Linux
     FILE *file = fopen("/proc/self/status", "r");
@@ -467,7 +467,7 @@ size_t tinyai_measure_peak_memory_usage(void)
 }
 
 // Function to detect and return the available SIMD capabilities
-const char *tinyai_detect_simd_capabilities(void)
+const char *hyperion_detect_simd_capabilities(void)
 {
 #ifdef __AVX2__
     return "AVX2";
@@ -487,7 +487,7 @@ const char *tinyai_detect_simd_capabilities(void)
 }
 
 // Function to determine the optimal number of threads
-int tinyai_determine_optimal_threads(void)
+int hyperion_determine_optimal_threads(void)
 {
 #ifdef _WIN32
     SYSTEM_INFO sysinfo;
@@ -499,7 +499,7 @@ int tinyai_determine_optimal_threads(void)
 }
 
 // Utility function to create a timestamped filename
-void tinyai_create_timestamped_filename(char *buffer, size_t buffer_size, const char *prefix,
+void hyperion_create_timestamped_filename(char *buffer, size_t buffer_size, const char *prefix,
                                         const char *extension)
 {
     if (!buffer || buffer_size == 0 || !prefix || !extension)

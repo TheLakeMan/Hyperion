@@ -1,7 +1,7 @@
 .
 
 'ef'f'f//**
- * TinyAI - SIMD-accelerated Attention Mechanism Tests
+ * Hyperion - SIMD-accelerated Attention Mechanism Tests
  *
  * This file contains tests for the SIMD-accelerated attention mechanism
  * implementation in models/text/attention.c, verifying both correctness

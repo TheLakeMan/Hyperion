@@ -1,6 +1,6 @@
-# TinyAI Media Tagging Example
+# Hyperion Media Tagging Example
 
-This example demonstrates how to use TinyAI for automated tagging and description generation for different media types (images, text, and audio). The media tagger uses multimodal capabilities to identify content, generate relevant tags, and produce human-readable descriptions.
+This example demonstrates how to use Hyperion for automated tagging and description generation for different media types (images, text, and audio). The media tagger uses multimodal capabilities to identify content, generate relevant tags, and produce human-readable descriptions.
 
 ## Features
 
@@ -14,7 +14,7 @@ This example demonstrates how to use TinyAI for automated tagging and descriptio
 
 ## Building the Example
 
-To build the media tagging example, ensure the `BUILD_EXAMPLES` option is set to `ON` when configuring TinyAI:
+To build the media tagging example, ensure the `BUILD_EXAMPLES` option is set to `ON` when configuring Hyperion:
 
 ```bash
 mkdir build && cd build
@@ -40,7 +40,6 @@ media_tagging [options] file1 [file2 file3 ...]
 - `--output <dir>`: Output directory for tag files (default: current dir)
 - `--format <format>`: Output format: txt, json, xml (default: json)
 - `--threshold <value>`: Confidence threshold (0.0-1.0, default: 0.5)
-- `--max-tags <n>`: Maximum number of tags (default: 20)
 - `--generate-description`: Generate descriptions for each media file
 - `--quantized`: Use 4-bit quantization for models
 - `--simd`: Use SIMD acceleration
@@ -170,4 +169,4 @@ You can customize the media tagger by:
 4. Configuring output formats for different use cases
 5. Creating custom prompt templates for description generation
 
-See the TinyAI documentation for more information on training and customizing models.
+See the Hyperion documentation for more information on training and customizing models.

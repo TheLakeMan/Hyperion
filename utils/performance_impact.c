@@ -6,7 +6,7 @@
 #include <time.h>
 
 // Default configuration
-static const TinyAIPerformanceConfig DEFAULT_CONFIG = {.track_execution_time  = true,
+static const HyperionPerformanceConfig DEFAULT_CONFIG = {.track_execution_time  = true,
                                                        .track_memory_usage    = true,
                                                        .track_cpu_usage       = true,
                                                        .track_cache_usage     = true,
@@ -23,9 +23,9 @@ static uint64_t get_timestamp_ms()
 }
 
 // Create performance analysis context
-TinyAIPerformanceAnalysis *tinyaiCreatePerformanceAnalysis(const TinyAIPerformanceConfig *config)
+HyperionPerformanceAnalysis *hyperionCreatePerformanceAnalysis(const HyperionPerformanceConfig *config)
 {
-    TinyAIPerformanceAnalysis *analysis = malloc(sizeof(TinyAIPerformanceAnalysis));
+    HyperionPerformanceAnalysis *analysis = malloc(sizeof(HyperionPerformanceAnalysis));
     if (!analysis)
         return NULL;
 
@@ -38,9 +38,9 @@ TinyAIPerformanceAnalysis *tinyaiCreatePerformanceAnalysis(const TinyAIPerforman
     }
 
     // Initialize metrics
-    memset(&analysis->baseline, 0, sizeof(TinyAIPerformanceMetrics));
-    memset(&analysis->current, 0, sizeof(TinyAIPerformanceMetrics));
-    memset(&analysis->impact, 0, sizeof(TinyAIOptimizationImpact));
+    memset(&analysis->baseline, 0, sizeof(HyperionPerformanceMetrics));
+    memset(&analysis->current, 0, sizeof(HyperionPerformanceMetrics));
+    memset(&analysis->impact, 0, sizeof(HyperionOptimizationImpact));
 
     // Initialize timestamps
     analysis->start_time       = get_timestamp_ms();
@@ -50,7 +50,7 @@ TinyAIPerformanceAnalysis *tinyaiCreatePerformanceAnalysis(const TinyAIPerforman
 }
 
 // Free performance analysis context
-void tinyaiFreePerformanceAnalysis(TinyAIPerformanceAnalysis *analysis)
+void hyperionFreePerformanceAnalysis(HyperionPerformanceAnalysis *analysis)
 {
     if (!analysis)
         return;
@@ -58,8 +58,8 @@ void tinyaiFreePerformanceAnalysis(TinyAIPerformanceAnalysis *analysis)
 }
 
 // Record performance metrics
-void tinyaiRecordMetrics(TinyAIPerformanceAnalysis      *analysis,
-                         const TinyAIPerformanceMetrics *metrics)
+void hyperionRecordMetrics(HyperionPerformanceAnalysis      *analysis,
+                         const HyperionPerformanceMetrics *metrics)
 {
     if (!analysis || !metrics)
         return;
@@ -82,7 +82,7 @@ void tinyaiRecordMetrics(TinyAIPerformanceAnalysis      *analysis,
 }
 
 // Take a performance sample
-void tinyaiTakePerformanceSample(TinyAIPerformanceAnalysis *analysis)
+void hyperionTakePerformanceSample(HyperionPerformanceAnalysis *analysis)
 {
     if (!analysis)
         return;
@@ -93,7 +93,7 @@ void tinyaiTakePerformanceSample(TinyAIPerformanceAnalysis *analysis)
     if (elapsed_ms >= analysis->config.sample_interval_ms) {
         // Update metrics based on current state
         // This is a placeholder - actual implementation would measure real metrics
-        TinyAIPerformanceMetrics metrics = {
+        HyperionPerformanceMetrics metrics = {
             .execution_time  = 0.0, // Would be measured
             .memory_usage    = 0,   // Would be measured
             .cpu_usage       = 0.0, // Would be measured
@@ -102,23 +102,23 @@ void tinyaiTakePerformanceSample(TinyAIPerformanceAnalysis *analysis)
             .cache_hit_ratio = 0.0  // Would be calculated
         };
 
-        tinyaiRecordMetrics(analysis, &metrics);
+        hyperionRecordMetrics(analysis, &metrics);
         analysis->last_sample_time = current_time;
     }
 }
 
 // Get current performance metrics
-TinyAIPerformanceMetrics tinyaiGetPerformanceMetrics(const TinyAIPerformanceAnalysis *analysis)
+HyperionPerformanceMetrics hyperionGetPerformanceMetrics(const HyperionPerformanceAnalysis *analysis)
 {
     if (!analysis) {
-        TinyAIPerformanceMetrics empty = {0};
+        HyperionPerformanceMetrics empty = {0};
         return empty;
     }
     return analysis->current;
 }
 
 // Analyze optimization impact
-void tinyaiAnalyzeOptimizationImpact(TinyAIPerformanceAnalysis *analysis)
+void hyperionAnalyzeOptimizationImpact(HyperionPerformanceAnalysis *analysis)
 {
     if (!analysis || !analysis->config.analyze_optimizations)
         return;
@@ -162,17 +162,17 @@ void tinyaiAnalyzeOptimizationImpact(TinyAIPerformanceAnalysis *analysis)
 }
 
 // Get optimization impact
-TinyAIOptimizationImpact tinyaiGetOptimizationImpact(const TinyAIPerformanceAnalysis *analysis)
+HyperionOptimizationImpact hyperionGetOptimizationImpact(const HyperionPerformanceAnalysis *analysis)
 {
     if (!analysis) {
-        TinyAIOptimizationImpact empty = {0};
+        HyperionOptimizationImpact empty = {0};
         return empty;
     }
     return analysis->impact;
 }
 
 // Generate performance report
-void tinyaiGeneratePerformanceReport(const TinyAIPerformanceAnalysis *analysis,
+void hyperionGeneratePerformanceReport(const HyperionPerformanceAnalysis *analysis,
                                      const char                      *filename)
 {
     if (!analysis || !filename)
@@ -212,7 +212,7 @@ void tinyaiGeneratePerformanceReport(const TinyAIPerformanceAnalysis *analysis,
 }
 
 // Get performance trend
-double tinyaiGetPerformanceTrend(const TinyAIPerformanceAnalysis *analysis)
+double hyperionGetPerformanceTrend(const HyperionPerformanceAnalysis *analysis)
 {
     if (!analysis)
         return 0.0;
@@ -225,15 +225,15 @@ double tinyaiGetPerformanceTrend(const TinyAIPerformanceAnalysis *analysis)
 }
 
 // Reset performance analysis
-void tinyaiResetPerformanceAnalysis(TinyAIPerformanceAnalysis *analysis)
+void hyperionResetPerformanceAnalysis(HyperionPerformanceAnalysis *analysis)
 {
     if (!analysis)
         return;
 
     // Reset metrics
-    memset(&analysis->baseline, 0, sizeof(TinyAIPerformanceMetrics));
-    memset(&analysis->current, 0, sizeof(TinyAIPerformanceMetrics));
-    memset(&analysis->impact, 0, sizeof(TinyAIOptimizationImpact));
+    memset(&analysis->baseline, 0, sizeof(HyperionPerformanceMetrics));
+    memset(&analysis->current, 0, sizeof(HyperionPerformanceMetrics));
+    memset(&analysis->impact, 0, sizeof(HyperionOptimizationImpact));
 
     // Reset timestamps
     analysis->start_time       = get_timestamp_ms();
@@ -241,7 +241,7 @@ void tinyaiResetPerformanceAnalysis(TinyAIPerformanceAnalysis *analysis)
 }
 
 // Enable/disable performance analysis
-void tinyaiEnablePerformanceAnalysis(TinyAIPerformanceAnalysis *analysis, bool enable)
+void hyperionEnablePerformanceAnalysis(HyperionPerformanceAnalysis *analysis, bool enable)
 {
     if (!analysis)
         return;
@@ -253,8 +253,8 @@ void tinyaiEnablePerformanceAnalysis(TinyAIPerformanceAnalysis *analysis, bool e
 }
 
 // Set performance analysis configuration
-void tinyaiSetPerformanceConfig(TinyAIPerformanceAnalysis     *analysis,
-                                const TinyAIPerformanceConfig *config)
+void hyperionSetPerformanceConfig(HyperionPerformanceAnalysis     *analysis,
+                                const HyperionPerformanceConfig *config)
 {
     if (!analysis || !config)
         return;

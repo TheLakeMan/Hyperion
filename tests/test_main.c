@@ -1,5 +1,5 @@
 /**
- * TinyAI Test Suite Main Entry Point
+ * Hyperion Test Suite Main Entry Point
  */
 
 #include <stdio.h>
@@ -26,7 +26,7 @@ void run_sparse_matrix_tests();  // Declaration for sparse matrix operations tes
 /* --- Test Runner --- */
 int main(int argc, char **argv)
 {
-    printf("--- Running TinyAI Test Suite ---\n");
+    printf("--- Running Hyperion Test Suite ---\n");
 
     // Simple argument parsing to run specific suites
     if (argc > 1) {

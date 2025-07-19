@@ -1,6 +1,6 @@
 /**
  * @file test_multimodal.c
- * @brief Test suite for TinyAI multimodal capabilities
+ * @brief Test suite for Hyperion multimodal capabilities
  */
 
 #include "../models/image/image_model.h"
@@ -42,14 +42,14 @@ static void test_multimodal_simd_acceleration();
 static void test_feature_fusion_methods();
 
 /* Utility function to create a simple test image */
-static TinyAIImage *create_test_image()
+static HyperionImage *create_test_image()
 {
     /* Create a small test image (RGB, 32x32) */
     const int width    = 32;
     const int height   = 32;
     const int channels = 3;
 
-    TinyAIImage *image = tinyaiImageCreate(width, height, channels);
+    HyperionImage *image = hyperionImageCreate(width, height, channels);
     if (!image) {
         fprintf(stderr, "Failed to create test image\n");
         return NULL;
@@ -114,16 +114,16 @@ static void test_multimodal_model_creation()
     printf("Testing multimodal model creation...\n");
 
     /* Create models */
-    TinyAIModel *visionModel =
-        tinyaiLoadModel(TEST_VISION_MODEL_PATH, TEST_VISION_WEIGHTS_PATH, NULL);
+    HyperionModel *visionModel =
+        hyperionLoadModel(TEST_VISION_MODEL_PATH, TEST_VISION_WEIGHTS_PATH, NULL);
     assert(visionModel != NULL);
 
-    TinyAIModel *textModel =
-        tinyaiLoadModel(TEST_TEXT_MODEL_PATH, TEST_TEXT_WEIGHTS_PATH, TEST_TOKENIZER_PATH);
+    HyperionModel *textModel =
+        hyperionLoadModel(TEST_TEXT_MODEL_PATH, TEST_TEXT_WEIGHTS_PATH, TEST_TOKENIZER_PATH);
     assert(textModel != NULL);
 
     /* Create multimodal model */
-    TinyAIMultimodalModel *multimodalModel = tinyaiCreateMultimodalModel(visionModel, textModel);
+    HyperionMultimodalModel *multimodalModel = hyperionCreateMultimodalModel(visionModel, textModel);
     assert(multimodalModel != NULL);
 
     /* Check properties */
@@ -131,7 +131,7 @@ static void test_multimodal_model_creation()
     assert(multimodalModel->textModel == textModel);
 
     /* Free multimodal model */
-    tinyaiFreeMultimodalModel(multimodalModel);
+    hyperionFreeMultimodalModel(multimodalModel);
 
     printf("Multimodal model creation test passed!\n");
 }
@@ -156,7 +156,7 @@ static void test_multimodal_feature_fusion()
     int    concatFeatureSize = 0;
 
     bool concatResult =
-        tinyaiFuseFeaturesConcat(visionFeatures, visionFeatureSize, textFeatures, textFeatureSize,
+        hyperionFuseFeaturesConcat(visionFeatures, visionFeatureSize, textFeatures, textFeatureSize,
                                  &concatFeatures, &concatFeatureSize);
 
     assert(concatResult == true);
@@ -179,7 +179,7 @@ static void test_multimodal_feature_fusion()
     float *addFeatures    = NULL;
     int    addFeatureSize = 0;
 
-    bool addResult = tinyaiFuseFeaturesAdd(visionFeatures, visionFeatureSize, tempTextFeatures,
+    bool addResult = hyperionFuseFeaturesAdd(visionFeatures, visionFeatureSize, tempTextFeatures,
                                            visionFeatureSize, &addFeatures, &addFeatureSize);
 
     assert(addResult == true);
@@ -195,7 +195,7 @@ static void test_multimodal_feature_fusion()
     float *mulFeatures    = NULL;
     int    mulFeatureSize = 0;
 
-    bool mulResult = tinyaiFuseFeaturesMul(visionFeatures, visionFeatureSize, tempTextFeatures,
+    bool mulResult = hyperionFuseFeaturesMul(visionFeatures, visionFeatureSize, tempTextFeatures,
                                            visionFeatureSize, &mulFeatures, &mulFeatureSize);
 
     assert(mulResult == true);
@@ -246,7 +246,7 @@ static void test_cross_attention()
     float *attentionFeatures    = NULL;
     int    attentionFeatureSize = 0;
 
-    bool attentionResult = tinyaiFuseFeaturesAttention(visionFeatures, visionFeatureSize,
+    bool attentionResult = hyperionFuseFeaturesAttention(visionFeatures, visionFeatureSize,
                                                        textFeatures, textFeatureSize, seqLength,
                                                        &attentionFeatures, &attentionFeatureSize);
 
@@ -268,12 +268,12 @@ static void test_multimodal_end_to_end()
     printf("Testing end-to-end multimodal operation...\n");
 
     /* Create test image */
-    TinyAIImage *testImage = create_test_image();
+    HyperionImage *testImage = create_test_image();
     assert(testImage != NULL);
 
     /* Create multimodal config */
-    TinyAIMultimodalConfig config;
-    memset(&config, 0, sizeof(TinyAIMultimodalConfig));
+    HyperionMultimodalConfig config;
+    memset(&config, 0, sizeof(HyperionMultimodalConfig));
 
     config.visionModelPath   = TEST_VISION_MODEL_PATH;
     config.visionWeightsPath = TEST_VISION_WEIGHTS_PATH;
@@ -286,21 +286,21 @@ static void test_multimodal_end_to_end()
     config.useSIMD           = true;
 
     /* Create multimodal model */
-    TinyAIMultimodalModel *model = tinyaiCreateMultimodalModelFromConfig(&config);
+    HyperionMultimodalModel *model = hyperionCreateMultimodalModelFromConfig(&config);
     assert(model != NULL);
 
     /* Process image */
     float *imageFeatures = NULL;
     int    featureSize   = 0;
 
-    bool encodeResult = tinyaiEncodeImage(model, testImage, &imageFeatures, &featureSize);
+    bool encodeResult = hyperionEncodeImage(model, testImage, &imageFeatures, &featureSize);
     assert(encodeResult == true);
     assert(imageFeatures != NULL);
     assert(featureSize > 0);
 
     /* Generate text from image features */
     char *outputText =
-        tinyaiGenerateTextFromFeatures(model, imageFeatures, featureSize, NULL, NULL);
+        hyperionGenerateTextFromFeatures(model, imageFeatures, featureSize, NULL, NULL);
     assert(outputText != NULL);
 
     /* Verify output is not empty */
@@ -309,8 +309,8 @@ static void test_multimodal_end_to_end()
     /* Clean up */
     free(outputText);
     free(imageFeatures);
-    tinyaiFreeMultimodalModel(model);
-    tinyaiImageFree(testImage);
+    hyperionFreeMultimodalModel(model);
+    hyperionImageFree(testImage);
 
     printf("End-to-end multimodal test passed!\n");
 }
@@ -321,12 +321,12 @@ static void test_multimodal_quantization()
     printf("Testing multimodal model quantization...\n");
 
     /* Create test image */
-    TinyAIImage *testImage = create_test_image();
+    HyperionImage *testImage = create_test_image();
     assert(testImage != NULL);
 
     /* Create multimodal config with quantization enabled */
-    TinyAIMultimodalConfig config;
-    memset(&config, 0, sizeof(TinyAIMultimodalConfig));
+    HyperionMultimodalConfig config;
+    memset(&config, 0, sizeof(HyperionMultimodalConfig));
 
     config.visionModelPath   = TEST_VISION_MODEL_PATH;
     config.visionWeightsPath = TEST_VISION_WEIGHTS_PATH;
@@ -339,27 +339,27 @@ static void test_multimodal_quantization()
     config.useSIMD           = true;
 
     /* Create multimodal model */
-    TinyAIMultimodalModel *model = tinyaiCreateMultimodalModelFromConfig(&config);
+    HyperionMultimodalModel *model = hyperionCreateMultimodalModelFromConfig(&config);
     assert(model != NULL);
 
     /* Verify quantization status */
-    assert(tinyaiIsModelQuantized(model->visionModel) == true);
-    assert(tinyaiIsModelQuantized(model->textModel) == true);
+    assert(hyperionIsModelQuantized(model->visionModel) == true);
+    assert(hyperionIsModelQuantized(model->textModel) == true);
 
     /* Measure memory usage */
-    size_t memoryUsage = tinyaiGetMultimodalModelSizeBytes(model);
+    size_t memoryUsage = hyperionGetMultimodalModelSizeBytes(model);
     printf("Quantized model memory usage: %zu bytes\n", memoryUsage);
 
     /* Process image */
     float *imageFeatures = NULL;
     int    featureSize   = 0;
 
-    bool encodeResult = tinyaiEncodeImage(model, testImage, &imageFeatures, &featureSize);
+    bool encodeResult = hyperionEncodeImage(model, testImage, &imageFeatures, &featureSize);
     assert(encodeResult == true);
 
     /* Generate text from image features */
     char *outputText =
-        tinyaiGenerateTextFromFeatures(model, imageFeatures, featureSize, NULL, NULL);
+        hyperionGenerateTextFromFeatures(model, imageFeatures, featureSize, NULL, NULL);
     assert(outputText != NULL);
 
     /* Verify output is not empty */
@@ -368,8 +368,8 @@ static void test_multimodal_quantization()
     /* Clean up */
     free(outputText);
     free(imageFeatures);
-    tinyaiFreeMultimodalModel(model);
-    tinyaiImageFree(testImage);
+    hyperionFreeMultimodalModel(model);
+    hyperionImageFree(testImage);
 
     printf("Multimodal quantization test passed!\n");
 }
@@ -380,12 +380,12 @@ static void test_multimodal_simd_acceleration()
     printf("Testing SIMD acceleration for multimodal operations...\n");
 
     /* Create test image */
-    TinyAIImage *testImage = create_test_image();
+    HyperionImage *testImage = create_test_image();
     assert(testImage != NULL);
 
     /* Create multimodal config */
-    TinyAIMultimodalConfig config;
-    memset(&config, 0, sizeof(TinyAIMultimodalConfig));
+    HyperionMultimodalConfig config;
+    memset(&config, 0, sizeof(HyperionMultimodalConfig));
 
     config.visionModelPath   = TEST_VISION_MODEL_PATH;
     config.visionWeightsPath = TEST_VISION_WEIGHTS_PATH;
@@ -398,35 +398,35 @@ static void test_multimodal_simd_acceleration()
     config.useSIMD           = true; /* Enable SIMD */
 
     /* Create multimodal model with SIMD */
-    TinyAIMultimodalModel *modelWithSIMD = tinyaiCreateMultimodalModelFromConfig(&config);
+    HyperionMultimodalModel *modelWithSIMD = hyperionCreateMultimodalModelFromConfig(&config);
     assert(modelWithSIMD != NULL);
 
     /* Update config to disable SIMD */
     config.useSIMD = false;
 
     /* Create multimodal model without SIMD */
-    TinyAIMultimodalModel *modelWithoutSIMD = tinyaiCreateMultimodalModelFromConfig(&config);
+    HyperionMultimodalModel *modelWithoutSIMD = hyperionCreateMultimodalModelFromConfig(&config);
     assert(modelWithoutSIMD != NULL);
 
     /* Set up benchmarking */
-    TinyAIBenchmarkConfig benchConfig;
+    HyperionBenchmarkConfig benchConfig;
     benchConfig.numRuns    = 5;
     benchConfig.warmupRuns = 2;
 
     /* Benchmark image encoding with SIMD */
-    double simdTime = tinyaiBenchmarkOperation(&benchConfig, ^{
+    double simdTime = hyperionBenchmarkOperation(&benchConfig, ^{
       float *features    = NULL;
       int    featureSize = 0;
-      bool   result      = tinyaiEncodeImage(modelWithSIMD, testImage, &features, &featureSize);
+      bool   result      = hyperionEncodeImage(modelWithSIMD, testImage, &features, &featureSize);
       assert(result == true);
       free(features);
     });
 
     /* Benchmark image encoding without SIMD */
-    double nonSimdTime = tinyaiBenchmarkOperation(&benchConfig, ^{
+    double nonSimdTime = hyperionBenchmarkOperation(&benchConfig, ^{
       float *features    = NULL;
       int    featureSize = 0;
-      bool   result      = tinyaiEncodeImage(modelWithoutSIMD, testImage, &features, &featureSize);
+      bool   result      = hyperionEncodeImage(modelWithoutSIMD, testImage, &features, &featureSize);
       assert(result == true);
       free(features);
     });
@@ -442,9 +442,9 @@ static void test_multimodal_simd_acceleration()
     */
 
     /* Clean up */
-    tinyaiFreeMultimodalModel(modelWithSIMD);
-    tinyaiFreeMultimodalModel(modelWithoutSIMD);
-    tinyaiImageFree(testImage);
+    hyperionFreeMultimodalModel(modelWithSIMD);
+    hyperionFreeMultimodalModel(modelWithoutSIMD);
+    hyperionImageFree(testImage);
 
     printf("SIMD acceleration test completed!\n");
 }
@@ -455,11 +455,11 @@ static void test_feature_fusion_methods()
     printf("Testing different fusion methods...\n");
 
     /* Create test image */
-    TinyAIImage *testImage = create_test_image();
+    HyperionImage *testImage = create_test_image();
     assert(testImage != NULL);
 
     /* Define fusion methods to test */
-    TinyAIFusionMethod fusionMethods[] = {TINYAI_FUSION_CONCATENATION, TINYAI_FUSION_ADDITION,
+    HyperionFusionMethod fusionMethods[] = {TINYAI_FUSION_CONCATENATION, TINYAI_FUSION_ADDITION,
                                           TINYAI_FUSION_MULTIPLICATION, TINYAI_FUSION_ATTENTION};
 
     const char *fusionMethodNames[] = {"Concatenation", "Addition", "Multiplication", "Attention"};
@@ -467,8 +467,8 @@ static void test_feature_fusion_methods()
     const int numMethods = sizeof(fusionMethods) / sizeof(fusionMethods[0]);
 
     /* Base config */
-    TinyAIMultimodalConfig config;
-    memset(&config, 0, sizeof(TinyAIMultimodalConfig));
+    HyperionMultimodalConfig config;
+    memset(&config, 0, sizeof(HyperionMultimodalConfig));
 
     config.visionModelPath   = TEST_VISION_MODEL_PATH;
     config.visionWeightsPath = TEST_VISION_WEIGHTS_PATH;
@@ -487,19 +487,19 @@ static void test_feature_fusion_methods()
         config.fusionMethod = fusionMethods[i];
 
         /* Create multimodal model */
-        TinyAIMultimodalModel *model = tinyaiCreateMultimodalModelFromConfig(&config);
+        HyperionMultimodalModel *model = hyperionCreateMultimodalModelFromConfig(&config);
         assert(model != NULL);
 
         /* Process image */
         float *imageFeatures = NULL;
         int    featureSize   = 0;
 
-        bool encodeResult = tinyaiEncodeImage(model, testImage, &imageFeatures, &featureSize);
+        bool encodeResult = hyperionEncodeImage(model, testImage, &imageFeatures, &featureSize);
         assert(encodeResult == true);
 
         /* Generate text */
         char *outputText =
-            tinyaiGenerateTextFromFeatures(model, imageFeatures, featureSize, NULL, NULL);
+            hyperionGenerateTextFromFeatures(model, imageFeatures, featureSize, NULL, NULL);
         assert(outputText != NULL);
 
         /* Print sample output */
@@ -508,11 +508,11 @@ static void test_feature_fusion_methods()
         /* Clean up */
         free(outputText);
         free(imageFeatures);
-        tinyaiFreeMultimodalModel(model);
+        hyperionFreeMultimodalModel(model);
     }
 
     /* Clean up */
-    tinyaiImageFree(testImage);
+    hyperionImageFree(testImage);
 
     printf("Feature fusion methods test passed!\n");
 }

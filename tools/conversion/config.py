@@ -1,5 +1,5 @@
 """
-Configuration Settings for TinyAI Model Conversion
+Configuration Settings for Hyperion Model Conversion
 
 This module provides default configuration values and settings for model conversion.
 These settings can be overridden via command-line arguments or environment variables.

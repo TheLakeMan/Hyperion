@@ -1,15 +1,15 @@
 /**
- * TinyAI Quantization Utilities Header
+ * Hyperion Quantization Utilities Header
  * 
- * This header defines quantization utilities for TinyAI, enabling 4-bit and 8-bit
+ * This header defines quantization utilities for Hyperion, enabling 4-bit and 8-bit
  * quantization of neural network weights and activations.
  */
 
-#ifndef TINYAI_QUANTIZE_H
-#define TINYAI_QUANTIZE_H
+#ifndef HYPERION_QUANTIZE_H
+#define HYPERION_QUANTIZE_H
 
 #include <stddef.h>
-#include <stdint.h>
+#include <stdint.h
 
 /* ----------------- Quantization Types ----------------- */
 
@@ -17,10 +17,10 @@
  * Precision enumeration
  */
 typedef enum {
-    TINYAI_PRECISION_FP32,
-    TINYAI_PRECISION_INT8,
-    TINYAI_PRECISION_INT4
-} TinyAIPrecision;
+    HYPERION_PRECISION_FP32,
+    HYPERION_PRECISION_INT8,
+    HYPERION_PRECISION_INT4
+} HyperionPrecision;
 
 /**
  * 4-bit quantized matrix structure
@@ -31,7 +31,7 @@ typedef struct {
     uint32_t cols;       /* Number of columns */
     float scale;         /* Scaling factor for quantization */
     float zeroPoint;     /* Zero point for quantization */
-} TinyAIMatrix4bit;
+} HyperionMatrix4bit;
 
 /**
  * 8-bit quantized matrix structure
@@ -42,7 +42,7 @@ typedef struct {
     uint32_t cols;       /* Number of columns */
     float scale;         /* Scaling factor for quantization */
     float zeroPoint;     /* Zero point for quantization */
-} TinyAIMatrix8bit;
+} HyperionMatrix8bit;
 
 /**
  * FP32 matrix structure
@@ -51,7 +51,7 @@ typedef struct {
     float *data;         /* Matrix data (32-bit float values) */
     uint32_t rows;       /* Number of rows */
     uint32_t cols;       /* Number of columns */
-} TinyAIMatrixFP32;
+} HyperionMatrixFP32;
 
 /* ----------------- Matrix Operations ----------------- */
 
@@ -62,14 +62,14 @@ typedef struct {
  * @param cols Number of columns
  * @return New matrix or NULL on error
  */
-TinyAIMatrix4bit* tinyaiCreateMatrix4bit(uint32_t rows, uint32_t cols);
+HyperionMatrix4bit* hyperionCreateMatrix4bit(uint32_t rows, uint32_t cols);
 
 /**
  * Destroy a 4-bit quantized matrix
  * 
  * @param matrix Matrix to destroy
  */
-void tinyaiDestroyMatrix4bit(TinyAIMatrix4bit *matrix);
+void hyperionDestroyMatrix4bit(HyperionMatrix4bit *matrix);
 
 /**
  * Create an 8-bit quantized matrix
@@ -78,14 +78,14 @@ void tinyaiDestroyMatrix4bit(TinyAIMatrix4bit *matrix);
  * @param cols Number of columns
  * @return New matrix or NULL on error
  */
-TinyAIMatrix8bit* tinyaiCreateMatrix8bit(uint32_t rows, uint32_t cols);
+HyperionMatrix8bit* hyperionCreateMatrix8bit(uint32_t rows, uint32_t cols);
 
 /**
  * Destroy an 8-bit quantized matrix
  * 
  * @param matrix Matrix to destroy
  */
-void tinyaiDestroyMatrix8bit(TinyAIMatrix8bit *matrix);
+void hyperionDestroyMatrix8bit(HyperionMatrix8bit *matrix);
 
 /**
  * Create a FP32 matrix
@@ -94,14 +94,14 @@ void tinyaiDestroyMatrix8bit(TinyAIMatrix8bit *matrix);
  * @param cols Number of columns
  * @return New matrix or NULL on error
  */
-TinyAIMatrixFP32* tinyaiCreateMatrixFP32(uint32_t rows, uint32_t cols);
+HyperionMatrixFP32* hyperionCreateMatrixFP32(uint32_t rows, uint32_t cols);
 
 /**
  * Destroy a FP32 matrix
  * 
  * @param matrix Matrix to destroy
  */
-void tinyaiDestroyMatrixFP32(TinyAIMatrixFP32 *matrix);
+void hyperionDestroyMatrixFP32(HyperionMatrixFP32 *matrix);
 
 /**
  * Quantize a FP32 matrix to 4-bit
@@ -109,7 +109,7 @@ void tinyaiDestroyMatrixFP32(TinyAIMatrixFP32 *matrix);
  * @param input Input FP32 matrix
  * @return Quantized 4-bit matrix or NULL on error
  */
-TinyAIMatrix4bit* tinyaiQuantizeFP32To4bit(const TinyAIMatrixFP32 *input);
+HyperionMatrix4bit* hyperionQuantizeFP32To4bit(const HyperionMatrixFP32 *input);
 
 /**
  * Quantize a FP32 matrix to 8-bit
@@ -117,7 +117,7 @@ TinyAIMatrix4bit* tinyaiQuantizeFP32To4bit(const TinyAIMatrixFP32 *input);
  * @param input Input FP32 matrix
  * @return Quantized 8-bit matrix or NULL on error
  */
-TinyAIMatrix8bit* tinyaiQuantizeFP32To8bit(const TinyAIMatrixFP32 *input);
+HyperionMatrix8bit* hyperionQuantizeFP32To8bit(const HyperionMatrixFP32 *input);
 
 /**
  * Dequantize a 4-bit matrix to FP32
@@ -125,7 +125,7 @@ TinyAIMatrix8bit* tinyaiQuantizeFP32To8bit(const TinyAIMatrixFP32 *input);
  * @param input Input 4-bit matrix
  * @return Dequantized FP32 matrix or NULL on error
  */
-TinyAIMatrixFP32* tinyaiDequantize4bitToFP32(const TinyAIMatrix4bit *input);
+HyperionMatrixFP32* hyperionDequantize4bitToFP32(const HyperionMatrix4bit *input);
 
 /**
  * Dequantize an 8-bit matrix to FP32
@@ -133,7 +133,7 @@ TinyAIMatrixFP32* tinyaiDequantize4bitToFP32(const TinyAIMatrix4bit *input);
  * @param input Input 8-bit matrix
  * @return Dequantized FP32 matrix or NULL on error
  */
-TinyAIMatrixFP32* tinyaiDequantize8bitToFP32(const TinyAIMatrix8bit *input);
+HyperionMatrixFP32* hyperionDequantize8bitToFP32(const HyperionMatrix8bit *input);
 
 /**
  * Matrix multiplication: C = A * B
@@ -144,7 +144,7 @@ TinyAIMatrixFP32* tinyaiDequantize8bitToFP32(const TinyAIMatrix8bit *input);
  * @param precision Precision to use for computation
  * @return 0 on success, non-zero on error
  */
-int tinyaiMatrixMultiply(const void *a, const void *b, void *c, TinyAIPrecision precision);
+int hyperionMatrixMultiply(const void *a, const void *b, void *c, HyperionPrecision precision);
 
 /**
  * Matrix addition: C = A + B
@@ -155,7 +155,7 @@ int tinyaiMatrixMultiply(const void *a, const void *b, void *c, TinyAIPrecision 
  * @param precision Precision to use for computation
  * @return 0 on success, non-zero on error
  */
-int tinyaiMatrixAdd(const void *a, const void *b, void *c, TinyAIPrecision precision);
+int hyperionMatrixAdd(const void *a, const void *b, void *c, HyperionPrecision precision);
 
 /**
  * Apply activation function to matrix
@@ -166,7 +166,7 @@ int tinyaiMatrixAdd(const void *a, const void *b, void *c, TinyAIPrecision preci
  * @param precision Precision to use for computation
  * @return 0 on success, non-zero on error
  */
-int tinyaiMatrixActivation(const void *input, void *output, int activation, TinyAIPrecision precision);
+int hyperionMatrixActivation(const void *input, void *output, int activation, HyperionPrecision precision);
 
 /* ----------------- Vector Operations ----------------- */
 
@@ -179,7 +179,7 @@ int tinyaiMatrixActivation(const void *input, void *output, int activation, Tiny
  * @param precision Precision to use for computation
  * @return Dot product result
  */
-float tinyaiVectorDot(const void *a, const void *b, uint32_t length, TinyAIPrecision precision);
+float hyperionVectorDot(const void *a, const void *b, uint32_t length, HyperionPrecision precision);
 
 /**
  * Vector L2 norm (Euclidean distance)
@@ -189,7 +189,7 @@ float tinyaiVectorDot(const void *a, const void *b, uint32_t length, TinyAIPreci
  * @param precision Precision to use for computation
  * @return L2 norm
  */
-float tinyaiVectorL2Norm(const void *a, uint32_t length, TinyAIPrecision precision);
+float hyperionVectorL2Norm(const void *a, uint32_t length, HyperionPrecision precision);
 
 /**
  * Vector cosine similarity
@@ -200,7 +200,7 @@ float tinyaiVectorL2Norm(const void *a, uint32_t length, TinyAIPrecision precisi
  * @param precision Precision to use for computation
  * @return Cosine similarity
  */
-float tinyaiVectorCosineSimilarity(const void *a, const void *b, uint32_t length, TinyAIPrecision precision);
+float hyperionVectorCosineSimilarity(const void *a, const void *b, uint32_t length, HyperionPrecision precision);
 
 /* ----------------- Activation Functions ----------------- */
 
@@ -210,7 +210,7 @@ float tinyaiVectorCosineSimilarity(const void *a, const void *b, uint32_t length
  * @param x Input value
  * @return ReLU(x)
  */
-float tinyaiActivationReLU(float x);
+float hyperionActivationReLU(float x);
 
 /**
  * Sigmoid activation function
@@ -218,7 +218,7 @@ float tinyaiActivationReLU(float x);
  * @param x Input value
  * @return Sigmoid(x)
  */
-float tinyaiActivationSigmoid(float x);
+float hyperionActivationSigmoid(float x);
 
 /**
  * Tanh activation function
@@ -226,7 +226,7 @@ float tinyaiActivationSigmoid(float x);
  * @param x Input value
  * @return Tanh(x)
  */
-float tinyaiActivationTanh(float x);
+float hyperionActivationTanh(float x);
 
 /**
  * GELU activation function
@@ -234,19 +234,19 @@ float tinyaiActivationTanh(float x);
  * @param x Input value
  * @return GELU(x)
  */
-float tinyaiActivationGELU(float x);
+float hyperionActivationGELU(float x);
 
 /**
  * Initialize activation function lookup tables
  * 
  * @return 0 on success, non-zero on error
  */
-int tinyaiInitActivationTables();
+int hyperionInitActivationTables();
 
 /**
  * Clean up activation function lookup tables
  */
-void tinyaiCleanupActivationTables();
+void hyperionCleanupActivationTables();
 
 /* ----------------- Utility Functions ----------------- */
 
@@ -258,7 +258,7 @@ void tinyaiCleanupActivationTables();
  * @param min Pointer to store minimum value
  * @param max Pointer to store maximum value
  */
-void tinyaiFindMinMax(const float *data, size_t size, float *min, float *max);
+void hyperionFindMinMax(const float *data, size_t size, float *min, float *max);
 
 /**
  * Save a quantized matrix to a file
@@ -268,7 +268,7 @@ void tinyaiFindMinMax(const float *data, size_t size, float *min, float *max);
  * @param precision Precision of the matrix
  * @return 0 on success, non-zero on error
  */
-int tinyaiSaveQuantizedMatrix(const void *matrix, const char *path, TinyAIPrecision precision);
+int hyperionSaveQuantizedMatrix(const void *matrix, const char *path, HyperionPrecision precision);
 
 /**
  * Load a quantized matrix from a file
@@ -277,6 +277,6 @@ int tinyaiSaveQuantizedMatrix(const void *matrix, const char *path, TinyAIPrecis
  * @param precision Precision of the matrix
  * @return Loaded matrix or NULL on error
  */
-void* tinyaiLoadQuantizedMatrix(const char *path, TinyAIPrecision precision);
+void* hyperionLoadQuantizedMatrix(const char *path, HyperionPrecision precision);
 
-#endif /* TINYAI_QUANTIZE_H */
+#endif /* HYPERION_QUANTIZE_H */

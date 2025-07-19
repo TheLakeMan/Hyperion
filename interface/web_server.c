@@ -9,8 +9,8 @@
 #include "web_server.h"
 
 // --- Global State (Consider managing this better in a real app) ---
-static TinyAIModel     *g_model     = NULL;
-static TinyAITokenizer *g_tokenizer = NULL;
+static HyperionModel     *g_model     = NULL;
+static HyperionTokenizer *g_tokenizer = NULL;
 static picolInterp     *g_interp    = NULL; // Store interpreter if needed for commands
 static volatile int     s_exit_flag = 0;    // Flag to signal server shutdown
 // ---
@@ -67,33 +67,33 @@ static void handle_api_generate(struct mg_connection *c, struct mg_http_message 
         return;
     }
 
-    // Check if prompt_buf is still empty after potential copy
+    // 2. Check if prompt_buf is still empty after potential copy
     if (strlen(prompt_buf) == 0) {
         mg_http_reply(c, 400, "Content-Type: application/json\r\n",
                       "{\"error\":\"Empty 'prompt' value provided\"}\n");
         return;
     }
 
-    // 2. Check if model is loaded
+    // 3. Check if model is loaded
     if (!g_model || !g_tokenizer) {
         mg_http_reply(c, 503, "Content-Type: application/json\r\n",
                       "{\"error\":\"Model or tokenizer not loaded\"}\n");
         return;
     }
 
-    // 3. Prepare generation parameters (use defaults or config)
-    TinyAIGenerationParams params = {0};
-    params.maxTokens = tinyaiConfigGetInt("generate.max_tokens", 128); // Get from config or default
-    params.samplingMethod = TINYAI_SAMPLING_TEMPERATURE;               // Example
+    // 4. Prepare generation parameters (use defaults or config)
+    HyperionGenerationParams params = {0};
+    params.maxTokens = hyperionConfigGetInt("generate.max_tokens", 128); // Get from config or default
+    params.samplingMethod = HYPERION_SAMPLING_TEMPERATURE;               // Example
     params.temperature =
-        tinyaiConfigGetFloat("generate.temperature", 0.7f); // Get from config or default
-    params.topK = tinyaiConfigGetInt("generate.top_k", 40);
-    params.topP = tinyaiConfigGetFloat("generate.top_p", 0.9f);
-    params.seed = tinyaiConfigGetInt("generate.seed", 0); // 0 for random
+        hyperionConfigGetFloat("generate.temperature", 0.7f); // Get from config or default
+    params.topK = hyperionConfigGetInt("generate.top_k", 40);
+    params.topP = hyperionConfigGetFloat("generate.top_p", 0.9f);
+    params.seed = hyperionConfigGetInt("generate.seed", 0); // 0 for random
 
-    // 4. Tokenize the prompt
+    // 5. Tokenize the prompt
     int prompt_tokens[512]; // Adjust size as needed
-    params.promptLength = tinyaiTokenize(g_tokenizer, prompt_buf, prompt_tokens,
+    params.promptLength = hyperionTokenize(g_tokenizer, prompt_buf, prompt_tokens,
                                          sizeof(prompt_tokens) / sizeof(prompt_tokens[0]));
     if (params.promptLength <= 0) {
         mg_http_reply(c, 400, "Content-Type: application/json\r\n",
@@ -102,7 +102,7 @@ static void handle_api_generate(struct mg_connection *c, struct mg_http_message 
     }
     params.promptTokens = prompt_tokens;
 
-    // 5. Allocate buffer for output tokens - dynamically to avoid VLA issues
+    // 6. Allocate buffer for output tokens - dynamically to avoid VLA issues
     int *output_tokens = (int *)malloc((params.maxTokens + params.promptLength) * sizeof(int));
     if (!output_tokens) {
         mg_http_reply(c, 500, "Content-Type: application/json\r\n",
@@ -110,13 +110,13 @@ static void handle_api_generate(struct mg_connection *c, struct mg_http_message 
         return;
     }
 
-    // 6. Generate text
+    // 7. Generate text
     printf("Generating text for prompt: \"%s\"\n", prompt_buf); // Log
-    int generated_count = tinyaiGenerateText(g_model, &params, output_tokens, params.maxTokens);
+    int generated_count = hyperionGenerateText(g_model, &params, output_tokens, params.maxTokens);
 
-    // 7. Decode the generated tokens (excluding prompt)
+    // 8. Decode the generated tokens (excluding prompt)
     if (generated_count > 0) {
-        result_text = tinyaiDecode(g_tokenizer, output_tokens, generated_count);
+        result_text = hyperionDecode(g_tokenizer, output_tokens, generated_count);
         if (result_text) {
             result_len = strlen(result_text);
             printf("Generated text: %s\n", result_text); // Log
@@ -134,7 +134,7 @@ static void handle_api_generate(struct mg_connection *c, struct mg_http_message 
         return;
     }
 
-    // 8. Send JSON response: {"result": "..."}
+    // 9. Send JSON response: {"result": "..."}
     // Use mg_http_reply which handles chunking if needed
     mg_printf(
         c,
@@ -157,9 +157,9 @@ static void handle_api_generate(struct mg_connection *c, struct mg_http_message 
     mg_http_printf_chunk(c, "}");
     mg_http_printf_chunk(c, ""); // End chunked response
 
-    // 9. Clean up allocated memory
+    // 10. Clean up allocated memory
     if (result_text) {
-        free(result_text); // Assuming tinyaiDecode allocates memory
+        free(result_text); // Assuming hyperionDecode allocates memory
     }
     free(output_tokens);
 }
@@ -172,10 +172,10 @@ int start_web_server(picolInterp *interp, const char *port, const char *document
 
     // --- Load Model and Tokenizer ---
     // Get paths from config (assuming they are set via CLI or config file)
-    const char *model_file = tinyaiConfigGet("model.path", NULL);
+    const char *model_file = hyperionConfigGet("model.path", NULL);
     const char *weights_file =
-        tinyaiConfigGet("model.weights_path", NULL); // Assuming separate weights
-    const char *tokenizer_file = tinyaiConfigGet("tokenizer.path", NULL);
+        hyperionConfigGet("model.weights_path", NULL); // Assuming separate weights
+    const char *tokenizer_file = hyperionConfigGet("tokenizer.path", NULL);
 
     if (!model_file || !tokenizer_file) {
         fprintf(stderr, "Error: Model or Tokenizer path not configured.\n");
@@ -185,22 +185,22 @@ int start_web_server(picolInterp *interp, const char *port, const char *document
     // If weights are separate, check for weights_file too
 
     printf("Loading tokenizer from %s...\n", tokenizer_file);
-    g_tokenizer = tinyaiLoadTokenizer(tokenizer_file);
+    g_tokenizer = hyperionLoadTokenizer(tokenizer_file);
     if (!g_tokenizer) {
         fprintf(stderr, "Error: Failed to load tokenizer from %s\n", tokenizer_file);
         return 1;
     }
 
     printf("Loading model from %s...\n", model_file);
-    // Assuming tinyaiLoadModel handles both structure and weights if weights_file is NULL
-    g_model = tinyaiLoadModel(model_file, weights_file, tokenizer_file);
+    // Assuming hyperionLoadModel handles both structure and weights if weights_file is NULL
+    g_model = hyperionLoadModel(model_file, weights_file, tokenizer_file);
     if (!g_model) {
         fprintf(stderr, "Error: Failed to load model from %s\n", model_file);
-        tinyaiDestroyTokenizer(g_tokenizer); // Clean up tokenizer
+        hyperionDestroyTokenizer(g_tokenizer); // Clean up tokenizer
         g_tokenizer = NULL;
         return 1;
     }
-    // Assign tokenizer to model if not done by tinyaiLoadModel
+    // Assign tokenizer to model if not done by hyperionLoadModel
     if (g_model->tokenizer == NULL) {
         g_model->tokenizer = g_tokenizer;
     }
@@ -218,8 +218,8 @@ int start_web_server(picolInterp *interp, const char *port, const char *document
     if (mg_http_listen(&mgr, addr, fn, (void *)document_root) == NULL) {
         fprintf(stderr, "Error: Cannot listen on %s. Is the port already in use?\n", addr);
         mg_mgr_free(&mgr);
-        tinyaiDestroyModel(g_model);
-        tinyaiDestroyTokenizer(g_tokenizer);
+        hyperionDestroyModel(g_model);
+        hyperionDestroyTokenizer(g_tokenizer);
         return 1;
     }
 
@@ -232,8 +232,8 @@ int start_web_server(picolInterp *interp, const char *port, const char *document
     // Cleanup
     printf("Shutting down web server...\n");
     mg_mgr_free(&mgr);
-    tinyaiDestroyModel(g_model);
-    tinyaiDestroyTokenizer(g_tokenizer);
+    hyperionDestroyModel(g_model);
+    hyperionDestroyTokenizer(g_tokenizer);
     g_model     = NULL;
     g_tokenizer = NULL;
     g_interp    = NULL;

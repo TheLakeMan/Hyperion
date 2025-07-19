@@ -1,6 +1,6 @@
 /**
  * @file main.c
- * @brief Main program for the TinyAI memory-constrained chatbot example
+ * @brief Main program for the Hyperion memory-constrained chatbot example
  */
 
 #include "../../core/io.h"
@@ -35,7 +35,7 @@
 
 /* Global variables */
 static volatile int       g_running = 1;    /* Control flag for main loop */
-static TinyAIChatSession *g_session = NULL; /* Global session for signal handler */
+static HyperionChatSession *g_session = NULL; /* Global session for signal handler */
 
 /* Maximum input length */
 #define MAX_INPUT_LENGTH 4096
@@ -123,7 +123,7 @@ bool streamingCallback(const char *token, bool is_partial, void *user_data)
 /* Print usage instructions */
 void printUsage(const char *progname)
 {
-    printf("TinyAI On-Device Chatbot Example\n\n");
+    printf("Hyperion On-Device Chatbot Example\n\n");
     printf("Usage: %s [options]\n\n", progname);
     printf("Options:\n");
     printf("  --model <file>         Path to model structure file\n");
@@ -146,11 +146,11 @@ void printUsage(const char *progname)
 }
 
 /* Print memory usage statistics */
-void printMemoryUsage(TinyAIChatSession *session)
+void printMemoryUsage(HyperionChatSession *session)
 {
     size_t modelMem, historyMem, totalMem;
 
-    if (tinyaiChatGetMemoryUsage(session, &modelMem, &historyMem, &totalMem)) {
+    if (hyperionChatGetMemoryUsage(session, &modelMem, &historyMem, &totalMem)) {
         printf("\n%sMemory Usage:%s\n", COLOR_BOLD, COLOR_RESET);
         printf("  Model:    %6.2f MB\n", modelMem / (1024.0 * 1024.0));
         printf("  History:  %6.2f MB\n", historyMem / (1024.0 * 1024.0));
@@ -259,8 +259,8 @@ int main(int argc, char *argv[])
     /* Initialize chat session */
     printf("Initializing chatbot...\n");
 
-    TinyAIChatConfig config;
-    memset(&config, 0, sizeof(TinyAIChatConfig));
+    HyperionChatConfig config;
+    memset(&config, 0, sizeof(HyperionChatConfig));
     config.modelPath        = model_path;
     config.weightsPath      = weights_path;
     config.tokenizerPath    = tokenizer_path;
@@ -274,7 +274,7 @@ int main(int argc, char *argv[])
 
     /* Create session */
     clock_t            start   = clock();
-    TinyAIChatSession *session = tinyaiChatSessionCreate(&config);
+    HyperionChatSession *session = hyperionChatSessionCreate(&config);
 
     if (!session) {
         fprintf(stderr, "Failed to create chat session\n");
@@ -290,9 +290,9 @@ int main(int argc, char *argv[])
 
     /* Add system prompt if provided */
     if (system_prompt_file) {
-        char *system_prompt = tinyaiReadTextFile(system_prompt_file);
+        char *system_prompt = hyperionReadTextFile(system_prompt_file);
         if (system_prompt) {
-            tinyaiChatAddMessage(session, TINYAI_ROLE_SYSTEM, system_prompt);
+            hyperionChatAddMessage(session, HYPERION_ROLE_SYSTEM, system_prompt);
             printf("Added system prompt from %s\n", system_prompt_file);
             free(system_prompt);
         }
@@ -303,8 +303,8 @@ int main(int argc, char *argv[])
 
     /* Load chat history if provided */
     if (load_history_file) {
-        if (tinyaiChatLoadHistory(session, load_history_file)) {
-            int msg_count = tinyaiChatGetMessageCount(session);
+        if (hyperionChatLoadHistory(session, load_history_file)) {
+            int msg_count = hyperionChatGetMessageCount(session);
             printf("Loaded %d messages from %s\n", msg_count, load_history_file);
         }
         else {
@@ -317,84 +317,85 @@ int main(int argc, char *argv[])
 
     /* Welcome message */
     printf("\n%s==========================================%s\n", COLOR_BOLD, COLOR_RESET);
-    printf("%s      TinyAI Memory-Constrained Chatbot      %s\n", COLOR_BOLD, COLOR_RESET);
+    printf("%s      Hyperion Memory-Constrained Chatbot      %s\n", COLOR_BOLD, COLOR_RESET);
     printf("%s==========================================%s\n\n", COLOR_BOLD, COLOR_RESET);
     printf("Enter your messages and press Enter twice (empty line) to submit.\n");
-    printf("Type 'exit', 'quit', or press Ctrl+C to exit.\n\n");
+    printf("Type 'exit', 'quit', or press Ctrl+C to exit.\n");
+}
 
-    /* Main conversation loop */
-    while (g_running) {
-        /* Read user input */
-        char *input = readMultilineInput();
+/* Main conversation loop */
+while (g_running) {
+    /* Read user input */
+    char *input = readMultilineInput();
 
-        /* Check for input */
-        if (!input || input[0] == '\0') {
-            free(input);
-            continue;
-        }
-
-        /* Check for exit commands */
-        if (strcmp(input, "exit\n") == 0 || strcmp(input, "quit\n") == 0) {
-            free(input);
-            break;
-        }
-
-        /* Add user message to history */
-        tinyaiChatAddMessage(session, TINYAI_ROLE_USER, input);
-
-        /* Get model response */
-        printf("\n%s%s: %s", COLOR_BOLD, "Assistant", COLOR_RESET);
-        fflush(stdout);
-
-        start = clock();
-
-        /* Generate response with or without streaming */
-        char *response;
-        if (use_streaming) {
-            response = tinyaiChatGenerateResponse(session, streamingCallback, NULL);
-        }
-        else {
-            response = tinyaiChatGenerateResponse(session, NULL, NULL);
-            if (response) {
-                printf("%s", response);
-            }
-            else {
-                printf("%sError: Failed to generate response%s", COLOR_RED, COLOR_RESET);
-            }
-        }
-
-        end                    = clock();
-        double generation_time = ((double)(end - start)) / CLOCKS_PER_SEC;
-
-        /* Free the response (it's already added to history by the API) */
-        free(response);
-
-        /* Free user input */
+    /* Check for input */
+    if (!input || input[0] == '\0') {
         free(input);
-
-        /* Print generation statistics */
-        printf("\n\n%s[Generated in %.2f seconds]%s\n\n", COLOR_YELLOW, generation_time,
-               COLOR_RESET);
+        continue;
     }
 
-    /* Save chat history if requested */
-    if (save_history_file) {
-        if (tinyaiChatSaveHistory(session, save_history_file)) {
-            printf("Chat history saved to %s\n", save_history_file);
+    /* Check for exit commands */
+    if (strcmp(input, "exit\n") == 0 || strcmp(input, "quit\n") == 0) {
+        free(input);
+        break;
+    }
+
+    /* Add user message to history */
+    hyperionChatAddMessage(session, HYPERION_ROLE_USER, input);
+
+    /* Get model response */
+    printf("\n%s%s: %s", COLOR_BOLD, "Assistant", COLOR_RESET);
+    fflush(stdout);
+
+    start = clock();
+
+    /* Generate response with or without streaming */
+    char *response;
+    if (use_streaming) {
+        response = hyperionChatGenerateResponse(session, streamingCallback, NULL);
+    }
+    else {
+        response = hyperionChatGenerateResponse(session, NULL, NULL);
+        if (response) {
+            printf("%s", response);
         }
         else {
-            fprintf(stderr, "Failed to save chat history to %s\n", save_history_file);
+            printf("%sError: Failed to generate response%s", COLOR_RED, COLOR_RESET);
         }
     }
 
-    /* Final memory usage */
-    printMemoryUsage(session);
+    end                    = clock();
+    double generation_time = ((double)(end - start)) / CLOCKS_PER_SEC;
 
-    /* Clean up */
-    tinyaiChatSessionFree(session);
-    g_session = NULL;
+    /* Free the response (it's already added to history by the API) */
+    free(response);
 
-    printf("Goodbye!\n");
+    /* Free user input */
+    free(input);
 
-    return 0;
+    /* Print generation statistics */
+    printf("\n\n%s[Generated in %.2f seconds]%s\n\n", COLOR_YELLOW, generation_time,
+           COLOR_RESET);
+}
+
+/* Save chat history if requested */
+if (save_history_file) {
+    if (hyperionChatSaveHistory(session, save_history_file)) {
+        printf("Chat history saved to %s\n", save_history_file);
+    }
+    else {
+        fprintf(stderr, "Failed to save chat history to %s\n", save_history_file);
+    }
+}
+
+/* Final memory usage */
+printMemoryUsage(session);
+
+/* Clean up */
+hyperionChatSessionFree(session);
+g_session = NULL;
+
+printf("Goodbye!\n");
+
+return 0;
 }

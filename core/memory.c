@@ -1,5 +1,5 @@
 /**
- * TinyAI Memory Management Implementation
+ * Hyperion Memory Management Implementation
  */
 
 #include "memory.h"
@@ -9,22 +9,22 @@
 
 /* ----------------- Standard Allocation Wrappers ----------------- */
 
-void* tinyaiAlloc(size_t size) {
+void* hyperionAlloc(size_t size) {
     // Basic wrapper around malloc
     return malloc(size);
 }
 
-void* tinyaiRealloc(void *ptr, size_t size) {
+void* hyperionRealloc(void *ptr, size_t size) {
     // Basic wrapper around realloc
     return realloc(ptr, size);
 }
 
-void tinyaiFree(void *ptr) {
+void hyperionFree(void *ptr) {
     // Basic wrapper around free
     free(ptr);
 }
 
-void* tinyaiCalloc(size_t count, size_t size) {
+void* hyperionCalloc(size_t count, size_t size) {
     // Basic wrapper around calloc
     return calloc(count, size);
 }
@@ -38,7 +38,7 @@ static size_t g_memPoolPeakSize = 0;
 static size_t g_memPoolAllocCount = 0;
 static size_t g_memPoolOffset = 0; // Current allocation offset
 
-int tinyaiMemPoolInit(size_t size) {
+int hyperionMemPoolInit(size_t size) {
     if (g_memPool != NULL) {
         fprintf(stderr, "Error: Memory pool already initialized.\n");
         return 1; // Already initialized
@@ -66,7 +66,7 @@ int tinyaiMemPoolInit(size_t size) {
     return 0; // Success
 }
 
-void tinyaiMemPoolCleanup() {
+void hyperionMemPoolCleanup() {
     if (g_memPool != NULL) {
         free(g_memPool);
         g_memPool = NULL;
@@ -78,7 +78,7 @@ void tinyaiMemPoolCleanup() {
     }
 }
 
-void* tinyaiMemPoolAlloc(size_t size) {
+void* hyperionMemPoolAlloc(size_t size) {
     if (g_memPool == NULL) {
         fprintf(stderr, "Error: Memory pool not initialized.\n");
         return NULL;
@@ -112,14 +112,14 @@ void* tinyaiMemPoolAlloc(size_t size) {
     return ptr;
 }
 
-void tinyaiMemPoolFree(void *ptr) {
+void hyperionMemPoolFree(void *ptr) {
     // Simple bump allocator: Free is typically a no-op or only allows freeing the last allocation.
     // For simplicity, we make it a no-op here. Reset the pool to free everything.
     // A more complex pool would need to manage free blocks.
     (void)ptr; // Suppress unused parameter warning
 }
 
-void tinyaiMemPoolReset() {
+void hyperionMemPoolReset() {
     if (g_memPool != NULL) {
         g_memPoolUsedSize = 0;
         g_memPoolAllocCount = 0;
@@ -129,7 +129,7 @@ void tinyaiMemPoolReset() {
     }
 }
 
-void tinyaiMemPoolStats(size_t *totalSize, size_t *usedSize, 
+void hyperionMemPoolStats(size_t *totalSize, size_t *usedSize, 
                        size_t *peakSize, size_t *allocCount) {
     if (totalSize) *totalSize = g_memPoolTotalSize;
     if (usedSize) *usedSize = g_memPoolUsedSize;
@@ -140,7 +140,7 @@ void tinyaiMemPoolStats(size_t *totalSize, size_t *usedSize,
 
 /* ----------------- Memory Tracking (Simple Linked List) ----------------- */
 
-#ifdef TINYAI_MEMORY_TRACKING
+#ifdef HYPERION_MEMORY_TRACKING
 
 typedef struct MemTrackNode {
     void *ptr;
@@ -156,7 +156,7 @@ static size_t g_memTrackAllocSize = 0;
 static size_t g_memTrackFreeCount = 0;
 // Note: Tracking total freed size isn't straightforward without storing original size on free
 
-int tinyaiMemTrackInit() {
+int hyperionMemTrackInit() {
     g_memTrackHead = NULL;
     g_memTrackAllocCount = 0;
     g_memTrackAllocSize = 0;
@@ -164,9 +164,9 @@ int tinyaiMemTrackInit() {
     return 0; // Success
 }
 
-void tinyaiMemTrackCleanup() {
+void hyperionMemTrackCleanup() {
     // Dump leaks before cleaning up
-    tinyaiMemTrackDumpLeaks(); 
+    hyperionMemTrackDumpLeaks(); 
 
     // Free any remaining nodes in the tracking list itself
     MemTrackNode *current = g_memTrackHead;
@@ -178,7 +178,7 @@ void tinyaiMemTrackCleanup() {
     g_memTrackHead = NULL;
 }
 
-void tinyaiMemTrackAlloc(void *ptr, size_t size, const char *file, int line) {
+void hyperionMemTrackAlloc(void *ptr, size_t size, const char *file, int line) {
     if (ptr == NULL) {
         // Don't track failed allocations
         return;
@@ -203,7 +203,7 @@ void tinyaiMemTrackAlloc(void *ptr, size_t size, const char *file, int line) {
     g_memTrackAllocSize += size;
 }
 
-void tinyaiMemTrackFree(void *ptr) {
+void hyperionMemTrackFree(void *ptr) {
     if (ptr == NULL) {
         return; // Don't track freeing NULL
     }
@@ -236,13 +236,13 @@ void tinyaiMemTrackFree(void *ptr) {
     fprintf(stderr, "Warning: Attempting to free untracked or already freed memory: %p\n", ptr);
 }
 
-int tinyaiMemTrackDumpLeaks() {
+int hyperionMemTrackDumpLeaks() {
     int leakCount = 0;
     MemTrackNode *current = g_memTrackHead;
     size_t totalLeakedSize = 0;
 
     if (current != NULL) {
-        printf("--- TinyAI Memory Leak Report ---\n");
+        printf("--- Hyperion Memory Leak Report ---\n");
     }
 
     while (current != NULL) {
@@ -256,13 +256,13 @@ int tinyaiMemTrackDumpLeaks() {
     if (leakCount > 0) {
         printf("--- Total Leaked: %d blocks, %zu bytes ---\n", leakCount, totalLeakedSize);
     } else {
-         printf("--- TinyAI Memory Leak Report: No leaks detected ---\n");
+         printf("--- Hyperion Memory Leak Report: No leaks detected ---\n");
     }
 
     return leakCount;
 }
 
-void tinyaiMemTrackStats(size_t *allocCount, size_t *allocSize, 
+void hyperionMemTrackStats(size_t *allocCount, size_t *allocSize, 
                         size_t *freeCount, size_t *freeSize) {
     // Note: freeSize is tricky to track accurately without storing size on free
     if (allocCount) *allocCount = g_memTrackAllocCount;
@@ -271,16 +271,16 @@ void tinyaiMemTrackStats(size_t *allocCount, size_t *allocSize,
     if (freeSize) *freeSize = 0; // Placeholder - not accurately tracked here
 }
 
-#else // TINYAI_MEMORY_TRACKING not defined
+#else // HYPERION_MEMORY_TRACKING not defined
 
 // Provide empty stub functions if tracking is disabled
 
-int tinyaiMemTrackInit() { return 0; }
-void tinyaiMemTrackCleanup() {}
-void tinyaiMemTrackAlloc(void *ptr, size_t size, const char *file, int line) { (void)ptr; (void)size; (void)file; (void)line; }
-void tinyaiMemTrackFree(void *ptr) { (void)ptr; }
-int tinyaiMemTrackDumpLeaks() { return 0; }
-void tinyaiMemTrackStats(size_t *allocCount, size_t *allocSize, 
+int hyperionMemTrackInit() { return 0; }
+void hyperionMemTrackCleanup() {}
+void hyperionMemTrackAlloc(void *ptr, size_t size, const char *file, int line) { (void)ptr; (void)size; (void)file; (void)line; }
+void hyperionMemTrackFree(void *ptr) { (void)ptr; }
+int hyperionMemTrackDumpLeaks() { return 0; }
+void hyperionMemTrackStats(size_t *allocCount, size_t *allocSize, 
                         size_t *freeCount, size_t *freeSize) {
     if (allocCount) *allocCount = 0;
     if (allocSize) *allocSize = 0;
@@ -288,4 +288,4 @@ void tinyaiMemTrackStats(size_t *allocCount, size_t *allocSize,
     if (freeSize) *freeSize = 0;
 }
 
-#endif // TINYAI_MEMORY_TRACKING
+#endif // HYPERION_MEMORY_TRACKING

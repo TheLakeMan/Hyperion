@@ -1,12 +1,12 @@
 /**
- * TinyAI Text Generation Header
+ * Hyperion Text Generation Header
  * 
- * This header defines the text generation API for TinyAI, allowing
+ * This header defines the text generation API for Hyperion, allowing
  * loading and running 4-bit quantized neural language models.
  */
 
-#ifndef TINYAI_GENERATE_H
-#define TINYAI_GENERATE_H
+#ifndef HYPERION_GENERATE_H
+#define HYPERION_GENERATE_H
 
 #include <stdint.h>
 #include "tokenizer.h"
@@ -15,53 +15,53 @@
 /* ----------------- Constants ----------------- */
 
 /* Model type constants */
-#define TINYAI_MODEL_TYPE_RNN         0
-#define TINYAI_MODEL_TYPE_TRANSFORMER 1
+#define HYPERION_MODEL_TYPE_RNN         0
+#define HYPERION_MODEL_TYPE_TRANSFORMER 1
 
 /* Layer type constants */
-#define TINYAI_LAYER_EMBEDDING        0
-#define TINYAI_LAYER_DENSE            1
-#define TINYAI_LAYER_RNN              2
-#define TINYAI_LAYER_ATTENTION        3
-#define TINYAI_LAYER_LAYERNORM        4
-#define TINYAI_LAYER_OUTPUT           5
+#define HYPERION_LAYER_EMBEDDING        0
+#define HYPERION_LAYER_DENSE            1
+#define HYPERION_LAYER_RNN              2
+#define HYPERION_LAYER_ATTENTION        3
+#define HYPERION_LAYER_LAYERNORM        4
+#define HYPERION_LAYER_OUTPUT           5
 
 /* Activation function constants */
-#define TINYAI_ACTIVATION_NONE        0
-#define TINYAI_ACTIVATION_RELU        1
-#define TINYAI_ACTIVATION_SIGMOID     2
-#define TINYAI_ACTIVATION_TANH        3
-#define TINYAI_ACTIVATION_GELU        4
+#define HYPERION_ACTIVATION_NONE        0
+#define HYPERION_ACTIVATION_RELU        1
+#define HYPERION_ACTIVATION_SIGMOID     2
+#define HYPERION_ACTIVATION_TANH        3
+#define HYPERION_ACTIVATION_GELU        4
 
 /* Sampling method constants */
-#define TINYAI_SAMPLING_GREEDY        0
-#define TINYAI_SAMPLING_TEMPERATURE   1
-#define TINYAI_SAMPLING_TOP_K         2
-#define TINYAI_SAMPLING_TOP_P         3
+#define HYPERION_SAMPLING_GREEDY        0
+#define HYPERION_SAMPLING_TEMPERATURE   1
+#define HYPERION_SAMPLING_TOP_K         2
+#define HYPERION_SAMPLING_TOP_P         3
 
 /* ----------------- Types ----------------- */
 
 /**
  * Layer type enumeration
  */
-typedef uint32_t TinyAILayerType;
+typedef uint32_t HyperionLayerType;
 
 /**
  * Activation function enumeration
  */
-typedef uint32_t TinyAIActivation;
+typedef uint32_t HyperionActivation;
 
 /**
  * Model layer structure
  */
 typedef struct {
-    TinyAILayerType type;          /* Layer type */
-    TinyAIActivation activation;   /* Activation function */
+    HyperionLayerType type;          /* Layer type */
+    HyperionActivation activation;   /* Activation function */
     uint32_t inputSize;            /* Input size */
     uint32_t outputSize;           /* Output size */
-    TinyAIMatrix4bit weights;      /* Layer weights (4-bit quantized) */
+    HyperionMatrix4bit weights;      /* Layer weights (4-bit quantized) */
     float *biases;                 /* Layer biases */
-} TinyAILayer;
+} HyperionLayer;
 
 /**
  * Model structure
@@ -69,13 +69,13 @@ typedef struct {
 typedef struct {
     uint32_t type;                 /* Model type */
     uint32_t layerCount;           /* Number of layers */
-    TinyAILayer *layers;           /* Layers array */
-    TinyAITokenizer *tokenizer;    /* Tokenizer */
+    HyperionLayer *layers;           /* Layers array */
+    HyperionTokenizer *tokenizer;    /* Tokenizer */
     uint32_t hiddenSize;           /* Hidden size */
     uint32_t contextSize;          /* Maximum context size */
     float *activations[2];         /* Ping-pong activation buffers */
     int activeBuffer;              /* Active buffer index */
-} TinyAIModel;
+} HyperionModel;
 
 /**
  * Generation parameters structure
@@ -89,7 +89,7 @@ typedef struct {
     uint32_t seed;                 /* Random seed (0 for random) */
     int *promptTokens;             /* Prompt tokens (can be NULL) */
     int promptLength;              /* Prompt length */
-} TinyAIGenerationParams;
+} HyperionGenerationParams;
 
 /* ----------------- API Functions ----------------- */
 
@@ -102,15 +102,15 @@ typedef struct {
  * @param tokenizer Tokenizer (ownership not transferred)
  * @return New model or NULL on error
  */
-TinyAIModel* tinyaiCreateModel(uint32_t type, uint32_t hiddenSize, 
-                             uint32_t contextSize, TinyAITokenizer *tokenizer);
+HyperionModel* hyperionCreateModel(uint32_t type, uint32_t hiddenSize, 
+                             uint32_t contextSize, HyperionTokenizer *tokenizer);
 
 /**
  * Destroy a text generation model
  * 
  * @param model Model to destroy
  */
-void tinyaiDestroyModel(TinyAIModel *model);
+void hyperionDestroyModel(HyperionModel *model);
 
 /**
  * Add a layer to a model
@@ -122,9 +122,9 @@ void tinyaiDestroyModel(TinyAIModel *model);
  * @param activation Activation function
  * @return 0 on success, non-zero on error
  */
-int tinyaiAddLayer(TinyAIModel *model, TinyAILayerType type, 
+int hyperionAddLayer(HyperionModel *model, HyperionLayerType type, 
                  uint32_t inputSize, uint32_t outputSize, 
-                 TinyAIActivation activation);
+                 HyperionActivation activation);
 
 /**
  * Load model weights from a file
@@ -133,7 +133,7 @@ int tinyaiAddLayer(TinyAIModel *model, TinyAILayerType type,
  * @param path File path
  * @return 0 on success, non-zero on error
  */
-int tinyaiLoadModelWeights(TinyAIModel *model, const char *path);
+int hyperionLoadModelWeights(HyperionModel *model, const char *path);
 
 /**
  * Load a complete model from files
@@ -143,7 +143,7 @@ int tinyaiLoadModelWeights(TinyAIModel *model, const char *path);
  * @param tokenizerPath Tokenizer file path
  * @return Loaded model or NULL on error
  */
-TinyAIModel* tinyaiLoadModel(const char *modelPath, const char *weightsPath, 
+HyperionModel* hyperionLoadModel(const char *modelPath, const char *weightsPath, 
                            const char *tokenizerPath);
 
 /**
@@ -155,7 +155,7 @@ TinyAIModel* tinyaiLoadModel(const char *modelPath, const char *weightsPath,
  * @param output Output logits (must be allocated to at least vocab size)
  * @return 0 on success, non-zero on error
  */
-int tinyaiModelForward(TinyAIModel *model, const int *input, 
+int hyperionModelForward(HyperionModel *model, const int *input, 
                      int inputLength, float *output);
 
 /**
@@ -166,8 +166,8 @@ int tinyaiModelForward(TinyAIModel *model, const int *input,
  * @param params Generation parameters
  * @return Sampled token ID
  */
-int tinyaiSampleToken(const float *output, int vocabSize, 
-                    const TinyAIGenerationParams *params);
+int hyperionSampleToken(const float *output, int vocabSize, 
+                    const HyperionGenerationParams *params);
 
 /**
  * Generate text from a model
@@ -178,7 +178,7 @@ int tinyaiSampleToken(const float *output, int vocabSize,
  * @param maxOutputTokens Maximum output tokens
  * @return Number of tokens generated
  */
-int tinyaiGenerateText(TinyAIModel *model, const TinyAIGenerationParams *params,
+int hyperionGenerateText(HyperionModel *model, const HyperionGenerationParams *params,
                      int *outputTokens, int maxOutputTokens);
 
 /**
@@ -187,6 +187,6 @@ int tinyaiGenerateText(TinyAIModel *model, const TinyAIGenerationParams *params,
  * @param model Model to quantize
  * @return 0 on success, non-zero on error
  */
-int tinyaiQuantizeModel(TinyAIModel *model);
+int hyperionQuantizeModel(HyperionModel *model);
 
-#endif /* TINYAI_GENERATE_H */
+#endif /* HYPERION_GENERATE_H */

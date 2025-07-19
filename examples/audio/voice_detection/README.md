@@ -1,6 +1,6 @@
 # Voice Activity Detection Example
 
-This example demonstrates how to use TinyAI's audio processing capabilities to perform real-time voice activity detection (VAD). Voice activity detection is a fundamental component in many audio applications, such as speech recognition, voice assistants, and audio compression.
+This example demonstrates how to use Hyperion's audio processing capabilities to perform real-time voice activity detection (VAD). Voice activity detection is a fundamental component in many audio applications, suchg as speech recognition, voice assistants, and audio compression.
 
 ## Overview
 
@@ -22,21 +22,21 @@ The voice activity detection example showcases:
 
 ```bash
 # Basic usage with default parameters
-./tinyai_vad input.wav
+./hyperion_vad input.wav
 
 # Specify sensitivity (0.0-1.0, higher = more sensitive)
-./tinyai_vad input.wav --sensitivity 0.8
+./hyperion_vad input.wav --sensitivity 0.8
 
 # Adjust frame size in milliseconds
-./tinyai_vad input.wav --frame-size 30
+./hyperion_vad input.wav --frame-size 30
 
 # Enable visualization
-./tinyai_vad input.wav --visualize
+./hyperion_vad input.wav --visualize
 ```
 
 ## Technical Implementation
 
-The example uses the following components of the TinyAI framework:
+The example uses the following components of the Hyperion framework:
 
 1. **Audio Utilities**: For loading and processing audio data
 2. **Audio Features**: For extracting features like zero-crossing rate and energy

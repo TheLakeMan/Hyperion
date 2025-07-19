@@ -2,13 +2,13 @@
 
 ## Overview
 
-The Memory Management API provides functions for configuring and managing memory usage in TinyAI, including memory pools, allocation strategies, and optimization features.
+The Memory Management API provides functions for configuring and managing memory usage in Hyperion, including memory pools, allocation strategies, and optimization features.
 
 ## Memory Configuration
 
-### `tinyai_configure_memory()`
+### `hyperion_configure_memory()`
 ```c
-void tinyai_configure_memory(const TinyAIMemoryConfig* config);
+void hyperion_configure_memory(const HyperionMemoryConfig* config);
 ```
 Configures the memory management system with specified settings.
 
@@ -17,17 +17,17 @@ Configures the memory management system with specified settings.
 
 **Example:**
 ```c
-TinyAIMemoryConfig mem_config = {
+HyperionMemoryConfig mem_config = {
     .initial_pool_size = 1024 * 1024,  // 1MB
     .enable_optimization = true,
     .track_usage = true
 };
-tinyai_configure_memory(&mem_config);
+hyperion_configure_memory(&mem_config);
 ```
 
-### `tinyai_get_memory_config()`
+### `hyperion_get_memory_config()`
 ```c
-void tinyai_get_memory_config(TinyAIMemoryConfig* config);
+void hyperion_get_memory_config(HyperionMemoryConfig* config);
 ```
 Retrieves the current memory configuration.
 
@@ -36,9 +36,9 @@ Retrieves the current memory configuration.
 
 ## Memory Allocation
 
-### `tinyai_malloc()`
+### `hyperion_malloc()`
 ```c
-void* tinyai_malloc(size_t size);
+void* hyperion_malloc(size_t size);
 ```
 Allocates memory from the memory pool.
 
@@ -50,16 +50,16 @@ Allocates memory from the memory pool.
 
 **Example:**
 ```c
-void* data = tinyai_malloc(1024);
+void* data = hyperion_malloc(1024);
 if (!data) {
     printf("Memory allocation failed\n");
     return 1;
 }
 ```
 
-### `tinyai_free()`
+### `hyperion_free()`
 ```c
-void tinyai_free(void* ptr);
+void hyperion_free(void* ptr);
 ```
 Frees previously allocated memory.
 
@@ -68,16 +68,16 @@ Frees previously allocated memory.
 
 **Example:**
 ```c
-void* data = tinyai_malloc(1024);
+void* data = hyperion_malloc(1024);
 // Use memory
-tinyai_free(data);
+hyperion_free(data);
 ```
 
 ## Memory Pool Management
 
-### `tinyai_create_memory_pool()`
+### `hyperion_create_memory_pool()`
 ```c
-TinyAIMemoryPool* tinyai_create_memory_pool(size_t size);
+HyperionMemoryPool* hyperion_create_memory_pool(size_t size);
 ```
 Creates a new memory pool.
 
@@ -87,9 +87,9 @@ Creates a new memory pool.
 **Returns:**
 - Pointer to memory pool or NULL on failure
 
-### `tinyai_destroy_memory_pool()`
+### `hyperion_destroy_memory_pool()`
 ```c
-void tinyai_destroy_memory_pool(TinyAIMemoryPool* pool);
+void hyperion_destroy_memory_pool(HyperionMemoryPool* pool);
 ```
 Destroys a memory pool and frees all associated memory.
 
@@ -98,18 +98,18 @@ Destroys a memory pool and frees all associated memory.
 
 ## Memory Usage Tracking
 
-### `tinyai_get_memory_usage()`
+### `hyperion_get_memory_usage()`
 ```c
-size_t tinyai_get_memory_usage(void);
+size_t hyperion_get_memory_usage(void);
 ```
 Returns the current memory usage in bytes.
 
 **Returns:**
 - Current memory usage in bytes
 
-### `tinyai_get_memory_stats()`
+### `hyperion_get_memory_stats()`
 ```c
-void tinyai_get_memory_stats(TinyAIMemoryStats* stats);
+void hyperion_get_memory_stats(HyperionMemoryStats* stats);
 ```
 Retrieves detailed memory statistics.
 
@@ -118,15 +118,15 @@ Retrieves detailed memory statistics.
 
 ## Memory Optimization
 
-### `tinyai_optimize_memory()`
+### `hyperion_optimize_memory()`
 ```c
-void tinyai_optimize_memory(void);
+void hyperion_optimize_memory(void);
 ```
 Performs memory optimization operations.
 
-### `tinyai_set_memory_strategy()`
+### `hyperion_set_memory_strategy()`
 ```c
-void tinyai_set_memory_strategy(TinyAIMemoryStrategy strategy);
+void hyperion_set_memory_strategy(HyperionMemoryStrategy strategy);
 ```
 Sets the memory allocation strategy.
 
@@ -135,34 +135,34 @@ Sets the memory allocation strategy.
 
 ## Data Types
 
-### `TinyAIMemoryConfig`
+### `HyperionMemoryConfig`
 ```c
 typedef struct {
     size_t initial_pool_size;
     bool enable_optimization;
     bool track_usage;
-} TinyAIMemoryConfig;
+} HyperionMemoryConfig;
 ```
 Memory configuration structure.
 
-### `TinyAIMemoryStats`
+### `HyperionMemoryStats`
 ```c
 typedef struct {
     size_t total_allocated;
     size_t peak_usage;
     size_t current_usage;
     size_t fragmentation;
-} TinyAIMemoryStats;
+} HyperionMemoryStats;
 ```
 Memory statistics structure.
 
-### `TinyAIMemoryStrategy`
+### `HyperionMemoryStrategy`
 ```c
 typedef enum {
-    TINYAI_MEMORY_STRATEGY_DEFAULT,
-    TINYAI_MEMORY_STRATEGY_POOLED,
-    TINYAI_MEMORY_STRATEGY_STREAMING
-} TinyAIMemoryStrategy;
+    HYPERION_MEMORY_STRATEGY_DEFAULT,
+    HYPERION_MEMORY_STRATEGY_POOLED,
+    HYPERION_MEMORY_STRATEGY_STREAMING
+} HyperionMemoryStrategy;
 ```
 Memory allocation strategy enumeration.
 
@@ -180,21 +180,21 @@ Memory allocation strategy enumeration.
 ### Memory Pool Usage
 ```c
 // Create memory pool
-TinyAIMemoryPool* pool = tinyai_create_memory_pool(1024 * 1024);
+HyperionMemoryPool* pool = hyperion_create_memory_pool(1024 * 1024);
 if (!pool) {
     printf("Failed to create memory pool\n");
     return 1;
 }
 
 // Configure memory
-TinyAIMemoryConfig mem_config = {
+HyperionMemoryConfig mem_config = {
     .initial_pool_size = 1024 * 1024,
     .enable_optimization = true
 };
-tinyai_configure_memory(&mem_config);
+hyperion_configure_memory(&mem_config);
 
 // Allocate memory
-void* data = tinyai_malloc(1024);
+void* data = hyperion_malloc(1024);
 if (!data) {
     printf("Memory allocation failed\n");
     return 1;
@@ -204,23 +204,23 @@ if (!data) {
 // ...
 
 // Free memory
-tinyai_free(data);
+hyperion_free(data);
 
 // Clean up
-tinyai_destroy_memory_pool(pool);
+hyperion_destroy_memory_pool(pool);
 ```
 
 ### Memory Usage Monitoring
 ```c
 // Enable memory tracking
-TinyAIMemoryConfig mem_config = {
+HyperionMemoryConfig mem_config = {
     .track_usage = true
 };
-tinyai_configure_memory(&mem_config);
+hyperion_configure_memory(&mem_config);
 
 // Get memory statistics
-TinyAIMemoryStats stats;
-tinyai_get_memory_stats(&stats);
+HyperionMemoryStats stats;
+hyperion_get_memory_stats(&stats);
 printf("Total allocated: %zu bytes\n", stats.total_allocated);
 printf("Peak usage: %zu bytes\n", stats.peak_usage);
 printf("Current usage: %zu bytes\n", stats.current_usage);
@@ -230,4 +230,4 @@ printf("Current usage: %zu bytes\n", stats.current_usage);
 
 - [Core API](core.md)
 - [Performance Tools API](performance.md)
-- [Models API](models.md) 
+- [Models API](models.md)

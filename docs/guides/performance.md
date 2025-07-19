@@ -1,8 +1,8 @@
-# TinyAI Performance Guide
+# Hyperion Performance Guide
 
 ## Overview
 
-This comprehensive guide covers all aspects of performance optimization in TinyAI, including computation optimization, memory efficiency, system-level tuning, and monitoring.
+This comprehensive guide covers all aspects of performance optimization in Hyperion, including computation optimization, memory efficiency, system-level tuning, and monitoring.
 
 ## Table of Contents
 1. [Computation Optimization](#computation-optimization)
@@ -35,19 +35,19 @@ This comprehensive guide covers all aspects of performance optimization in TinyA
 1. **Enable SIMD Operations**
    ```c
    // Enable SIMD for all supported operations
-   tinyaiEnableSIMD(model, TINYAI_SIMD_OP_MATRIX_MUL, true);
-   tinyaiEnableSIMD(model, TINYAI_SIMD_OP_CONV, true);
-   tinyaiEnableSIMD(model, TINYAI_SIMD_OP_ACTIVATION, true);
-   tinyaiEnableSIMD(model, TINYAI_SIMD_OP_ATTENTION, true);
+   hyperionEnableSIMD(model, HYPERION_SIMD_OP_MATRIX_MUL, true);
+   hyperionEnableSIMD(model, HYPERION_SIMD_OP_CONV, true);
+   hyperionEnableSIMD(model, HYPERION_SIMD_OP_ACTIVATION, true);
+   hyperionEnableSIMD(model, HYPERION_SIMD_OP_ATTENTION, true);
 
    // Set optimization level
-   tinyaiSetSIMDOptimizationLevel(model, 3);  // Maximum optimization
+   hyperionSetSIMDOptimizationLevel(model, 3);  // Maximum optimization
    ```
 
 2. **Check Hardware Support**
    ```c
    // Check SIMD capabilities
-   TinyAISIMDCapabilities caps = tinyaiGetSIMDCapabilities();
+   HyperionSIMDCapabilities caps = hyperionGetSIMDCapabilities();
    printf("AVX2 Support: %s\n", caps.avx2 ? "Yes" : "No");
    printf("AVX512 Support: %s\n", caps.avx512 ? "Yes" : "No");
    ```
@@ -57,22 +57,22 @@ This comprehensive guide covers all aspects of performance optimization in TinyA
 1. **Cache Configuration**
    ```c
    // Cache configuration for performance
-   TinyAICacheConfig cache_config = {
+   HyperionCacheConfig cache_config = {
        .block_size = 64,           // Match cache line size
        .cache_line_size = 64,      // Standard cache line
        .enable_prefetch = true,    // Enable prefetching
        .prefetch_distance = 2      // Optimal prefetch distance
    };
-   tinyaiConfigureCacheOptimization(model, &cache_config);
+   hyperionConfigureCacheOptimization(model, &cache_config);
    ```
 
 2. **Memory Layout**
    ```c
    // Optimize memory layout
-   tinyaiOptimizeMemoryLayout(model);
+   hyperionOptimizeMemoryLayout(model);
 
    // Get cache statistics
-   TinyAICacheStats stats = tinyaiGetCacheStats(model);
+   HyperionCacheStats stats = hyperionGetCacheStats(model);
    printf("Cache hit rate: %.2f%%\n", stats.hit_rate * 100);
    ```
 
@@ -81,22 +81,22 @@ This comprehensive guide covers all aspects of performance optimization in TinyA
 1. **Scheduler Configuration**
    ```c
    // Layer scheduler configuration
-   TinyAILayerSchedulerConfig scheduler_config = {
+   HyperionLayerSchedulerConfig scheduler_config = {
        .enable_checkpointing = true,
        .memory_speed_tradeoff = 0.7f,  // Balance memory and speed
        .recompute_activations = false,
        .max_activation_memory = 256 * 1024 * 1024  // 256MB
    };
-   TinyAILayerScheduler* scheduler = tinyaiCreateLayerScheduler(model, &scheduler_config);
+   HyperionLayerScheduler* scheduler = hyperionCreateLayerScheduler(model, &scheduler_config);
    ```
 
 2. **Execution Planning**
    ```c
    // Create optimized execution plan
-   TinyAIExecutionPlan* plan = tinyaiCreateExecutionPlan(scheduler);
+   HyperionExecutionPlan* plan = hyperionCreateExecutionPlan(scheduler);
 
    // Get memory estimate
-   TinyAIMemoryEstimate estimate = tinyaiEstimateMemoryUsage(scheduler);
+   HyperionMemoryEstimate estimate = hyperionEstimateMemoryUsage(scheduler);
    printf("Minimum memory: %zu MB\n", estimate.min_memory / (1024 * 1024));
    printf("Maximum memory: %zu MB\n", estimate.max_memory / (1024 * 1024));
    ```
@@ -106,7 +106,7 @@ This comprehensive guide covers all aspects of performance optimization in TinyA
 1. **Batch Size Configuration**
    ```c
    // Generation configuration for batch processing
-   TinyAIGenerationConfig gen_config = {
+   HyperionGenerationConfig gen_config = {
        .max_length = 100,
        .temperature = 0.7f,
        .top_k = 50,
@@ -128,12 +128,12 @@ This comprehensive guide covers all aspects of performance optimization in TinyA
 1. **Thread Configuration**
    ```c
    // Set thread count based on CPU cores
-   int num_cores = tinyaiGetCPUCoreCount();
-   tinyaiSetThreadCount(model, num_cores - 1);  // Leave one core free
+   int num_cores = hyperionGetCPUCoreCount();
+   hyperionSetThreadCount(model, num_cores - 1);  // Leave one core free
 
    // Configure thread affinity
-   tinyaiSetThreadAffinity(model, 0, 1);  // Core 0 for main thread
-   tinyaiSetThreadAffinity(model, 1, 2);  // Core 1 for worker thread
+   hyperionSetThreadAffinity(model, 0, 1);  // Core 0 for main thread
+   hyperionSetThreadAffinity(model, 1, 2);  // Core 1 for worker thread
    ```
 
 ### Resource Management
@@ -141,11 +141,11 @@ This comprehensive guide covers all aspects of performance optimization in TinyA
 1. **Resource Limits**
    ```c
    // Set resource limits
-   tinyaiSetCPULimit(model, 90);  // 90% CPU usage limit
-   tinyaiSetMemoryLimit(model, 80);  // 80% memory usage limit
+   hyperionSetCPULimit(model, 90);  // 90% CPU usage limit
+   hyperionSetMemoryLimit(model, 80);  // 80% memory usage limit
 
    // Monitor resource usage
-   TinyAIResourceUsage usage = tinyaiGetResourceUsage(model);
+   HyperionResourceUsage usage = hyperionGetResourceUsage(model);
    printf("CPU Usage: %.1f%%\n", usage.cpu_usage);
    printf("Memory Usage: %.1f%%\n", usage.memory_usage);
    ```
@@ -157,21 +157,21 @@ This comprehensive guide covers all aspects of performance optimization in TinyA
 1. **Enable Monitoring**
    ```c
    // Configure performance monitoring
-   TinyAIPerformanceConfig config = {
+   HyperionPerformanceConfig config = {
        .track_execution_time = true,
        .track_cache_usage = true,
        .sample_interval_ms = 100
    };
-   TinyAIPerformanceAnalysis* analysis = tinyai_create_performance_analysis(&config);
+   HyperionPerformanceAnalysis* analysis = hyperion_create_performance_analysis(&config);
 
    // Set monitoring interval
-   tinyaiSetMonitoringInterval(model, 1000);  // 1 second
+   hyperionSetMonitoringInterval(model, 1000);  // 1 second
    ```
 
 2. **Collect Metrics**
    ```c
    // Get performance metrics
-   TinyAIPerformanceMetrics metrics = tinyaiGetPerformanceMetrics(model);
+   HyperionPerformanceMetrics metrics = hyperionGetPerformanceMetrics(model);
    printf("Inference time: %.2f ms\n", metrics.inference_time);
    printf("Throughput: %.2f tokens/s\n", metrics.throughput);
    ```
@@ -181,13 +181,13 @@ This comprehensive guide covers all aspects of performance optimization in TinyA
 1. **Basic Profiling**
    ```c
    // Start profiling
-   tinyaiStartProfiling(model);
+   hyperionStartProfiling(model);
 
    // Run operations
-   tinyaiGenerateText(model, prompt, &gen_config, &output);
+   hyperionGenerateText(model, prompt, &gen_config, &output);
 
    // Stop profiling and get results
-   TinyAIProfileResults results = tinyaiStopProfiling(model);
+   HyperionProfileResults results = hyperionStopProfiling(model);
    printf("Total time: %.2f ms\n", results.total_time);
    printf("Memory operations: %zu\n", results.memory_ops);
    ```
@@ -195,13 +195,13 @@ This comprehensive guide covers all aspects of performance optimization in TinyA
 2. **Analysis and Reporting**
    ```c
    // Take regular samples
-   tinyai_take_performance_sample(analysis);
+   hyperion_take_performance_sample(analysis);
 
    // Analyze optimization impact
-   tinyai_analyze_optimization_impact(analysis);
+   hyperion_analyze_optimization_impact(analysis);
 
    // Generate performance report
-   tinyai_generate_performance_report(analysis, "performance_report.txt");
+   hyperion_generate_performance_report(analysis, "performance_report.txt");
    ```
 
 ## Benchmarking
@@ -237,19 +237,19 @@ This comprehensive guide covers all aspects of performance optimization in TinyA
 1. **Environment Configuration**
    ```bash
    # Check system specifications
-   tinyai benchmark system --specs
+   hyperion benchmark system --specs
    
    # Verify environment
-   tinyai benchmark verify --env
+   hyperion benchmark verify --env
    ```
 
 2. **Model Preparation**
    ```bash
    # Prepare model for benchmarking
-   tinyai benchmark prepare --model model.tinyai --config benchmark_config.json
+   hyperion benchmark prepare --model model.hyperion --config benchmark_config.json
    
    # Verify model readiness
-   tinyai benchmark verify --model model.tinyai
+   hyperion benchmark verify --model model.hyperion
    ```
 
 ### Running Benchmarks
@@ -257,30 +257,30 @@ This comprehensive guide covers all aspects of performance optimization in TinyA
 1. **Command Line Interface**
    ```bash
    # Basic benchmark
-   tinyai benchmark run --model model.tinyai --type inference
+   hyperion benchmark run --model model.hyperion --type inference
 
    # Customized benchmark
-   tinyai benchmark run \
-     --model model.tinyai \
+   hyperion benchmark run \
+     --model model.hyperion \
      --type inference \
      --iterations 1000 \
      --batch-size 8 \
      --metrics latency throughput memory
 
    # Comparative benchmark
-   tinyai benchmark compare \
-     --models model_v1.tinyai model_v2.tinyai \
+   hyperion benchmark compare \
+     --models model_v1.hyperion model_v2.hyperion \
      --type inference \
      --config comparison_config.json
    ```
 
 2. **Python API**
    ```python
-   import tinyai.benchmark as benchmark
+   import hyperion.benchmark as benchmark
 
    # Create benchmark configuration
    config = benchmark.Config(
-       model_path="model.tinyai",
+       model_path="model.hyperion",
        benchmark_type="inference",
        iterations=1000,
        batch_sizes=[1, 4, 8, 16],
@@ -301,7 +301,7 @@ This comprehensive guide covers all aspects of performance optimization in TinyA
    ```json
    {
      "benchmark_info": {
-       "model": "model.tinyai",
+       "model": "model.hyperion",
        "type": "inference",
        "timestamp": "2024-03-21T10:00:00Z",
        "system_info": {
@@ -341,15 +341,15 @@ This comprehensive guide covers all aspects of performance optimization in TinyA
 2. **Analysis Tools**
    ```bash
    # Basic analysis
-   tinyai benchmark analyze --results benchmark_results.json
+   hyperion benchmark analyze --results benchmark_results.json
 
    # Comparative analysis
-   tinyai benchmark compare \
+   hyperion benchmark compare \
      --results results_v1.json results_v2.json \
      --output comparison_report.html
 
    # Trend analysis
-   tinyai benchmark trends \
+   hyperion benchmark trends \
      --results results_*.json \
      --metric latency \
      --output trends.png
@@ -432,4 +432,4 @@ This comprehensive guide covers all aspects of performance optimization in TinyA
 - [ ] Generate and analyze reports
 - [ ] Apply recommended optimizations
 - [ ] Validate optimization impact
-- [ ] Document performance results 
+- [ ] Document performance results

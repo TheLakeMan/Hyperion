@@ -1,6 +1,6 @@
 /**
  * @file image_utils.c
- * @brief Image utility functions for TinyAI
+ * @brief Image utility functions for Hyperion
  */
 
 #include "image_utils.h"
@@ -16,7 +16,7 @@
  * @param format Image format
  * @return Newly allocated image, or NULL on failure
  */
-TinyAIImage *tinyaiImageCreate(int width, int height, TinyAIImageFormat format)
+HyperionImage *hyperionImageCreate(int width, int height, HyperionImageFormat format)
 {
     if (width <= 0 || height <= 0) {
         fprintf(stderr, "Invalid image dimensions: %dx%d\n", width, height);
@@ -26,14 +26,14 @@ TinyAIImage *tinyaiImageCreate(int width, int height, TinyAIImageFormat format)
     /* Determine number of channels based on format */
     int channels;
     switch (format) {
-    case TINYAI_IMAGE_FORMAT_GRAYSCALE:
+    case HYPERION_IMAGE_FORMAT_GRAYSCALE:
         channels = 1;
         break;
-    case TINYAI_IMAGE_FORMAT_RGB:
-    case TINYAI_IMAGE_FORMAT_BGR:
+    case HYPERION_IMAGE_FORMAT_RGB:
+    case HYPERION_IMAGE_FORMAT_BGR:
         channels = 3;
         break;
-    case TINYAI_IMAGE_FORMAT_RGBA:
+    case HYPERION_IMAGE_FORMAT_RGBA:
         channels = 4;
         break;
     default:
@@ -42,7 +42,7 @@ TinyAIImage *tinyaiImageCreate(int width, int height, TinyAIImageFormat format)
     }
 
     /* Allocate image structure */
-    TinyAIImage *image = (TinyAIImage *)malloc(sizeof(TinyAIImage));
+    HyperionImage *image = (HyperionImage *)malloc(sizeof(HyperionImage));
     if (!image) {
         fprintf(stderr, "Failed to allocate image structure\n");
         return NULL;
@@ -73,7 +73,7 @@ TinyAIImage *tinyaiImageCreate(int width, int height, TinyAIImageFormat format)
  * Free an image
  * @param image The image to free
  */
-void tinyaiImageFree(TinyAIImage *image)
+void hyperionImageFree(HyperionImage *image)
 {
     if (!image) {
         return;
@@ -93,14 +93,14 @@ void tinyaiImageFree(TinyAIImage *image)
  * @param image The image to copy
  * @return Newly allocated copy of image, or NULL on failure
  */
-TinyAIImage *tinyaiImageCopy(const TinyAIImage *image)
+HyperionImage *hyperionImageCopy(const HyperionImage *image)
 {
     if (!image) {
         return NULL;
     }
 
     /* Create a new image with the same dimensions and format */
-    TinyAIImage *copy = tinyaiImageCreate(image->width, image->height, image->format);
+    HyperionImage *copy = hyperionImageCreate(image->width, image->height, image->format);
     if (!copy) {
         return NULL;
     }
@@ -108,19 +108,19 @@ TinyAIImage *tinyaiImageCopy(const TinyAIImage *image)
     /* Determine number of channels */
     int channels;
     switch (image->format) {
-    case TINYAI_IMAGE_FORMAT_GRAYSCALE:
+    case HYPERION_IMAGE_FORMAT_GRAYSCALE:
         channels = 1;
         break;
-    case TINYAI_IMAGE_FORMAT_RGB:
-    case TINYAI_IMAGE_FORMAT_BGR:
+    case HYPERION_IMAGE_FORMAT_RGB:
+    case HYPERION_IMAGE_FORMAT_BGR:
         channels = 3;
         break;
-    case TINYAI_IMAGE_FORMAT_RGBA:
+    case HYPERION_IMAGE_FORMAT_RGBA:
         channels = 4;
         break;
     default:
         fprintf(stderr, "Unsupported image format\n");
-        tinyaiImageFree(copy);
+        hyperionImageFree(copy);
         return NULL;
     }
 
@@ -138,7 +138,7 @@ TinyAIImage *tinyaiImageCopy(const TinyAIImage *image)
  * @param newHeight New height
  * @return Newly allocated resized image, or NULL on failure
  */
-TinyAIImage *tinyaiImageResize(const TinyAIImage *image, int newWidth, int newHeight)
+HyperionImage *hyperionImageResize(const HyperionImage *image, int newWidth, int newHeight)
 {
     if (!image || newWidth <= 0 || newHeight <= 0) {
         return NULL;
@@ -147,14 +147,14 @@ TinyAIImage *tinyaiImageResize(const TinyAIImage *image, int newWidth, int newHe
     /* Determine number of channels */
     int channels;
     switch (image->format) {
-    case TINYAI_IMAGE_FORMAT_GRAYSCALE:
+    case HYPERION_IMAGE_FORMAT_GRAYSCALE:
         channels = 1;
         break;
-    case TINYAI_IMAGE_FORMAT_RGB:
-    case TINYAI_IMAGE_FORMAT_BGR:
+    case HYPERION_IMAGE_FORMAT_RGB:
+    case HYPERION_IMAGE_FORMAT_BGR:
         channels = 3;
         break;
-    case TINYAI_IMAGE_FORMAT_RGBA:
+    case HYPERION_IMAGE_FORMAT_RGBA:
         channels = 4;
         break;
     default:
@@ -163,7 +163,7 @@ TinyAIImage *tinyaiImageResize(const TinyAIImage *image, int newWidth, int newHe
     }
 
     /* Create a new image with the new dimensions */
-    TinyAIImage *resized = tinyaiImageCreate(newWidth, newHeight, image->format);
+    HyperionImage *resized = hyperionImageCreate(newWidth, newHeight, image->format);
     if (!resized) {
         return NULL;
     }
@@ -209,27 +209,27 @@ TinyAIImage *tinyaiImageResize(const TinyAIImage *image, int newWidth, int newHe
  * @param image The image to convert
  * @return Newly allocated grayscale image, or NULL on failure
  */
-TinyAIImage *tinyaiImageToGrayscale(const TinyAIImage *image)
+HyperionImage *hyperionImageToGrayscale(const HyperionImage *image)
 {
     if (!image) {
         return NULL;
     }
 
     /* Check if already grayscale */
-    if (image->format == TINYAI_IMAGE_FORMAT_GRAYSCALE) {
-        return tinyaiImageCopy(image);
+    if (image->format == HYPERION_IMAGE_FORMAT_GRAYSCALE) {
+        return hyperionImageCopy(image);
     }
 
     /* Create a new grayscale image */
-    TinyAIImage *gray =
-        tinyaiImageCreate(image->width, image->height, TINYAI_IMAGE_FORMAT_GRAYSCALE);
+    HyperionImage *gray =
+        hyperionImageCreate(image->width, image->height, HYPERION_IMAGE_FORMAT_GRAYSCALE);
     if (!gray) {
         return NULL;
     }
 
     /* Determine conversion based on source format */
     switch (image->format) {
-    case TINYAI_IMAGE_FORMAT_RGB:
+    case HYPERION_IMAGE_FORMAT_RGB:
         /* Use standard RGB to grayscale conversion */
         for (int i = 0; i < image->width * image->height; i++) {
             uint8_t r = image->data[i * 3 + 0];
@@ -241,7 +241,7 @@ TinyAIImage *tinyaiImageToGrayscale(const TinyAIImage *image)
         }
         break;
 
-    case TINYAI_IMAGE_FORMAT_BGR:
+    case HYPERION_IMAGE_FORMAT_BGR:
         /* Same as RGB but with different channel order */
         for (int i = 0; i < image->width * image->height; i++) {
             uint8_t b = image->data[i * 3 + 0];
@@ -253,7 +253,7 @@ TinyAIImage *tinyaiImageToGrayscale(const TinyAIImage *image)
         }
         break;
 
-    case TINYAI_IMAGE_FORMAT_RGBA:
+    case HYPERION_IMAGE_FORMAT_RGBA:
         /* Ignore alpha channel */
         for (int i = 0; i < image->width * image->height; i++) {
             uint8_t r = image->data[i * 4 + 0];
@@ -267,7 +267,7 @@ TinyAIImage *tinyaiImageToGrayscale(const TinyAIImage *image)
 
     default:
         fprintf(stderr, "Unsupported conversion to grayscale\n");
-        tinyaiImageFree(gray);
+        hyperionImageFree(gray);
         return NULL;
     }
 
@@ -277,11 +277,10 @@ TinyAIImage *tinyaiImageToGrayscale(const TinyAIImage *image)
 /**
  * Convert image to float array
  * @param image The image to convert
- * @param output Float array to store result (must be pre-allocated)
- * @param normalize Whether to normalize to 0-1 range
+ * @param output Float array to store result (must be pre-allocated) \n * @param normalize Whether to normalize to 0-1 range
  * @return true on success, false on failure
  */
-bool tinyaiImageToFloatArray(const TinyAIImage *image, float *output, bool normalize)
+bool hyperionImageToFloatArray(const HyperionImage *image, float *output, bool normalize)
 {
     if (!image || !output) {
         return false;
@@ -290,14 +289,14 @@ bool tinyaiImageToFloatArray(const TinyAIImage *image, float *output, bool norma
     /* Determine number of channels */
     int channels;
     switch (image->format) {
-    case TINYAI_IMAGE_FORMAT_GRAYSCALE:
+    case HYPERION_IMAGE_FORMAT_GRAYSCALE:
         channels = 1;
         break;
-    case TINYAI_IMAGE_FORMAT_RGB:
-    case TINYAI_IMAGE_FORMAT_BGR:
+    case HYPERION_IMAGE_FORMAT_RGB:
+    case HYPERION_IMAGE_FORMAT_BGR:
         channels = 3;
         break;
-    case TINYAI_IMAGE_FORMAT_RGBA:
+    case HYPERION_IMAGE_FORMAT_RGBA:
         channels = 4;
         break;
     default:
@@ -329,7 +328,7 @@ bool tinyaiImageToFloatArray(const TinyAIImage *image, float *output, bool norma
  * Set default preprocessing parameters
  * @param params The parameters structure to initialize
  */
-void tinyaiImagePreprocessParamsDefault(TinyAIImagePreprocessParams *params)
+void hyperionImagePreprocessParamsDefault(HyperionImagePreprocessParams *params)
 {
     if (!params) {
         return;
@@ -354,21 +353,21 @@ void tinyaiImagePreprocessParamsDefault(TinyAIImagePreprocessParams *params)
  * @param params Preprocessing parameters
  * @return Newly allocated preprocessed image, or NULL on failure
  */
-TinyAIImage *tinyaiImagePreprocess(const TinyAIImage                 *image,
-                                   const TinyAIImagePreprocessParams *params)
+HyperionImage *hyperionImagePreprocess(const HyperionImage                 *image,
+                                   const HyperionImagePreprocessParams *params)
 {
     if (!image || !params) {
         return NULL;
     }
 
     /* Ensure image is in RGB format */
-    TinyAIImage *rgbImage = NULL;
-    if (image->format != TINYAI_IMAGE_FORMAT_RGB) {
+    HyperionImage *rgbImage = NULL;
+    if (image->format != HYPERION_IMAGE_FORMAT_RGB) {
         /* Convert to RGB if needed */
         switch (image->format) {
-        case TINYAI_IMAGE_FORMAT_GRAYSCALE:
+        case HYPERION_IMAGE_FORMAT_GRAYSCALE:
             /* Grayscale to RGB: duplicate channel */
-            rgbImage = tinyaiImageCreate(image->width, image->height, TINYAI_IMAGE_FORMAT_RGB);
+            rgbImage = hyperionImageCreate(image->width, image->height, HYPERION_IMAGE_FORMAT_RGB);
             if (!rgbImage) {
                 return NULL;
             }
@@ -381,9 +380,9 @@ TinyAIImage *tinyaiImagePreprocess(const TinyAIImage                 *image,
             }
             break;
 
-        case TINYAI_IMAGE_FORMAT_BGR:
+        case HYPERION_IMAGE_FORMAT_BGR:
             /* BGR to RGB: swap channels */
-            rgbImage = tinyaiImageCreate(image->width, image->height, TINYAI_IMAGE_FORMAT_RGB);
+            rgbImage = hyperionImageCreate(image->width, image->height, HYPERION_IMAGE_FORMAT_RGB);
             if (!rgbImage) {
                 return NULL;
             }
@@ -395,9 +394,9 @@ TinyAIImage *tinyaiImagePreprocess(const TinyAIImage                 *image,
             }
             break;
 
-        case TINYAI_IMAGE_FORMAT_RGBA:
+        case HYPERION_IMAGE_FORMAT_RGBA:
             /* RGBA to RGB: drop alpha */
-            rgbImage = tinyaiImageCreate(image->width, image->height, TINYAI_IMAGE_FORMAT_RGB);
+            rgbImage = hyperionImageCreate(image->width, image->height, HYPERION_IMAGE_FORMAT_RGB);
             if (!rgbImage) {
                 return NULL;
             }
@@ -407,7 +406,7 @@ TinyAIImage *tinyaiImagePreprocess(const TinyAIImage                 *image,
                 rgbImage->data[i * 3 + 1] = image->data[i * 4 + 1]; /* G */
                 rgbImage->data[i * 3 + 2] = image->data[i * 4 + 2]; /* B */
             }
-            break;
+        break;
 
         default:
             fprintf(stderr, "Unsupported image format for preprocessing\n");
@@ -416,14 +415,14 @@ TinyAIImage *tinyaiImagePreprocess(const TinyAIImage                 *image,
     }
     else {
         /* Already RGB, just make a copy */
-        rgbImage = tinyaiImageCopy(image);
+        rgbImage = hyperionImageCopy(image);
         if (!rgbImage) {
             return NULL;
         }
     }
 
     /* Apply center crop if requested */
-    TinyAIImage *croppedImage = NULL;
+    HyperionImage *croppedImage = NULL;
     if (params->centerCrop) {
         int cropWidth  = (int)(rgbImage->width * params->cropRatio);
         int cropHeight = (int)(rgbImage->height * params->cropRatio);
@@ -437,9 +436,9 @@ TinyAIImage *tinyaiImagePreprocess(const TinyAIImage                 *image,
         int y = (rgbImage->height - cropHeight) / 2;
 
         /* Create a new image for the cropped result */
-        croppedImage = tinyaiImageCreate(cropWidth, cropHeight, TINYAI_IMAGE_FORMAT_RGB);
+        croppedImage = hyperionImageCreate(cropWidth, cropHeight, HYPERION_IMAGE_FORMAT_RGB);
         if (!croppedImage) {
-            tinyaiImageFree(rgbImage);
+            hyperionImageFree(rgbImage);
             return NULL;
         }
 
@@ -456,21 +455,21 @@ TinyAIImage *tinyaiImagePreprocess(const TinyAIImage                 *image,
         }
 
         /* Free the RGB image as we don't need it anymore */
-        tinyaiImageFree(rgbImage);
+        hyperionImageFree(rgbImage);
         rgbImage = croppedImage;
     }
 
     /* Resize to target dimensions if needed */
-    TinyAIImage *resizedImage = NULL;
+    HyperionImage *resizedImage = NULL;
     if (rgbImage->width != params->targetWidth || rgbImage->height != params->targetHeight) {
-        resizedImage = tinyaiImageResize(rgbImage, params->targetWidth, params->targetHeight);
+        resizedImage = hyperionImageResize(rgbImage, params->targetWidth, params->targetHeight);
         if (!resizedImage) {
-            tinyaiImageFree(rgbImage);
+            hyperionImageFree(rgbImage);
             return NULL;
         }
 
         /* Free the previous image as we don't need it anymore */
-        tinyaiImageFree(rgbImage);
+        hyperionImageFree(rgbImage);
         rgbImage = resizedImage;
     }
 

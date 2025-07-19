@@ -1,13 +1,13 @@
 /**
  * @file fusion.h
- * @brief Cross-modal fusion operations for TinyAI
+ * @brief Cross-modal fusion operations for Hyperion
  *
  * This header defines the fusion operations used to combine
  * features from different modalities in multimodal models.
  */
 
-#ifndef TINYAI_FUSION_H
-#define TINYAI_FUSION_H
+#ifndef HYPERION_FUSION_H
+#define HYPERION_FUSION_H
 
 #include "multimodal_model.h"
 #include <stdbool.h>
@@ -26,7 +26,7 @@ extern "C" {
  * @param fusedDim Dimension of the fused feature space
  * @return true on success, false on failure
  */
-bool tinyaiFusionConcat(const float **outputs, const int *outDims, int numModalities,
+bool hyperionFusionConcat(const float **outputs, const int *outDims, int numModalities,
                         float *fusedOutput, int fusedDim);
 
 /**
@@ -39,7 +39,7 @@ bool tinyaiFusionConcat(const float **outputs, const int *outDims, int numModali
  * @param fusedDim Dimension of the fused feature space
  * @return true on success, false on failure
  */
-bool tinyaiFusionAdd(const float **outputs, const int *outDims, int numModalities,
+bool hyperionFusionAdd(const float **outputs, const int *outDims, int numModalities,
                      float *fusedOutput, int fusedDim);
 
 /**
@@ -52,7 +52,7 @@ bool tinyaiFusionAdd(const float **outputs, const int *outDims, int numModalitie
  * @param fusedDim Dimension of the fused feature space
  * @return true on success, false on failure
  */
-bool tinyaiFusionMultiply(const float **outputs, const int *outDims, int numModalities,
+bool hyperionFusionMultiply(const float **outputs, const int *outDims, int numModalities,
                           float *fusedOutput, int fusedDim);
 
 /**
@@ -68,7 +68,7 @@ bool tinyaiFusionMultiply(const float **outputs, const int *outDims, int numModa
  * @param useSIMD Whether to use SIMD acceleration
  * @return true on success, false on failure
  */
-bool tinyaiFusionAttention(const float **outputs, const int *outDims, int numModalities,
+bool hyperionFusionAttention(const float **outputs, const int *outDims, int numModalities,
                            const float *weights, float *fusedOutput, int fusedDim,
                            bool useQuantization, bool useSIMD);
 
@@ -88,7 +88,7 @@ bool tinyaiFusionAttention(const float **outputs, const int *outDims, int numMod
  * @param useSIMD Whether to use SIMD acceleration
  * @return true on success, false on failure
  */
-bool tinyaiFusionCrossAttention(const float *output1, int dim1, const float *output2, int dim2,
+bool hyperionFusionCrossAttention(const float *output1, int dim1, const float *output2, int dim2,
                                 float *fusedOutput, int fusedDim, const float *weights,
                                 bool useQuantization, bool useSIMD);
 
@@ -105,7 +105,7 @@ bool tinyaiFusionCrossAttention(const float *output1, int dim1, const float *out
  * @param useSIMD Whether to use SIMD acceleration
  * @return true on success, false on failure
  */
-bool tinyaiFusionProject(const float *input, int inputDim, float *output, int outputDim,
+bool hyperionFusionProject(const float *input, int inputDim, float *output, int outputDim,
                          const void *weights, const float *bias, bool useQuantization,
                          bool useSIMD);
 
@@ -113,4 +113,4 @@ bool tinyaiFusionProject(const float *input, int inputDim, float *output, int ou
 }
 #endif
 
-#endif /* TINYAI_FUSION_H */
+#endif /* HYPERION_FUSION_H */

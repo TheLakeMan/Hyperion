@@ -1,5 +1,5 @@
 /**
- * TinyAI Logging System Implementation
+ * Hyperion Logging System Implementation
  */
 
 #include "logging.h"
@@ -65,9 +65,9 @@ static const char *LOG_LEVEL_COLORS[] = {
  */
 typedef struct {
     bool             initialized;
-    TinyAILogConfig  config;
+    HyperionLogConfig  config;
     FILE            *log_file;
-    TinyAILogHandler custom_handler;
+    HyperionLogHandler custom_handler;
     void            *custom_handler_data;
     char             log_file_path[MAX_LOG_FILE_PATH];
     size_t           current_file_size;
@@ -82,22 +82,22 @@ static LogSystemState log_state = {0};
 /* ----------------- Forward Declarations ----------------- */
 
 static void format_timestamp(char *buffer, size_t buffer_size);
-static void format_log_message(TinyAILogLevel level, const char *file, int line, const char *format,
+static void format_log_message(HyperionLogLevel level, const char *file, int line, const char *format,
                                va_list args, char *buffer, size_t buffer_size);
-static void format_log_message_json(TinyAILogLevel level, const char *file, int line,
+static void format_log_message_json(HyperionLogLevel level, const char *file, int line,
                                     const char *format, va_list args, char *buffer,
                                     size_t buffer_size);
-static void format_log_message_csv(TinyAILogLevel level, const char *file, int line,
+static void format_log_message_csv(HyperionLogLevel level, const char *file, int line,
                                    const char *format, va_list args, char *buffer,
                                    size_t buffer_size);
-static void write_to_console(TinyAILogLevel level, const char *message);
+static void write_to_console(HyperionLogLevel level, const char *message);
 static int  write_to_file(const char *message);
 static int  rotate_log_file_if_needed(void);
 static void escape_json_string(const char *input, char *output, size_t output_size);
 
 /* ----------------- Core Functions ----------------- */
 
-int tinyai_logging_init(void)
+int hyperion_logging_init(void)
 {
     if (log_state.initialized) {
         return 1; /* Already initialized */
@@ -105,9 +105,9 @@ int tinyai_logging_init(void)
 
     /* Set default configuration */
     memset(&log_state, 0, sizeof(LogSystemState));
-    log_state.config.level                      = TINYAI_LOG_INFO;
-    log_state.config.output                     = TINYAI_LOG_OUTPUT_CONSOLE;
-    log_state.config.format                     = TINYAI_LOG_FORMAT_PLAIN;
+    log_state.config.level                      = HYPERION_LOG_INFO;
+    log_state.config.output                     = HYPERION_LOG_OUTPUT_CONSOLE;
+    log_state.config.format                     = HYPERION_LOG_FORMAT_PLAIN;
     log_state.config.include_timestamp          = true;
     log_state.config.include_level              = true;
     log_state.config.include_source             = false;
@@ -126,14 +126,14 @@ int tinyai_logging_init(void)
 
     log_state.initialized = true;
 
-    TINYAI_LOG_INFO("Logging system initialized");
+    HYPERION_LOG_INFO("Logging system initialized");
     return 1;
 }
 
-int tinyai_configure_logging(const TinyAILogConfig *config)
+int hyperion_configure_logging(const HyperionLogConfig *config)
 {
     if (!log_state.initialized) {
-        if (!tinyai_logging_init()) {
+        if (!hyperion_logging_init()) {
             return 0;
         }
     }
@@ -143,8 +143,8 @@ int tinyai_configure_logging(const TinyAILogConfig *config)
     }
 
     /* Close existing log file if we're changing output settings */
-    if ((log_state.config.output & TINYAI_LOG_OUTPUT_FILE) && (log_state.log_file != NULL) &&
-        ((!(config->output & TINYAI_LOG_OUTPUT_FILE)) ||
+    if ((log_state.config.output & HYPERION_LOG_OUTPUT_FILE) && (log_state.log_file != NULL) &&
+        ((!(config->output & HYPERION_LOG_OUTPUT_FILE)) ||
          (config->log_file_path != log_state.config.log_file_path))) {
         fclose(log_state.log_file);
         log_state.log_file = NULL;
@@ -166,7 +166,7 @@ int tinyai_configure_logging(const TinyAILogConfig *config)
     log_state.config.rotation.rotate_on_startup = config->rotation.rotate_on_startup;
 
     /* Configure log file */
-    if (config->output & TINYAI_LOG_OUTPUT_FILE) {
+    if (config->output & HYPERION_LOG_OUTPUT_FILE) {
         if (config->log_file_path) {
             log_state.config.log_file_path = config->log_file_path;
             strncpy(log_state.log_file_path, config->log_file_path, MAX_LOG_FILE_PATH - 1);
@@ -196,7 +196,7 @@ int tinyai_configure_logging(const TinyAILogConfig *config)
             log_state.log_file = fopen(log_state.log_file_path, "a");
             if (!log_state.log_file) {
                 fprintf(stderr, "Failed to open log file: %s\n", log_state.log_file_path);
-                log_state.config.output &= ~TINYAI_LOG_OUTPUT_FILE;
+                log_state.config.output &= ~HYPERION_LOG_OUTPUT_FILE;
                 return 0;
             }
 
@@ -206,43 +206,43 @@ int tinyai_configure_logging(const TinyAILogConfig *config)
         }
     }
 
-    TINYAI_LOG_INFO("Logging configuration updated");
+    HYPERION_LOG_INFO("Logging configuration updated");
     return 1;
 }
 
-void tinyai_get_logging_config(TinyAILogConfig *config)
+void hyperion_get_logging_config(HyperionLogConfig *config)
 {
     if (!log_state.initialized) {
-        tinyai_logging_init();
+        hyperion_logging_init();
     }
 
     if (config) {
-        memcpy(config, &log_state.config, sizeof(TinyAILogConfig));
+        memcpy(config, &log_state.config, sizeof(HyperionLogConfig));
     }
 }
 
-void tinyai_set_log_level(TinyAILogLevel level)
+void hyperion_set_log_level(HyperionLogLevel level)
 {
     if (!log_state.initialized) {
-        tinyai_logging_init();
+        hyperion_logging_init();
     }
 
     log_state.config.level = level;
 }
 
-TinyAILogLevel tinyai_get_log_level(void)
+HyperionLogLevel hyperion_get_log_level(void)
 {
     if (!log_state.initialized) {
-        tinyai_logging_init();
+        hyperion_logging_init();
     }
 
     return log_state.config.level;
 }
 
-int tinyai_set_log_file(const char *file_path)
+int hyperion_set_log_file(const char *file_path)
 {
     if (!log_state.initialized) {
-        tinyai_logging_init();
+        hyperion_logging_init();
     }
 
     if (!file_path) {
@@ -250,7 +250,7 @@ int tinyai_set_log_file(const char *file_path)
             fclose(log_state.log_file);
             log_state.log_file = NULL;
         }
-        log_state.config.output &= ~TINYAI_LOG_OUTPUT_FILE;
+        log_state.config.output &= ~HYPERION_LOG_OUTPUT_FILE;
         return 1;
     }
 
@@ -262,7 +262,7 @@ int tinyai_set_log_file(const char *file_path)
 
     /* Update config */
     log_state.config.log_file_path = file_path;
-    log_state.config.output |= TINYAI_LOG_OUTPUT_FILE;
+    log_state.config.output |= HYPERION_LOG_OUTPUT_FILE;
     strncpy(log_state.log_file_path, file_path, MAX_LOG_FILE_PATH - 1);
     log_state.log_file_path[MAX_LOG_FILE_PATH - 1] = '\0';
 
@@ -270,7 +270,7 @@ int tinyai_set_log_file(const char *file_path)
     log_state.log_file = fopen(log_state.log_file_path, "a");
     if (!log_state.log_file) {
         fprintf(stderr, "Failed to open log file: %s\n", log_state.log_file_path);
-        log_state.config.output &= ~TINYAI_LOG_OUTPUT_FILE;
+        log_state.config.output &= ~HYPERION_LOG_OUTPUT_FILE;
         return 0;
     }
 
@@ -281,10 +281,10 @@ int tinyai_set_log_file(const char *file_path)
     return 1;
 }
 
-int tinyai_configure_log_rotation(const TinyAILogRotationConfig *rotation_config)
+int hyperion_configure_log_rotation(const HyperionLogRotationConfig *rotation_config)
 {
     if (!log_state.initialized) {
-        tinyai_logging_init();
+        hyperion_logging_init();
     }
 
     if (!rotation_config) {
@@ -300,26 +300,26 @@ int tinyai_configure_log_rotation(const TinyAILogRotationConfig *rotation_config
     return 1;
 }
 
-int tinyai_register_log_handler(TinyAILogHandler handler, void *user_data)
+int hyperion_register_log_handler(HyperionLogHandler handler, void *user_data)
 {
     if (!log_state.initialized) {
-        tinyai_logging_init();
+        hyperion_logging_init();
     }
 
     log_state.custom_handler      = handler;
     log_state.custom_handler_data = user_data;
-    log_state.config.output |= TINYAI_LOG_OUTPUT_CUSTOM;
+    log_state.config.output |= HYPERION_LOG_OUTPUT_CUSTOM;
 
     return 1;
 }
 
-void tinyai_logging_shutdown(void)
+void hyperion_logging_shutdown(void)
 {
     if (!log_state.initialized) {
         return;
     }
 
-    TINYAI_LOG_INFO("Logging system shutting down");
+    HYPERION_LOG_INFO("Logging system shutting down");
 
     /* Close log file if open */
     if (log_state.log_file) {
@@ -332,22 +332,22 @@ void tinyai_logging_shutdown(void)
 
 /* ----------------- Logging Functions ----------------- */
 
-void tinyai_log(TinyAILogLevel level, const char *format, ...)
+void hyperion_log(HyperionLogLevel level, const char *format, ...)
 {
     va_list args;
     va_start(args, format);
-    tinyai_vlog(level, format, args);
+    hyperion_vlog(level, format, args);
     va_end(args);
 }
 
-void tinyai_vlog(TinyAILogLevel level, const char *format, va_list args)
+void hyperion_vlog(HyperionLogLevel level, const char *format, va_list args)
 {
     if (!log_state.initialized) {
-        tinyai_logging_init();
+        hyperion_logging_init();
     }
 
     /* Check log level */
-    if (level > log_state.config.level || level == TINYAI_LOG_NONE) {
+    if (level > log_state.config.level || level == HYPERION_LOG_NONE) {
         return;
     }
 
@@ -357,13 +357,13 @@ void tinyai_vlog(TinyAILogLevel level, const char *format, va_list args)
     va_copy(args_copy, args);
 
     switch (log_state.config.format) {
-    case TINYAI_LOG_FORMAT_JSON:
+    case HYPERION_LOG_FORMAT_JSON:
         format_log_message_json(level, NULL, 0, format, args_copy, message, sizeof(message));
         break;
-    case TINYAI_LOG_FORMAT_CSV:
+    case HYPERION_LOG_FORMAT_CSV:
         format_log_message_csv(level, NULL, 0, format, args_copy, message, sizeof(message));
         break;
-    case TINYAI_LOG_FORMAT_PLAIN:
+    case HYPERION_LOG_FORMAT_PLAIN:
     default:
         format_log_message(level, NULL, 0, format, args_copy, message, sizeof(message));
         break;
@@ -372,28 +372,28 @@ void tinyai_vlog(TinyAILogLevel level, const char *format, va_list args)
     va_end(args_copy);
 
     /* Write to enabled output destinations */
-    if (log_state.config.output & TINYAI_LOG_OUTPUT_CONSOLE) {
+    if (log_state.config.output & HYPERION_LOG_OUTPUT_CONSOLE) {
         write_to_console(level, message);
     }
 
-    if (log_state.config.output & TINYAI_LOG_OUTPUT_FILE) {
+    if (log_state.config.output & HYPERION_LOG_OUTPUT_FILE) {
         write_to_file(message);
     }
 
-    if ((log_state.config.output & TINYAI_LOG_OUTPUT_CUSTOM) && log_state.custom_handler) {
+    if ((log_state.config.output & HYPERION_LOG_OUTPUT_CUSTOM) && log_state.custom_handler) {
         log_state.custom_handler(level, message, log_state.custom_handler_data);
     }
 }
 
-void tinyai_log_with_source(TinyAILogLevel level, const char *file, int line, const char *format,
+void hyperion_log_with_source(HyperionLogLevel level, const char *file, int line, const char *format,
                             ...)
 {
     if (!log_state.initialized) {
-        tinyai_logging_init();
+        hyperion_logging_init();
     }
 
     /* Check log level */
-    if (level > log_state.config.level || level == TINYAI_LOG_NONE) {
+    if (level > log_state.config.level || level == HYPERION_LOG_NONE) {
         return;
     }
 
@@ -403,13 +403,13 @@ void tinyai_log_with_source(TinyAILogLevel level, const char *file, int line, co
     va_start(args, format);
 
     switch (log_state.config.format) {
-    case TINYAI_LOG_FORMAT_JSON:
+    case HYPERION_LOG_FORMAT_JSON:
         format_log_message_json(level, file, line, format, args, message, sizeof(message));
         break;
-    case TINYAI_LOG_FORMAT_CSV:
+    case HYPERION_LOG_FORMAT_CSV:
         format_log_message_csv(level, file, line, format, args, message, sizeof(message));
         break;
-    case TINYAI_LOG_FORMAT_PLAIN:
+    case HYPERION_LOG_FORMAT_PLAIN:
     default:
         format_log_message(level, file, line, format, args, message, sizeof(message));
         break;
@@ -418,15 +418,15 @@ void tinyai_log_with_source(TinyAILogLevel level, const char *file, int line, co
     va_end(args);
 
     /* Write to enabled output destinations */
-    if (log_state.config.output & TINYAI_LOG_OUTPUT_CONSOLE) {
+    if (log_state.config.output & HYPERION_LOG_OUTPUT_CONSOLE) {
         write_to_console(level, message);
     }
 
-    if (log_state.config.output & TINYAI_LOG_OUTPUT_FILE) {
+    if (log_state.config.output & HYPERION_LOG_OUTPUT_FILE) {
         write_to_file(message);
     }
 
-    if ((log_state.config.output & TINYAI_LOG_OUTPUT_CUSTOM) && log_state.custom_handler) {
+    if ((log_state.config.output & HYPERION_LOG_OUTPUT_CUSTOM) && log_state.custom_handler) {
         log_state.custom_handler(level, message, log_state.custom_handler_data);
     }
 }
@@ -441,7 +441,7 @@ static void format_timestamp(char *buffer, size_t buffer_size)
     strftime(buffer, buffer_size, "%Y-%m-%d %H:%M:%S", timeinfo);
 }
 
-static void format_log_message(TinyAILogLevel level, const char *file, int line, const char *format,
+static void format_log_message(HyperionLogLevel level, const char *file, int line, const char *format,
                                va_list args, char *buffer, size_t buffer_size)
 {
     char   timestamp[MAX_TIMESTAMP_LENGTH] = {0};
@@ -489,7 +489,7 @@ static void format_log_message(TinyAILogLevel level, const char *file, int line,
     vsnprintf(buffer_pos, remaining, format, args);
 }
 
-static void format_log_message_json(TinyAILogLevel level, const char *file, int line,
+static void format_log_message_json(HyperionLogLevel level, const char *file, int line,
                                     const char *format, va_list args, char *buffer,
                                     size_t buffer_size)
 {
@@ -524,7 +524,7 @@ static void format_log_message_json(TinyAILogLevel level, const char *file, int 
     }
 }
 
-static void format_log_message_csv(TinyAILogLevel level, const char *file, int line,
+static void format_log_message_csv(HyperionLogLevel level, const char *file, int line,
                                    const char *format, va_list args, char *buffer,
                                    size_t buffer_size)
 {
@@ -574,7 +574,7 @@ static void format_log_message_csv(TinyAILogLevel level, const char *file, int l
     snprintf(buffer_pos, remaining, "%s", message);
 }
 
-static void write_to_console(TinyAILogLevel level, const char *message)
+static void write_to_console(HyperionLogLevel level, const char *message)
 {
 #ifdef _WIN32
     /* Windows console coloring */

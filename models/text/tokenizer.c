@@ -1,7 +1,7 @@
 /**
- * TinyAI Tokenizer Implementation
+ * Hyperion Tokenizer Implementation
  * 
- * This file implements a minimal, memory-efficient tokenizer for TinyAI.
+ * This file implements a minimal, memory-efficient tokenizer for Hyperion.
  */
 
 #include <stdio.h>
@@ -35,10 +35,10 @@ typedef struct {
 
 /* Special token strings */
 static const char *SPECIAL_TOKENS[] = {
-    "<unk>",  /* TINYAI_TOKEN_UNKNOWN */
-    "<bos>",  /* TINYAI_TOKEN_BOS */
-    "<eos>",  /* TINYAI_TOKEN_EOS */
-    "<pad>",  /* TINYAI_TOKEN_PAD */
+    "<unk>",  /* HYPERION_TOKEN_UNKNOWN */
+    "<bos>",  /* HYPERION_TOKEN_BOS */
+    "<eos>",  /* HYPERION_TOKEN_EOS */
+    "<pad>",  /* HYPERION_TOKEN_PAD */
 };
 
 /* ----------------- Helper Functions ----------------- */
@@ -47,7 +47,7 @@ static const char *SPECIAL_TOKENS[] = {
  * Create a trie node
  */
 static TrieNode* createTrieNode() {
-    TrieNode *node = (TrieNode*)TINYAI_MALLOC(sizeof(TrieNode));
+    TrieNode *node = (TrieNode*)HYPERION_MALLOC(sizeof(TrieNode));
     if (!node) {
         return NULL;
     }
@@ -72,7 +72,7 @@ static void freeTrieNode(TrieNode *node) {
         }
     }
     
-    TINYAI_FREE(node);
+    HYPERION_FREE(node);
 }
 
 /**
@@ -144,8 +144,8 @@ static int compareBPEMerges(const void *a, const void *b) {
 /**
  * Create a new tokenizer
  */
-TinyAITokenizer* tinyaiCreateTokenizer() {
-    TinyAITokenizer *tokenizer = (TinyAITokenizer *)TINYAI_MALLOC(sizeof(TinyAITokenizer));
+HyperionTokenizer* hyperionCreateTokenizer() {
+    HyperionTokenizer *tokenizer = (HyperionTokenizer *)HYPERION_MALLOC(sizeof(HyperionTokenizer));
     if (!tokenizer) {
         return NULL;
     }
@@ -153,18 +153,18 @@ TinyAITokenizer* tinyaiCreateTokenizer() {
     /* Initialize the tokenizer */
     memset(tokenizer->tokens, 0, sizeof(tokenizer->tokens));
     tokenizer->tokenCount = 0;
-    tokenizer->frequencies = (uint32_t *)TINYAI_MALLOC(TINYAI_MAX_VOCAB_SIZE * sizeof(uint32_t));
+    tokenizer->frequencies = (uint32_t *)HYPERION_MALLOC(HYPERION_MAX_VOCAB_SIZE * sizeof(uint32_t));
     if (!tokenizer->frequencies) {
-        TINYAI_FREE(tokenizer);
+        HYPERION_FREE(tokenizer);
         return NULL;
     }
     
-    memset(tokenizer->frequencies, 0, TINYAI_MAX_VOCAB_SIZE * sizeof(uint32_t));
+    memset(tokenizer->frequencies, 0, HYPERION_MAX_VOCAB_SIZE * sizeof(uint32_t));
     tokenizer->caseSensitive = 0;
     
     /* Add special tokens */
     for (int i = 0; i < 4; i++) {
-        tinyaiAddToken(tokenizer, SPECIAL_TOKENS[i], 0);
+        hyperionAddToken(tokenizer, SPECIAL_TOKENS[i], 0);
     }
     
     return tokenizer;
@@ -173,7 +173,7 @@ TinyAITokenizer* tinyaiCreateTokenizer() {
 /**
  * Destroy a tokenizer
  */
-void tinyaiDestroyTokenizer(TinyAITokenizer *tokenizer) {
+void hyperionDestroyTokenizer(HyperionTokenizer *tokenizer) {
     if (!tokenizer) {
         return;
     }
@@ -181,23 +181,23 @@ void tinyaiDestroyTokenizer(TinyAITokenizer *tokenizer) {
     /* Free token strings */
     for (uint32_t i = 0; i < tokenizer->tokenCount; i++) {
         if (tokenizer->tokens[i]) {
-            TINYAI_FREE(tokenizer->tokens[i]);
+            HYPERION_FREE(tokenizer->tokens[i]);
         }
     }
     
     /* Free frequencies */
     if (tokenizer->frequencies) {
-        TINYAI_FREE(tokenizer->frequencies);
+        HYPERION_FREE(tokenizer->frequencies);
     }
     
     /* Free the tokenizer */
-    TINYAI_FREE(tokenizer);
+    HYPERION_FREE(tokenizer);
 }
 
 /**
  * Load a vocabulary from a file
  */
-int tinyaiLoadVocabulary(TinyAITokenizer *tokenizer, const char *path) {
+int hyperionLoadVocabulary(HyperionTokenizer *tokenizer, const char *path) {
     if (!tokenizer || !path) {
         return -1;
     }
@@ -210,14 +210,14 @@ int tinyaiLoadVocabulary(TinyAITokenizer *tokenizer, const char *path) {
     /* Clear existing vocabulary (except special tokens) */
     for (uint32_t i = 4; i < tokenizer->tokenCount; i++) {
         if (tokenizer->tokens[i]) {
-            TINYAI_FREE(tokenizer->tokens[i]);
+            HYPERION_FREE(tokenizer->tokens[i]);
             tokenizer->tokens[i] = NULL;
         }
     }
     tokenizer->tokenCount = 4;  /* Keep special tokens */
     
     /* Parse the vocabulary file */
-    char line[TINYAI_MAX_TOKEN_LENGTH * 2];
+    char line[HYPERION_MAX_TOKEN_LENGTH * 2];
     while (fgets(line, sizeof(line), file)) {
         /* Remove trailing newline */
         size_t len = strlen(line);
@@ -234,11 +234,11 @@ int tinyaiLoadVocabulary(TinyAITokenizer *tokenizer, const char *path) {
         }
         
         /* Parse token and frequency (if provided) */
-        char token[TINYAI_MAX_TOKEN_LENGTH];
+        char token[HYPERION_MAX_TOKEN_LENGTH];
         uint32_t frequency = 0;
         
         if (sscanf(line, "%s %u", token, &frequency) >= 1) {
-            tinyaiAddToken(tokenizer, token, frequency);
+            hyperionAddToken(tokenizer, token, frequency);
         }
     }
     
@@ -249,8 +249,8 @@ int tinyaiLoadVocabulary(TinyAITokenizer *tokenizer, const char *path) {
 /**
  * Add a token to the vocabulary
  */
-int tinyaiAddToken(TinyAITokenizer *tokenizer, const char *token, uint32_t frequency) {
-    if (!tokenizer || !token || tokenizer->tokenCount >= TINYAI_MAX_VOCAB_SIZE) {
+int hyperionAddToken(HyperionTokenizer *tokenizer, const char *token, uint32_t frequency) {
+    if (!tokenizer || !token || tokenizer->tokenCount >= HYPERION_MAX_VOCAB_SIZE) {
         return -1;
     }
     
@@ -281,9 +281,9 @@ int tinyaiAddToken(TinyAITokenizer *tokenizer, const char *token, uint32_t frequ
 /**
  * Get a token ID by string
  */
-int tinyaiGetTokenId(const TinyAITokenizer *tokenizer, const char *token) {
+int hyperionGetTokenId(const HyperionTokenizer *tokenizer, const char *token) {
     if (!tokenizer || !token) {
-        return TINYAI_TOKEN_UNKNOWN;
+        return HYPERION_TOKEN_UNKNOWN;
     }
     
     /* Check if token exists */
@@ -305,13 +305,13 @@ int tinyaiGetTokenId(const TinyAITokenizer *tokenizer, const char *token) {
         }
     }
     
-    return TINYAI_TOKEN_UNKNOWN;
+    return HYPERION_TOKEN_UNKNOWN;
 }
 
 /**
  * Get a token string by ID
  */
-const char* tinyaiGetTokenString(const TinyAITokenizer *tokenizer, int id) {
+const char* hyperionGetTokenString(const HyperionTokenizer *tokenizer, int id) {
     if (!tokenizer || id < 0 || id >= (int)tokenizer->tokenCount) {
         return NULL;
     }
@@ -322,7 +322,7 @@ const char* tinyaiGetTokenString(const TinyAITokenizer *tokenizer, int id) {
 /**
  * Tokenize a single word into subwords using BPE
  */
-static int tokenizeWord(const TinyAITokenizer *tokenizer, const char *word, 
+static int tokenizeWord(const HyperionTokenizer *tokenizer, const char *word, 
                       int *tokens, int maxTokens, int *numTokens) {
     if (!tokenizer || !word || !tokens || !numTokens) {
         return -1;
@@ -331,8 +331,8 @@ static int tokenizeWord(const TinyAITokenizer *tokenizer, const char *word,
     *numTokens = 0;
     
     /* Check if the word is already a token */
-    int id = tinyaiGetTokenId(tokenizer, word);
-    if (id != TINYAI_TOKEN_UNKNOWN) {
+    int id = hyperionGetTokenId(tokenizer, word);
+    if (id != HYPERION_TOKEN_UNKNOWN) {
         if (*numTokens < maxTokens) {
             tokens[(*numTokens)++] = id;
         }
@@ -341,15 +341,15 @@ static int tokenizeWord(const TinyAITokenizer *tokenizer, const char *word,
     
     /* Split into characters */
     size_t wordLen = strlen(word);
-    char *chars[TINYAI_MAX_TOKEN_LENGTH];
+    char *chars[HYPERION_MAX_TOKEN_LENGTH];
     int numChars = 0;
     
-    for (size_t i = 0; i < wordLen && numChars < TINYAI_MAX_TOKEN_LENGTH - 1; i++) {
-        chars[numChars] = (char*)TINYAI_MALLOC(2);
+    for (size_t i = 0; i < wordLen && numChars < HYPERION_MAX_TOKEN_LENGTH - 1; i++) {
+        chars[numChars] = (char*)HYPERION_MALLOC(2);
         if (!chars[numChars]) {
             /* Clean up */
             for (int j = 0; j < numChars; j++) {
-                TINYAI_FREE(chars[j]);
+                HYPERION_FREE(chars[j]);
             }
             return -1;
         }
@@ -367,14 +367,14 @@ static int tokenizeWord(const TinyAITokenizer *tokenizer, const char *word,
         
         for (int i = 0; i < numChars - 1; i++) {
             /* Try to merge the pair */
-            char merged[TINYAI_MAX_TOKEN_LENGTH];
+            char merged[HYPERION_MAX_TOKEN_LENGTH];
             snprintf(merged, sizeof(merged), "%s%s", chars[i], chars[i+1]);
             
-            id = tinyaiGetTokenId(tokenizer, merged);
-            if (id != TINYAI_TOKEN_UNKNOWN) {
+            id = hyperionGetTokenId(tokenizer, merged);
+            if (id != HYPERION_TOKEN_UNKNOWN) {
                 /* Merge the pair */
-                TINYAI_FREE(chars[i]);
-                TINYAI_FREE(chars[i+1]);
+                HYPERION_FREE(chars[i]);
+                HYPERION_FREE(chars[i+1]);
                 
                 chars[i] = _strdup(merged);
                 
@@ -392,9 +392,9 @@ static int tokenizeWord(const TinyAITokenizer *tokenizer, const char *word,
     
     /* Add the resulting tokens */
     for (int i = 0; i < numChars && *numTokens < maxTokens; i++) {
-        id = tinyaiGetTokenId(tokenizer, chars[i]);
-        if (id == TINYAI_TOKEN_UNKNOWN) {
-            tokens[(*numTokens)++] = TINYAI_TOKEN_UNKNOWN;
+        id = hyperionGetTokenId(tokenizer, chars[i]);
+        if (id == HYPERION_TOKEN_UNKNOWN) {
+            tokens[(*numTokens)++] = HYPERION_TOKEN_UNKNOWN;
         } else {
             tokens[(*numTokens)++] = id;
         }
@@ -402,7 +402,7 @@ static int tokenizeWord(const TinyAITokenizer *tokenizer, const char *word,
     
     /* Clean up */
     for (int i = 0; i < numChars; i++) {
-        TINYAI_FREE(chars[i]);
+        HYPERION_FREE(chars[i]);
     }
     
     return 0;
@@ -411,7 +411,7 @@ static int tokenizeWord(const TinyAITokenizer *tokenizer, const char *word,
 /**
  * Encode a text string into token IDs
  */
-int tinyaiEncodeText(const TinyAITokenizer *tokenizer, const char *text, 
+int hyperionEncodeText(const HyperionTokenizer *tokenizer, const char *text, 
                    int *tokens, int maxTokens) {
     if (!tokenizer || !text || !tokens || maxTokens <= 0) {
         return 0;
@@ -421,13 +421,13 @@ int tinyaiEncodeText(const TinyAITokenizer *tokenizer, const char *text,
     
     /* Tokenize the text */
     const char *p = text;
-    char word[TINYAI_MAX_TOKEN_LENGTH];
+    char word[HYPERION_MAX_TOKEN_LENGTH];
     int wordLen = 0;
     
     while (*p && numTokens < maxTokens) {
         if (isalnum((unsigned char)*p) || *p == '\'' || *p == '-') {
             /* Part of a word */
-            if (wordLen < TINYAI_MAX_TOKEN_LENGTH - 1) {
+            if (wordLen < HYPERION_MAX_TOKEN_LENGTH - 1) {
                 word[wordLen++] = *p;
             }
         } else {
@@ -435,10 +435,10 @@ int tinyaiEncodeText(const TinyAITokenizer *tokenizer, const char *text,
             if (wordLen > 0) {
                 word[wordLen] = '\0';
                 
-                int subtokens[TINYAI_MAX_TOKEN_LENGTH];
+                int subtokens[HYPERION_MAX_TOKEN_LENGTH];
                 int numSubtokens = 0;
                 
-                tokenizeWord(tokenizer, word, subtokens, TINYAI_MAX_TOKEN_LENGTH, &numSubtokens);
+                tokenizeWord(tokenizer, word, subtokens, HYPERION_MAX_TOKEN_LENGTH, &numSubtokens);
                 
                 for (int i = 0; i < numSubtokens && numTokens < maxTokens; i++) {
                     tokens[numTokens++] = subtokens[i];
@@ -451,12 +451,12 @@ int tinyaiEncodeText(const TinyAITokenizer *tokenizer, const char *text,
             if (!isspace((unsigned char)*p)) {
                 /* Treat as a separate token */
                 char separator[2] = {*p, '\0'};
-                int id = tinyaiGetTokenId(tokenizer, separator);
+                int id = hyperionGetTokenId(tokenizer, separator);
                 
-                if (id != TINYAI_TOKEN_UNKNOWN) {
+                if (id != HYPERION_TOKEN_UNKNOWN) {
                     tokens[numTokens++] = id;
                 } else {
-                    tokens[numTokens++] = TINYAI_TOKEN_UNKNOWN;
+                    tokens[numTokens++] = HYPERION_TOKEN_UNKNOWN;
                 }
             }
         }
@@ -468,10 +468,10 @@ int tinyaiEncodeText(const TinyAITokenizer *tokenizer, const char *text,
     if (wordLen > 0 && numTokens < maxTokens) {
         word[wordLen] = '\0';
         
-        int subtokens[TINYAI_MAX_TOKEN_LENGTH];
+        int subtokens[HYPERION_MAX_TOKEN_LENGTH];
         int numSubtokens = 0;
         
-        tokenizeWord(tokenizer, word, subtokens, TINYAI_MAX_TOKEN_LENGTH, &numSubtokens);
+        tokenizeWord(tokenizer, word, subtokens, HYPERION_MAX_TOKEN_LENGTH, &numSubtokens);
         
         for (int i = 0; i < numSubtokens && numTokens < maxTokens; i++) {
             tokens[numTokens++] = subtokens[i];
@@ -484,7 +484,7 @@ int tinyaiEncodeText(const TinyAITokenizer *tokenizer, const char *text,
 /**
  * Decode token IDs into a text string
  */
-int tinyaiDecodeTokens(const TinyAITokenizer *tokenizer, const int *tokens, 
+int hyperionDecodeTokens(const HyperionTokenizer *tokenizer, const int *tokens, 
                      int tokenCount, char *text, int maxLength) {
     if (!tokenizer || !tokens || !text || maxLength <= 0) {
         return 0;
@@ -494,14 +494,14 @@ int tinyaiDecodeTokens(const TinyAITokenizer *tokenizer, const int *tokens,
     text[0] = '\0';
     
     for (int i = 0; i < tokenCount; i++) {
-        const char *token = tinyaiGetTokenString(tokenizer, tokens[i]);
+        const char *token = hyperionGetTokenString(tokenizer, tokens[i]);
         if (!token) {
             /* Unknown token */
-            token = SPECIAL_TOKENS[TINYAI_TOKEN_UNKNOWN];
+            token = SPECIAL_TOKENS[HYPERION_TOKEN_UNKNOWN];
         }
         
         /* Skip special tokens in the output */
-        if (tokens[i] <= TINYAI_TOKEN_PAD) {
+        if (tokens[i] <= HYPERION_TOKEN_PAD) {
             continue;
         }
         
@@ -538,7 +538,7 @@ int tinyaiDecodeTokens(const TinyAITokenizer *tokenizer, const int *tokens,
 /**
  * Create a minimal BPE tokenizer vocabulary from text corpus
  */
-int tinyaiCreateMinimalVocabulary(TinyAITokenizer *tokenizer, 
+int hyperionCreateMinimalVocabulary(HyperionTokenizer *tokenizer, 
                                 const char *corpus, int maxVocabSize) {
     if (!tokenizer || !corpus || maxVocabSize <= 0) {
         return -1;
@@ -547,7 +547,7 @@ int tinyaiCreateMinimalVocabulary(TinyAITokenizer *tokenizer,
     /* Reset the tokenizer to just special tokens */
     for (uint32_t i = 4; i < tokenizer->tokenCount; i++) {
         if (tokenizer->tokens[i]) {
-            TINYAI_FREE(tokenizer->tokens[i]);
+            HYPERION_FREE(tokenizer->tokens[i]);
             tokenizer->tokens[i] = NULL;
         }
     }
@@ -562,13 +562,13 @@ int tinyaiCreateMinimalVocabulary(TinyAITokenizer *tokenizer,
     int wordCount = 0;
     
     const char *p = corpus;
-    char word[TINYAI_MAX_TOKEN_LENGTH];
+    char word[HYPERION_MAX_TOKEN_LENGTH];
     int wordLen = 0;
     
     while (*p) {
         if (isalnum((unsigned char)*p) || *p == '\'' || *p == '-') {
             /* Part of a word */
-            if (wordLen < TINYAI_MAX_TOKEN_LENGTH - 1) {
+            if (wordLen < HYPERION_MAX_TOKEN_LENGTH - 1) {
                 word[wordLen++] = *p;
             }
         } else {
@@ -648,7 +648,7 @@ int tinyaiCreateMinimalVocabulary(TinyAITokenizer *tokenizer,
     for (int i = 32; i < 127; i++) {
         if (isalnum(i) || ispunct(i)) {
             char c[2] = {(char)i, '\0'};
-            tinyaiAddToken(tokenizer, c, 0);
+            hyperionAddToken(tokenizer, c, 0);
         }
     }
     
@@ -670,7 +670,7 @@ int tinyaiCreateMinimalVocabulary(TinyAITokenizer *tokenizer,
     
     /* Add words until we reach maxVocabSize */
     for (int i = 0; i < wordCount && tokenizer->tokenCount < maxVocabSize; i++) {
-        tinyaiAddToken(tokenizer, words[i].word, words[i].count);
+        hyperionAddToken(tokenizer, words[i].word, words[i].count);
     }
     
     /* Clean up */
@@ -684,7 +684,7 @@ int tinyaiCreateMinimalVocabulary(TinyAITokenizer *tokenizer,
 /**
  * Save a vocabulary to a file
  */
-int tinyaiSaveVocabulary(const TinyAITokenizer *tokenizer, const char *path) {
+int hyperionSaveVocabulary(const HyperionTokenizer *tokenizer, const char *path) {
     if (!tokenizer || !path) {
         return -1;
     }
@@ -695,7 +695,7 @@ int tinyaiSaveVocabulary(const TinyAITokenizer *tokenizer, const char *path) {
     }
     
     /* Write the vocabulary */
-    fprintf(file, "# TinyAI Vocabulary File\n");
+    fprintf(file, "# Hyperion Vocabulary File\n");
     fprintf(file, "# Format: token frequency\n\n");
     
     for (uint32_t i = 0; i < tokenizer->tokenCount; i++) {

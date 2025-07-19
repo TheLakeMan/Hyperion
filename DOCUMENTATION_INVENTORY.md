@@ -1,4 +1,4 @@
-# TinyAI Documentation Inventory
+# Hyperion Documentation Inventory
 
 ## Current Documentation Structure
 

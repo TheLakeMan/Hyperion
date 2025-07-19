@@ -11,7 +11,7 @@
 #include <string.h>
 
 /* Mock model for local generation testing */
-TinyAIModel mockModel = {
+HyperionModel mockModel = {
     .type         = TINYAI_MODEL_TYPE_TRANSFORMER,
     .layerCount   = 4,
     .layers       = NULL, /* We'll mock the generation function, so we don't need real layers */
@@ -22,7 +22,7 @@ TinyAIModel mockModel = {
     .activeBuffer = 0};
 
 /* Mock generate function for testing */
-int tinyaiGenerateText(TinyAIModel *model, const TinyAIGenerationParams *params, int *outputTokens,
+int hyperionGenerateText(HyperionModel *model, const HyperionGenerationParams *params, int *outputTokens,
                        int maxTokens)
 {
     /* Generate some dummy tokens */
@@ -39,11 +39,11 @@ void testLocalOnlyGeneration()
     printf("Testing local-only generation...\n");
 
     /* Create a hybrid generation context with only local model */
-    TinyAIHybridGenerate *hybrid = tinyaiCreateHybridGenerate(&mockModel, NULL);
+    HyperionHybridGenerate *hybrid = hyperionCreateHybridGenerate(&mockModel, NULL);
     assert(hybrid != NULL);
 
     /* Create generation parameters */
-    TinyAIGenerationParams params;
+    HyperionGenerationParams params;
     int                    promptTokens[2] = {1, 2};
     params.promptTokens                    = promptTokens;
     params.promptLength                    = 2;
@@ -56,15 +56,15 @@ void testLocalOnlyGeneration()
 
     /* Generate text */
     int outputTokens[10] = {0};
-    int tokensGenerated  = tinyaiHybridGenerateText(hybrid, &params, outputTokens, 10);
+    int tokensGenerated  = hyperionHybridGenerateText(hybrid, &params, outputTokens, 10);
 
     /* Verify results */
     assert(tokensGenerated == 5);
-    assert(!tinyaiHybridGenerateUsedRemote(hybrid));
+    assert(!hyperionHybridGenerateUsedRemote(hybrid));
 
     /* Get generation stats */
     double localTime, remoteTime, tokensPerSec;
-    tinyaiHybridGenerateGetStats(hybrid, &localTime, &remoteTime, &tokensPerSec);
+    hyperionHybridGenerateGetStats(hybrid, &localTime, &remoteTime, &tokensPerSec);
 
     printf("  Local time: %.2f ms\n", localTime);
     printf("  Remote time: %.2f ms\n", remoteTime);
@@ -74,7 +74,7 @@ void testLocalOnlyGeneration()
     assert(remoteTime == 0.0);
 
     /* Clean up */
-    tinyaiDestroyHybridGenerate(hybrid);
+    hyperionDestroyHybridGenerate(hybrid);
     printf("Local-only generation test passed!\n\n");
 }
 
@@ -84,23 +84,23 @@ void testHybridGeneration()
     printf("Testing hybrid generation with MCP...\n");
 
     /* Create a MCP client config */
-    TinyAIMcpConfig config;
-    tinyaiMcpGetDefaultConfig(&config);
+    HyperionMcpConfig config;
+    hyperionMcpGetDefaultConfig(&config);
 
     /* Create MCP client */
-    TinyAIMcpClient *mcpClient = tinyaiMcpCreateClient(&config);
+    HyperionMcpClient *mcpClient = hyperionMcpCreateClient(&config);
     assert(mcpClient != NULL);
 
     /* Connect to a mock server */
-    bool connected = tinyaiMcpConnect(mcpClient, "mock://localhost:8080");
+    bool connected = hyperionMcpConnect(mcpClient, "mock://localhost:8080");
     assert(connected);
 
     /* Create hybrid generation context */
-    TinyAIHybridGenerate *hybrid = tinyaiCreateHybridGenerate(&mockModel, mcpClient);
+    HyperionHybridGenerate *hybrid = hyperionCreateHybridGenerate(&mockModel, mcpClient);
     assert(hybrid != NULL);
 
     /* Create generation parameters that should trigger remote execution */
-    TinyAIGenerationParams params;
+    HyperionGenerationParams params;
     int                    promptTokens[200];
     for (int i = 0; i < 200; i++) {
         promptTokens[i] = i;
@@ -115,23 +115,23 @@ void testHybridGeneration()
     params.seed           = 123;
 
     /* Check if remote would be used */
-    bool wouldUseRemote = tinyaiHybridGenerateWouldUseRemote(hybrid, &params);
+    bool wouldUseRemote = hyperionHybridGenerateWouldUseRemote(hybrid, &params);
     printf("  Would use remote: %s\n", wouldUseRemote ? "yes" : "no");
 
     /* Generate text */
     int outputTokens[50] = {0};
-    int tokensGenerated  = tinyaiHybridGenerateText(hybrid, &params, outputTokens, 50);
+    int tokensGenerated  = hyperionHybridGenerateText(hybrid, &params, outputTokens, 50);
 
     /* Verify results */
     assert(tokensGenerated > 0);
 
     /* Check if remote was used */
-    bool usedRemote = tinyaiHybridGenerateUsedRemote(hybrid);
+    bool usedRemote = hyperionHybridGenerateUsedRemote(hybrid);
     printf("  Used remote: %s\n", usedRemote ? "yes" : "no");
 
     /* Get generation stats */
     double localTime, remoteTime, tokensPerSec;
-    tinyaiHybridGenerateGetStats(hybrid, &localTime, &remoteTime, &tokensPerSec);
+    hyperionHybridGenerateGetStats(hybrid, &localTime, &remoteTime, &tokensPerSec);
 
     printf("  Local time: %.2f ms\n", localTime);
     printf("  Remote time: %.2f ms\n", remoteTime);
@@ -147,27 +147,27 @@ void testHybridGeneration()
     /* Test forcing local execution */
     printf("Testing forced local execution...\n");
 
-    bool forceSuccess = tinyaiHybridGenerateForceMode(hybrid, false);
+    bool forceSuccess = hyperionHybridGenerateForceMode(hybrid, false);
     assert(forceSuccess);
 
-    tokensGenerated = tinyaiHybridGenerateText(hybrid, &params, outputTokens, 50);
+    tokensGenerated = hyperionHybridGenerateText(hybrid, &params, outputTokens, 50);
     assert(tokensGenerated > 0);
-    assert(!tinyaiHybridGenerateUsedRemote(hybrid));
+    assert(!hyperionHybridGenerateUsedRemote(hybrid));
 
     /* Test forcing remote execution */
     printf("Testing forced remote execution...\n");
 
-    forceSuccess = tinyaiHybridGenerateForceMode(hybrid, true);
+    forceSuccess = hyperionHybridGenerateForceMode(hybrid, true);
     assert(forceSuccess);
 
-    tokensGenerated = tinyaiHybridGenerateText(hybrid, &params, outputTokens, 50);
+    tokensGenerated = hyperionHybridGenerateText(hybrid, &params, outputTokens, 50);
     assert(tokensGenerated > 0);
     /* Remote execution may fallback to local if connection fails, so don't assert this */
 
     /* Clean up */
-    tinyaiDestroyHybridGenerate(hybrid);
-    tinyaiMcpDisconnect(mcpClient);
-    tinyaiMcpDestroyClient(mcpClient);
+    hyperionDestroyHybridGenerate(hybrid);
+    hyperionMcpDisconnect(mcpClient);
+    hyperionMcpDestroyClient(mcpClient);
 
     printf("Hybrid generation test passed!\n\n");
 }
@@ -178,11 +178,11 @@ void testNoModelsGeneration()
     printf("Testing generation with no models...\n");
 
     /* Create hybrid generation context with no models */
-    TinyAIHybridGenerate *hybrid = tinyaiCreateHybridGenerate(NULL, NULL);
+    HyperionHybridGenerate *hybrid = hyperionCreateHybridGenerate(NULL, NULL);
     assert(hybrid != NULL);
 
     /* Try to generate text - should fail */
-    TinyAIGenerationParams params;
+    HyperionGenerationParams params;
     int                    promptTokens[2] = {1, 2};
     params.promptTokens                    = promptTokens;
     params.promptLength                    = 2;
@@ -190,13 +190,13 @@ void testNoModelsGeneration()
     params.temperature                     = 0.7f;
 
     int outputTokens[10] = {0};
-    int tokensGenerated  = tinyaiHybridGenerateText(hybrid, &params, outputTokens, 10);
+    int tokensGenerated  = hyperionHybridGenerateText(hybrid, &params, outputTokens, 10);
 
     /* Verify results */
     assert(tokensGenerated < 0); /* Should return negative value on error */
 
     /* Clean up */
-    tinyaiDestroyHybridGenerate(hybrid);
+    hyperionDestroyHybridGenerate(hybrid);
 
     printf("No models generation test passed!\n\n");
 }

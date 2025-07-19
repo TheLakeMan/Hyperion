@@ -1,6 +1,6 @@
 /**
  * @file audio_utils.c
- * @brief Audio utilities implementation for TinyAI
+ * @brief Audio utilities implementation for Hyperion
  */
 
 #include "audio_utils.h"
@@ -145,7 +145,7 @@ static bool convertToMono(const float *input, float *output, int numFrames, int 
  * @param audio Output structure to receive audio data
  * @return true on success, false on failure
  */
-static bool loadWavFile(const char *path, TinyAIAudioData *audio)
+static bool loadWavFile(const char *path, HyperionAudioData *audio)
 {
     if (!path || !audio) {
         return false;
@@ -246,6 +246,7 @@ static bool loadWavFile(const char *path, TinyAIAudioData *audio)
         if (!monoSamples) {
             free(data);
             free(floatSamples);
+            free(monoSamples);
             fclose(file);
             return false;
         }
@@ -279,14 +280,14 @@ static bool loadWavFile(const char *path, TinyAIAudioData *audio)
  * @param audio Output structure to receive audio data
  * @return true on success, false on failure
  */
-bool tinyaiAudioDataLoad(const char *path, TinyAIAudioData *audio)
+bool hyperionAudioDataLoad(const char *path, HyperionAudioData *audio)
 {
     if (!path || !audio) {
         return false;
     }
 
     /* Initialize audio structure */
-    memset(audio, 0, sizeof(TinyAIAudioData));
+    memset(audio, 0, sizeof(HyperionAudioData));
 
     /* Check file extension */
     const char *extension = strrchr(path, '.');
@@ -307,7 +308,7 @@ bool tinyaiAudioDataLoad(const char *path, TinyAIAudioData *audio)
  * Free audio data
  * @param audio The audio data to free
  */
-void tinyaiAudioDataFree(TinyAIAudioData *audio)
+void hyperionAudioDataFree(HyperionAudioData *audio)
 {
     if (!audio) {
         return;
@@ -328,7 +329,7 @@ void tinyaiAudioDataFree(TinyAIAudioData *audio)
  * @param targetSampleRate Target sample rate in Hz
  * @return true on success, false on failure
  */
-bool tinyaiAudioResample(const TinyAIAudioData *input, TinyAIAudioData *output,
+bool hyperionAudioResample(const HyperionAudioData *input, HyperionAudioData *output,
                          int targetSampleRate)
 {
     if (!input || !output || !input->data || targetSampleRate <= 0) {
@@ -392,7 +393,7 @@ bool tinyaiAudioResample(const TinyAIAudioData *input, TinyAIAudioData *output,
  * @param gainDb Gain in decibels
  * @return true on success, false on failure
  */
-bool tinyaiAudioApplyGain(TinyAIAudioData *audio, float gainDb)
+bool hyperionAudioApplyGain(HyperionAudioData *audio, float gainDb)
 {
     if (!audio || !audio->data) {
         return false;
@@ -424,7 +425,7 @@ bool tinyaiAudioApplyGain(TinyAIAudioData *audio, float gainDb)
  * @param rms Output RMS energy
  * @return true on success, false on failure
  */
-bool tinyaiAudioCalculateRMS(const TinyAIAudioData *audio, float *rms)
+bool hyperionAudioCalculateRMS(const HyperionAudioData *audio, float *rms)
 {
     if (!audio || !audio->data || !rms) {
         return false;
@@ -448,7 +449,7 @@ bool tinyaiAudioCalculateRMS(const TinyAIAudioData *audio, float *rms)
  * @param targetRMS Target RMS energy
  * @return true on success, false on failure
  */
-bool tinyaiAudioNormalize(TinyAIAudioData *audio, float targetRMS)
+bool hyperionAudioNormalize(HyperionAudioData *audio, float targetRMS)
 {
     if (!audio || !audio->data || targetRMS <= 0.0f) {
         return false;
@@ -456,7 +457,7 @@ bool tinyaiAudioNormalize(TinyAIAudioData *audio, float targetRMS)
 
     /* Calculate current RMS */
     float currentRMS;
-    if (!tinyaiAudioCalculateRMS(audio, &currentRMS) || currentRMS <= 0.0f) {
+    if (!hyperionAudioCalculateRMS(audio, &currentRMS) || currentRMS <= 0.0f) {
         return false;
     }
 
@@ -490,7 +491,7 @@ bool tinyaiAudioNormalize(TinyAIAudioData *audio, float targetRMS)
  * @param numFrames Output number of frames
  * @return true on success, false on failure
  */
-bool tinyaiAudioDetectSilence(const TinyAIAudioData *audio, float threshold, bool **isSilence,
+bool hyperionAudioDetectSilence(const HyperionAudioData *audio, float threshold, bool **isSilence,
                               int frameSize, int frameShift, int *numFrames)
 {
     if (!audio || !audio->data || !isSilence || !numFrames || threshold < 0.0f || frameSize <= 0 ||
@@ -535,7 +536,7 @@ bool tinyaiAudioDetectSilence(const TinyAIAudioData *audio, float threshold, boo
  * @param frameSize Frame size in samples
  * @return true on success, false on failure
  */
-bool tinyaiAudioTrimSilence(TinyAIAudioData *audio, float threshold, int frameSize)
+bool hyperionAudioTrimSilence(HyperionAudioData *audio, float threshold, int frameSize)
 {
     if (!audio || !audio->data || threshold < 0.0f || frameSize <= 0) {
         return false;
@@ -607,7 +608,7 @@ bool tinyaiAudioTrimSilence(TinyAIAudioData *audio, float threshold, int frameSi
  * @param durationMs Duration in milliseconds
  * @return New audio data, or NULL on failure
  */
-TinyAIAudioData *tinyaiAudioDataCreate(const TinyAIAudioFormat *format, int durationMs)
+HyperionAudioData *hyperionAudioDataCreate(const HyperionAudioFormat *format, int durationMs)
 {
     if (!format || durationMs <= 0 || format->sampleRate <= 0 || format->channels <= 0 ||
         format->bitsPerSample <= 0) {
@@ -615,7 +616,7 @@ TinyAIAudioData *tinyaiAudioDataCreate(const TinyAIAudioFormat *format, int dura
     }
 
     /* Allocate struct */
-    TinyAIAudioData *audio = (TinyAIAudioData *)malloc(sizeof(TinyAIAudioData));
+    HyperionAudioData *audio = (HyperionAudioData *)malloc(sizeof(HyperionAudioData));
     if (!audio) {
         return NULL;
     }
@@ -647,7 +648,7 @@ TinyAIAudioData *tinyaiAudioDataCreate(const TinyAIAudioFormat *format, int dura
  * @param audio Audio data
  * @return Sample rate in Hz, or 0 on failure
  */
-int tinyaiAudioGetSampleRate(const TinyAIAudioData *audio)
+int hyperionAudioGetSampleRate(const HyperionAudioData *audio)
 {
     if (!audio) {
         return 0;
@@ -660,7 +661,7 @@ int tinyaiAudioGetSampleRate(const TinyAIAudioData *audio)
  * @param audio Audio data
  * @return Duration in milliseconds, or 0 on failure
  */
-int tinyaiAudioGetDurationMs(const TinyAIAudioData *audio)
+int hyperionAudioGetDurationMs(const HyperionAudioData *audio)
 {
     if (!audio) {
         return 0;
@@ -673,7 +674,7 @@ int tinyaiAudioGetDurationMs(const TinyAIAudioData *audio)
  * @param audio Audio data
  * @return Number of channels, or 0 on failure
  */
-int tinyaiAudioGetChannels(const TinyAIAudioData *audio)
+int hyperionAudioGetChannels(const HyperionAudioData *audio)
 {
     if (!audio) {
         return 0;
@@ -687,7 +688,7 @@ int tinyaiAudioGetChannels(const TinyAIAudioData *audio)
  * @param scaleFactor Scale factor (1.0 = no change)
  * @return true on success, false on failure
  */
-bool tinyaiAudioScale(TinyAIAudioData *audio, float scaleFactor)
+bool hyperionAudioScale(HyperionAudioData *audio, float scaleFactor)
 {
     if (!audio || !audio->data || scaleFactor <= 0.0f) {
         return false;
@@ -713,7 +714,7 @@ bool tinyaiAudioScale(TinyAIAudioData *audio, float scaleFactor)
             newData[i] = samples[numSamples - 1];
         }
         else {
-            newData[i] = (1.0f - frac) * samples[index] + frac * samples[index + 1];
+            newData[i] = (1.0f - t) * samples[index] + frac * samples[index + 1];
         }
     }
 
@@ -721,7 +722,7 @@ bool tinyaiAudioScale(TinyAIAudioData *audio, float scaleFactor)
     free(audio->data);
     audio->data       = newData;
     audio->dataSize   = newSamples * sizeof(float);
-    audio->durationMs = (int)(audio->durationMs / scaleFactor);
+    audio->durationMs = (newSamples * 1000) / audio->format.sampleRate;
 
     return true;
 }
@@ -729,39 +730,39 @@ bool tinyaiAudioScale(TinyAIAudioData *audio, float scaleFactor)
 /**
  * Detect audio file format from file extension
  * @param filePath Path to audio file
- * @return Detected file format, or TINYAI_AUDIO_FORMAT_WAV on failure
+ * @return Detected file format, or HYPERION_AUDIO_FORMAT_WAV on failure
  */
-TinyAIAudioFileFormat tinyaiAudioDetectFormat(const char *filePath)
+HyperionAudioFileFormat hyperionAudioDetectFormat(const char *filePath)
 {
     if (!filePath) {
-        return TINYAI_AUDIO_FORMAT_WAV;
+        return HYPERION_AUDIO_FORMAT_WAV;
     }
 
     /* Check file extension */
     const char *extension = strrchr(filePath, '.');
     if (!extension) {
-        return TINYAI_AUDIO_FORMAT_WAV;
+        return HYPERION_AUDIO_FORMAT_WAV;
     }
 
     /* Match extension */
     if (strcasecmp(extension, ".wav") == 0) {
-        return TINYAI_AUDIO_FORMAT_WAV;
+        return HYPERION_AUDIO_FORMAT_WAV;
     }
     else if (strcasecmp(extension, ".mp3") == 0) {
-        return TINYAI_AUDIO_FORMAT_MP3;
+        return HYPERION_AUDIO_FORMAT_MP3;
     }
     else if (strcasecmp(extension, ".flac") == 0) {
-        return TINYAI_AUDIO_FORMAT_FLAC;
+        return HYPERION_AUDIO_FORMAT_FLAC;
     }
     else if (strcasecmp(extension, ".ogg") == 0) {
-        return TINYAI_AUDIO_FORMAT_OGG;
+        return HYPERION_AUDIO_FORMAT_OGG;
     }
     else if (strcasecmp(extension, ".raw") == 0 || strcasecmp(extension, ".pcm") == 0) {
-        return TINYAI_AUDIO_FORMAT_RAW;
+        return HYPERION_AUDIO_FORMAT_RAW;
     }
 
     /* Default to WAV */
-    return TINYAI_AUDIO_FORMAT_WAV;
+    return HYPERION_AUDIO_FORMAT_WAV;
 }
 
 /**
@@ -771,25 +772,25 @@ TinyAIAudioFileFormat tinyaiAudioDetectFormat(const char *filePath)
  * @param audio Output structure to receive audio data
  * @return true on success, false on failure
  */
-bool tinyaiAudioLoadFile(const char *filePath, TinyAIAudioFileFormat format, TinyAIAudioData *audio)
+bool hyperionAudioLoadFile(const char *filePath, HyperionAudioFileFormat format, HyperionAudioData *audio)
 {
     if (!filePath || !audio) {
         return false;
     }
 
     /* Detect format if not specified */
-    if (format == (TinyAIAudioFileFormat)(-1)) {
-        format = tinyaiAudioDetectFormat(filePath);
+    if (format == (HyperionAudioFileFormat)(-1)) {
+        format = hyperionAudioDetectFormat(filePath);
     }
 
     /* Load based on format */
     switch (format) {
-    case TINYAI_AUDIO_FORMAT_WAV:
+    case HYPERION_AUDIO_FORMAT_WAV:
         return loadWavFile(filePath, audio);
-    case TINYAI_AUDIO_FORMAT_MP3:
-    case TINYAI_AUDIO_FORMAT_FLAC:
-    case TINYAI_AUDIO_FORMAT_OGG:
-    case TINYAI_AUDIO_FORMAT_RAW:
+    case HYPERION_AUDIO_FORMAT_MP3:
+    case HYPERION_AUDIO_FORMAT_FLAC:
+    case HYPERION_AUDIO_FORMAT_OGG:
+    case HYPERION_AUDIO_FORMAT_RAW:
         /* Not implemented yet */
         return false;
     default:
@@ -804,8 +805,8 @@ bool tinyaiAudioLoadFile(const char *filePath, TinyAIAudioFileFormat format, Tin
  * @param audio Audio data to save
  * @return true on success, false on failure
  */
-bool tinyaiAudioSaveFile(const char *filePath, TinyAIAudioFileFormat format,
-                         const TinyAIAudioData *audio)
+bool hyperionAudioSaveFile(const char *filePath, HyperionAudioFileFormat format,
+                         const HyperionAudioData *audio)
 {
     /* TODO: Implement saving audio to different formats */
     /* For now, just indicate not implemented */
@@ -819,8 +820,8 @@ bool tinyaiAudioSaveFile(const char *filePath, TinyAIAudioFileFormat format,
  * @param targetFormat Target audio format
  * @return true on success, false on failure
  */
-bool tinyaiAudioConvertFormat(const TinyAIAudioData *input, TinyAIAudioData *output,
-                              const TinyAIAudioFormat *targetFormat)
+bool hyperionAudioConvertFormat(const HyperionAudioData *input, HyperionAudioData *output,
+                              const HyperionAudioFormat *targetFormat)
 {
     /* TODO: Implement format conversion */
     /* For now, just make a copy */
@@ -847,7 +848,7 @@ bool tinyaiAudioConvertFormat(const TinyAIAudioData *input, TinyAIAudioData *out
  * @param durationMs Duration of fade-in in milliseconds
  * @return true on success, false on failure
  */
-bool tinyaiAudioFadeIn(TinyAIAudioData *audio, int durationMs)
+bool hyperionAudioFadeIn(HyperionAudioData *audio, int durationMs)
 {
     if (!audio || !audio->data || durationMs <= 0) {
         return false;
@@ -880,7 +881,7 @@ bool tinyaiAudioFadeIn(TinyAIAudioData *audio, int durationMs)
  * @param durationMs Duration of fade-out in milliseconds
  * @return true on success, false on failure
  */
-bool tinyaiAudioFadeOut(TinyAIAudioData *audio, int durationMs)
+bool hyperionAudioFadeOut(HyperionAudioData *audio, int durationMs)
 {
     if (!audio || !audio->data || durationMs <= 0) {
         return false;
@@ -916,8 +917,8 @@ bool tinyaiAudioFadeOut(TinyAIAudioData *audio, int durationMs)
  * @param mixRatio Mixing ratio (0.0 = only audio1, 1.0 = only audio2, 0.5 = equal mix)
  * @return true on success, false on failure
  */
-bool tinyaiAudioMix(const TinyAIAudioData *audio1, const TinyAIAudioData *audio2,
-                    TinyAIAudioData *output, float mixRatio)
+bool hyperionAudioMix(const HyperionAudioData *audio1, const HyperionAudioData *audio2,
+                    HyperionAudioData *output, float mixRatio)
 {
     if (!audio1 || !audio2 || !output || !audio1->data || !audio2->data || mixRatio < 0.0f ||
         mixRatio > 1.0f) {
@@ -979,7 +980,7 @@ bool tinyaiAudioMix(const TinyAIAudioData *audio1, const TinyAIAudioData *audio2
  * @param order Filter order (1, 2, 4, 8, etc.)
  * @return true on success, false on failure
  */
-bool tinyaiAudioBandpassFilter(const TinyAIAudioData *input, TinyAIAudioData *output,
+bool hyperionAudioBandpassFilter(const HyperionAudioData *input, HyperionAudioData *output,
                                float lowFreqHz, float highFreqHz, int order)
 {
     /* TODO: Implement bandpass filter */
@@ -1009,7 +1010,7 @@ bool tinyaiAudioBandpassFilter(const TinyAIAudioData *input, TinyAIAudioData *ou
  * @param strengthDb Noise reduction strength in decibels
  * @return true on success, false on failure
  */
-bool tinyaiAudioReduceNoise(const TinyAIAudioData *input, TinyAIAudioData *output, float strengthDb)
+bool hyperionAudioReduceNoise(const HyperionAudioData *input, HyperionAudioData *output, float strengthDb)
 {
     /* TODO: Implement noise reduction */
     /* For now, just make a copy */
@@ -1038,8 +1039,8 @@ bool tinyaiAudioReduceNoise(const TinyAIAudioData *input, TinyAIAudioData *outpu
  * @param audio Output structure to receive audio data
  * @return true on success, false on failure
  */
-bool tinyaiAudioCreateFromSamples(const float *samples, int numSamples,
-                                  const TinyAIAudioFormat *format, TinyAIAudioData *audio)
+bool hyperionAudioCreateFromSamples(const float *samples, int numSamples,
+                                  const HyperionAudioFormat *format, HyperionAudioData *audio)
 {
     if (!samples || !format || !audio || numSamples <= 0) {
         return false;
@@ -1068,7 +1069,7 @@ bool tinyaiAudioCreateFromSamples(const float *samples, int numSamples,
  * @param numSamples Output number of samples converted
  * @return true on success, false on failure
  */
-bool tinyaiAudioToFloatSamples(const TinyAIAudioData *audio, float *samples, int maxSamples,
+bool hyperionAudioToFloatSamples(const HyperionAudioData *audio, float *samples, int maxSamples,
                                int *numSamples)
 {
     if (!audio || !audio->data || !samples || !numSamples || maxSamples <= 0) {
@@ -1094,7 +1095,7 @@ bool tinyaiAudioToFloatSamples(const TinyAIAudioData *audio, float *samples, int
  * @param numRates Output number of rates calculated
  * @return true on success, false on failure
  */
-bool tinyaiAudioCalculateZeroCrossingRate(const TinyAIAudioData *audio, int windowMs, float *rates,
+bool hyperionAudioCalculateZeroCrossingRate(const HyperionAudioData *audio, int windowMs, float *rates,
                                           int maxRates, int *numRates)
 {
     if (!audio || !audio->data || !rates || !numRates || maxRates <= 0) {
@@ -1156,7 +1157,7 @@ bool tinyaiAudioCalculateZeroCrossingRate(const TinyAIAudioData *audio, int wind
  * @param numLevels Output number of levels calculated
  * @return true on success, false on failure
  */
-bool tinyaiAudioCalculatePeakLevel(const TinyAIAudioData *audio, int windowMs, float *peakLevels,
+bool hyperionAudioCalculatePeakLevel(const HyperionAudioData *audio, int windowMs, float *peakLevels,
                                    int maxLevels, int *numLevels)
 {
     if (!audio || !audio->data || !peakLevels || !numLevels || maxLevels <= 0) {
@@ -1216,7 +1217,7 @@ bool tinyaiAudioCalculatePeakLevel(const TinyAIAudioData *audio, int windowMs, f
  * @param numLevels Output number of levels calculated
  * @return true on success, false on failure
  */
-bool tinyaiAudioCalculateRMSLevel(const TinyAIAudioData *audio, int windowMs, float *rmsLevels,
+bool hyperionAudioCalculateRMSLevel(const HyperionAudioData *audio, int windowMs, float *rmsLevels,
                                   int maxLevels, int *numLevels)
 {
     if (!audio || !audio->data || !rmsLevels || !numLevels || maxLevels <= 0) {
@@ -1274,7 +1275,7 @@ bool tinyaiAudioCalculateRMSLevel(const TinyAIAudioData *audio, int windowMs, fl
  * @param sensitivity Sensitivity (0.0-1.0, higher = more sensitive)
  * @return true on success, false on failure
  */
-bool tinyaiAudioDetectVoiceActivity(const TinyAIAudioData *audio, int windowMs, float *activity,
+bool hyperionAudioDetectVoiceActivity(const HyperionAudioData *audio, int windowMs, float *activity,
                                     int maxFrames, int *numFrames, float sensitivity)
 {
     if (!audio || !audio->data || !activity || !numFrames || maxFrames <= 0 || windowMs <= 0 ||

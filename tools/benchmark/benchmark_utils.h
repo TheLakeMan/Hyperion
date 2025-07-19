@@ -33,7 +33,7 @@ typedef struct {
     double samples_per_second; // Samples processed per second
 
     // Framework identification
-    char framework_name[32];    // Name of the framework (TinyAI, TFLite, etc.)
+    char framework_name[32];    // Name of the framework (Hyperion, TFLite, etc.)
     char framework_version[16]; // Version of the framework
     char model_name[64];        // Name of the model
     char device_name[64];       // Name of the device
@@ -66,7 +66,7 @@ typedef struct {
             double fusion_time_ms; // Time for modality fusion
         } multimodal;
     } modality_metrics;
-} TinyAIBenchmarkResult;
+} HyperionBenchmarkResult;
 
 // Define benchmark configuration structure
 typedef struct {
@@ -91,46 +91,46 @@ typedef struct {
     // Comparison options
     bool compare_frameworks;         // Whether to compare with other frameworks
     char comparison_frameworks[256]; // Comma-separated list of frameworks to compare
-} TinyAIBenchmarkConfig;
+} HyperionBenchmarkConfig;
 
 // Function to initialize benchmark configuration with defaults
-void tinyai_init_benchmark_config(TinyAIBenchmarkConfig *config);
+void hyperion_init_benchmark_config(HyperionBenchmarkConfig *config);
 
 // Function to initialize benchmark result structure
-void tinyai_init_benchmark_result(TinyAIBenchmarkResult *result);
+void hyperion_init_benchmark_result(HyperionBenchmarkResult *result);
 
 // Function to start benchmark timing
-void tinyai_benchmark_start_timer(struct timespec *start_time);
+void hyperion_benchmark_start_timer(struct timespec *start_time);
 
 // Function to stop benchmark timing and calculate elapsed time in ms
-double tinyai_benchmark_stop_timer(struct timespec *start_time);
+double hyperion_benchmark_stop_timer(struct timespec *start_time);
 
 // Function to export benchmark results to CSV
-bool tinyai_export_benchmark_csv(const TinyAIBenchmarkResult *result, const char *filepath);
+bool hyperion_export_benchmark_csv(const HyperionBenchmarkResult *result, const char *filepath);
 
 // Function to export benchmark results to JSON
-bool tinyai_export_benchmark_json(const TinyAIBenchmarkResult *result, const char *filepath);
+bool hyperion_export_benchmark_json(const HyperionBenchmarkResult *result, const char *filepath);
 
 // Function to print benchmark results to console
-void tinyai_print_benchmark_results(const TinyAIBenchmarkResult *result);
+void hyperion_print_benchmark_results(const HyperionBenchmarkResult *result);
 
 // Function to compare benchmark results with other frameworks
-void tinyai_compare_benchmark_results(const TinyAIBenchmarkResult *tinyai_result,
-                                      const TinyAIBenchmarkResult *other_results,
+void hyperion_compare_benchmark_results(const HyperionBenchmarkResult *hyperion_result,
+                                      const HyperionBenchmarkResult *other_results,
                                       int                          num_other_results);
 
 // Platform-specific memory measurement functions
-size_t tinyai_measure_current_memory_usage(void);
-size_t tinyai_measure_peak_memory_usage(void);
+size_t hyperion_measure_current_memory_usage(void);
+size_t hyperion_measure_peak_memory_usage(void);
 
 // Function to detect and return the available SIMD capabilities
-const char *tinyai_detect_simd_capabilities(void);
+const char *hyperion_detect_simd_capabilities(void);
 
 // Function to determine the optimal number of threads
-int tinyai_determine_optimal_threads(void);
+int hyperion_determine_optimal_threads(void);
 
 // Utility function to create a timestamped filename
-void tinyai_create_timestamped_filename(char *buffer, size_t buffer_size, const char *prefix,
+void hyperion_create_timestamped_filename(char *buffer, size_t buffer_size, const char *prefix,
                                         const char *extension);
 
 #endif /* TINYAI_BENCHMARK_UTILS_H */

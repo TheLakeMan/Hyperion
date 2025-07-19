@@ -1,8 +1,8 @@
-# TinyAI Testing Implementation
+# Hyperion Testing Implementation
 
 ## Overview
 
-This document outlines the testing implementation for TinyAI's tokenizer and text generation modules, along with CLI enhancements to support these features.
+This document outlines the testing implementation for Hyperion's tokenizer and text generation modules, along with CLI enhancements to support these features.
 
 ## Implemented Components
 
@@ -62,19 +62,19 @@ The testing approach follows these principles:
 ### Creating a Vocabulary
 
 ```
-tinyai model create-vocab sample_text.txt 100 test-vocab.txt
+hyperion model create-vocab sample_text.txt 100 test-vocab.txt
 ```
 
 ### Tokenizing Text
 
 ```
-tinyai tokenize "The quick brown fox jumps over the lazy dog"
+hyperion tokenize "The quick brown fox jumps over the lazy dog"
 ```
 
 ### Generating Text
 
 ```
-tinyai generate "Once upon a time" 50 0.7 topk
+hyperion generate "Once upon a time" 50 0.7 topk
 ```
 
 ## Next Steps

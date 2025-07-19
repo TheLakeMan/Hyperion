@@ -31,8 +31,8 @@ typedef struct {
     size_t                   sample_count;
     size_t                   max_samples;
     clock_t                  start_time;
-    TinyAIProgressiveLoader *loader;
-    TinyAIMemoryOptimizer   *optimizer;
+    HyperionProgressiveLoader *loader;
+    HyperionMemoryOptimizer   *optimizer;
 } MemoryProfiler;
 
 // Initialize memory profiler
@@ -55,13 +55,13 @@ MemoryProfiler *init_memory_profiler(const char *model_path, size_t memory_budge
     profiler->start_time   = clock();
 
     // Create memory optimizer
-    TinyAIMemoryOptimizerConfig optimizer_config = {.max_memory_budget     = memory_budget,
+    HyperionMemoryOptimizerConfig optimizer_config = {.max_memory_budget     = memory_budget,
                                                     .enable_checkpointing  = enable_checkpointing,
                                                     .memory_speed_tradeoff = memory_speed_tradeoff,
                                                     .recompute_activations = true,
                                                     .max_activation_memory = memory_budget / 2};
 
-    profiler->optimizer = tinyaiCreateMemoryOptimizer(&optimizer_config);
+    profiler->optimizer = hyperionCreateMemoryOptimizer(&optimizer_config);
     if (!profiler->optimizer) {
         free(profiler->samples);
         free(profiler);
@@ -69,15 +69,15 @@ MemoryProfiler *init_memory_profiler(const char *model_path, size_t memory_budge
     }
 
     // Create progressive loader
-    TinyAIProgressiveLoaderConfig loader_config = {.max_memory_budget      = memory_budget,
+    HyperionProgressiveLoaderConfig loader_config = {.max_memory_budget      = memory_budget,
                                                    .enable_layer_unloading = true,
                                                    .priority_strategy =
                                                        TINYAI_PRIORITY_ACCESS_PATTERN,
                                                    .prefetch_threshold = 0.7f};
 
-    profiler->loader = tinyaiCreateProgressiveLoader(model_path, &loader_config);
+    profiler->loader = hyperionCreateProgressiveLoader(model_path, &loader_config);
     if (!profiler->loader) {
-        tinyaiFreeMemoryOptimizer(profiler->optimizer);
+        hyperionFreeMemoryOptimizer(profiler->optimizer);
         free(profiler->samples);
         free(profiler);
         return NULL;
@@ -99,7 +99,7 @@ void take_profile_sample(MemoryProfiler *profiler)
     sample->timestamp_ms        = elapsed_ms;
 
     // Get memory stats
-    TinyAIMemoryStats stats  = tinyaiGetProgressiveLoaderMemoryStats(profiler->loader);
+    HyperionMemoryStats stats  = hyperionGetProgressiveLoaderMemoryStats(profiler->loader);
     sample->total_memory     = stats.total_allocated;
     sample->active_memory    = stats.current_allocated;
     sample->peak_memory      = stats.peak_allocated;
@@ -111,7 +111,7 @@ void take_profile_sample(MemoryProfiler *profiler)
     sample->layer_loaded = malloc(sizeof(bool) * sample->layer_count);
     if (sample->layer_loaded) {
         for (size_t i = 0; i < sample->layer_count; i++) {
-            sample->layer_loaded[i] = tinyaiIsLayerLoaded(profiler->loader, i);
+            sample->layer_loaded[i] = hyperionIsLayerLoaded(profiler->loader, i);
         }
     }
 
@@ -130,8 +130,8 @@ void free_memory_profiler(MemoryProfiler *profiler)
     }
 
     // Free main resources
-    tinyaiFreeProgressiveLoader(profiler->loader);
-    tinyaiFreeMemoryOptimizer(profiler->optimizer);
+    hyperionFreeProgressiveLoader(profiler->loader);
+    hyperionFreeMemoryOptimizer(profiler->optimizer);
     free(profiler->samples);
     free(profiler);
 }
@@ -231,7 +231,7 @@ int main(int argc, char *argv[])
     while ((clock() - start_time) * 1000 / CLOCKS_PER_SEC < PROFILER_DURATION_SECONDS * 1000) {
         // Simulate model operations
         for (int layer = 0; layer < profiler->loader->layer_count; layer++) {
-            if (!tinyaiLoadModelLayer(profiler->loader, layer)) {
+            if (!hyperionLoadModelLayer(profiler->loader, layer)) {
                 fprintf(stderr, "Failed to load layer %d\n", layer);
                 continue;
             }
@@ -243,7 +243,7 @@ int main(int argc, char *argv[])
             struct timespec sleep_time = {0, PROFILER_SAMPLE_INTERVAL_MS * 1000000};
             nanosleep(&sleep_time, NULL);
 
-            if (!tinyaiUnloadModelLayer(profiler->loader, layer)) {
+            if (!hyperionUnloadModelLayer(profiler->loader, layer)) {
                 fprintf(stderr, "Failed to unload layer %d\n", layer);
                 continue;
             }

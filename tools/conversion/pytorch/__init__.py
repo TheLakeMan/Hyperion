@@ -1,5 +1,5 @@
 """
-PyTorch to TinyAI Converter Package
+PyTorch to Hyperion Converter Package
 
 This package provides functionality to convert PyTorch models to TinyAI format.
 """

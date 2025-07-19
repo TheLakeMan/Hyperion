@@ -1,6 +1,6 @@
 /**
  * @file image_classifier.c
- * @brief Implementation of image classification in TinyAI
+ * @brief Implementation of image classification in Hyperion
  */
 
 #include "image_classifier.h"
@@ -27,8 +27,8 @@
 /**
  * Internal structure for image classifier
  */
-struct TinyAIImageClassifier {
-    TinyAIModel *model;               /* Image model */
+struct HyperionImageClassifier {
+    HyperionModel *model;               /* Image model */
     char       **labels;              /* Class labels */
     int          numLabels;           /* Number of class labels */
     int          inputSize;           /* Input image size */
@@ -72,7 +72,7 @@ static char **loadLabels(const char *filePath, int *numLabels)
     }
 
     /* Read labels file */
-    char *fileContent = tinyaiReadTextFile(filePath);
+    char *fileContent = hyperionReadTextFile(filePath);
     if (!fileContent) {
         fprintf(stderr, "Failed to read labels file: %s\n", filePath);
         return NULL;
@@ -136,7 +136,7 @@ static void freeLabels(char **labels, int numLabels)
 /**
  * Create a new image classifier
  */
-TinyAIImageClassifier *tinyaiClassifierCreate(const TinyAIClassifierConfig *config)
+HyperionImageClassifier *hyperionClassifierCreate(const HyperionClassifierConfig *config)
 {
     if (!config || !config->modelPath || !config->weightsPath || !config->labelsPath) {
         fprintf(stderr, "Invalid classifier configuration\n");
@@ -144,15 +144,15 @@ TinyAIImageClassifier *tinyaiClassifierCreate(const TinyAIClassifierConfig *conf
     }
 
     /* Allocate classifier structure */
-    TinyAIImageClassifier *classifier =
-        (TinyAIImageClassifier *)malloc(sizeof(TinyAIImageClassifier));
+    HyperionImageClassifier *classifier =
+        (HyperionImageClassifier *)malloc(sizeof(HyperionImageClassifier));
     if (!classifier) {
         fprintf(stderr, "Failed to allocate classifier\n");
         return NULL;
     }
 
     /* Initialize with defaults */
-    memset(classifier, 0, sizeof(TinyAIImageClassifier));
+    memset(classifier, 0, sizeof(HyperionImageClassifier));
     classifier->inputSize = config->inputSize > 0 ? config->inputSize : DEFAULT_INPUT_SIZE;
     classifier->topK      = config->topK > 0 ? config->topK : DEFAULT_TOP_K;
     classifier->confidenceThreshold = config->confidenceThreshold >= 0.0f
@@ -165,13 +165,14 @@ TinyAIImageClassifier *tinyaiClassifierCreate(const TinyAIClassifierConfig *conf
     /* Load class labels */
     classifier->labels = loadLabels(config->labelsPath, &classifier->numLabels);
     if (!classifier->labels) {
+        freeLabels(classifier->labels, classifier->numLabels);
         free(classifier);
         fprintf(stderr, "Failed to load class labels from %s\n", config->labelsPath);
         return NULL;
     }
 
     /* Load model */
-    classifier->model = tinyaiLoadModel(config->modelPath, config->weightsPath, NULL);
+    classifier->model = hyperionLoadModel(config->modelPath, config->weightsPath, NULL);
     if (!classifier->model) {
         freeLabels(classifier->labels, classifier->numLabels);
         free(classifier);
@@ -182,7 +183,7 @@ TinyAIImageClassifier *tinyaiClassifierCreate(const TinyAIClassifierConfig *conf
 
     /* Apply quantization if requested */
     if (classifier->useQuantization) {
-        if (tinyaiQuantizeModel(classifier->model) != 0) {
+        if (hyperionQuantizeModel(classifier->model) != 0) {
             fprintf(stderr, "Warning: Model quantization failed\n");
             /* Continue with unquantized model */
         }
@@ -194,7 +195,7 @@ TinyAIImageClassifier *tinyaiClassifierCreate(const TinyAIClassifierConfig *conf
 /**
  * Free an image classifier
  */
-void tinyaiClassifierFree(TinyAIImageClassifier *classifier)
+void hyperionClassifierFree(HyperionImageClassifier *classifier)
 {
     if (!classifier) {
         return;
@@ -202,7 +203,7 @@ void tinyaiClassifierFree(TinyAIImageClassifier *classifier)
 
     /* Free the model */
     if (classifier->model) {
-        tinyaiDestroyModel(classifier->model);
+        hyperionDestroyModel(classifier->model);
     }
 
     /* Free class labels */
@@ -215,8 +216,8 @@ void tinyaiClassifierFree(TinyAIImageClassifier *classifier)
 /**
  * Process model outputs to get predictions
  */
-static bool processOutputs(TinyAIImageClassifier *classifier, const float *outputs, int outputSize,
-                           TinyAIPrediction *predictions, int maxPredictions, int *numPredictions)
+static bool processOutputs(HyperionImageClassifier *classifier, const float *outputs, int outputSize,
+                           HyperionPrediction *predictions, int maxPredictions, int *numPredictions)
 {
     if (!classifier || !outputs || !predictions || !numPredictions) {
         return false;
@@ -279,15 +280,15 @@ static bool processOutputs(TinyAIImageClassifier *classifier, const float *outpu
 /**
  * Classify an image file
  */
-bool tinyaiClassifyImage(TinyAIImageClassifier *classifier, const char *imagePath,
-                         TinyAIPrediction *predictions, int maxPredictions, int *numPredictions)
+bool hyperionClassifyImage(HyperionImageClassifier *classifier, const char *imagePath,
+                         HyperionPrediction *predictions, int maxPredictions, int *numPredictions)
 {
     if (!classifier || !imagePath || !predictions || maxPredictions <= 0 || !numPredictions) {
         return false;
     }
 
     /* Load the image */
-    TinyAIImage *image = tinyaiImageLoadFromFile(imagePath);
+    HyperionImage *image = hyperionImageLoadFromFile(imagePath);
     if (!image) {
         fprintf(stderr, "Failed to load image from %s\n", imagePath);
         return false;
@@ -295,10 +296,10 @@ bool tinyaiClassifyImage(TinyAIImageClassifier *classifier, const char *imagePat
 
     /* Classify the image */
     bool result =
-        tinyaiClassifyImageData(classifier, image, predictions, maxPredictions, numPredictions);
+        hyperionClassifyImageData(classifier, image, predictions, maxPredictions, numPredictions);
 
     /* Clean up */
-    tinyaiImageFree(image);
+    hyperionImageFree(image);
 
     return result;
 }
@@ -306,8 +307,8 @@ bool tinyaiClassifyImage(TinyAIImageClassifier *classifier, const char *imagePat
 /**
  * Classify an in-memory image
  */
-bool tinyaiClassifyImageData(TinyAIImageClassifier *classifier, const TinyAIImage *image,
-                             TinyAIPrediction *predictions, int maxPredictions, int *numPredictions)
+bool hyperionClassifyImageData(HyperionImageClassifier *classifier, const HyperionImage *image,
+                             HyperionPrediction *predictions, int maxPredictions, int *numPredictions)
 {
     if (!classifier || !classifier->model || !image || !predictions || maxPredictions <= 0 ||
         !numPredictions) {
@@ -315,11 +316,11 @@ bool tinyaiClassifyImageData(TinyAIImageClassifier *classifier, const TinyAIImag
     }
 
     /* Resize image if needed */
-    TinyAIImage *processedImage = image;
-    TinyAIImage *resizedImage   = NULL;
+    HyperionImage *processedImage = image;
+    HyperionImage *resizedImage   = NULL;
 
     if (image->width != classifier->inputSize || image->height != classifier->inputSize) {
-        resizedImage = tinyaiImageResize(image, classifier->inputSize, classifier->inputSize);
+        resizedImage = hyperionImageResize(image, classifier->inputSize, classifier->inputSize);
         if (!resizedImage) {
             fprintf(stderr, "Failed to resize image to %dx%d\n", classifier->inputSize,
                     classifier->inputSize);
@@ -336,7 +337,7 @@ bool tinyaiClassifyImageData(TinyAIImageClassifier *classifier, const TinyAIImag
     int    outputSize = 0;
 
     bool success =
-        tinyaiRunImageInference(classifier->model, processedImage, &outputs, &outputSize);
+        hyperionRunImageInference(classifier->model, processedImage, &outputs, &outputSize);
 
     /* End timing */
     clock_t end                   = clock();
@@ -354,7 +355,7 @@ bool tinyaiClassifyImageData(TinyAIImageClassifier *classifier, const TinyAIImag
 
     /* Clean up */
     if (resizedImage) {
-        tinyaiImageFree(resizedImage);
+        hyperionImageFree(resizedImage);
     }
 
     return success;
@@ -363,7 +364,7 @@ bool tinyaiClassifyImageData(TinyAIImageClassifier *classifier, const TinyAIImag
 /**
  * Get the last inference time in milliseconds
  */
-double tinyaiClassifierGetInferenceTime(const TinyAIImageClassifier *classifier)
+double hyperionClassifierGetInferenceTime(const HyperionImageClassifier *classifier)
 {
     if (!classifier) {
         return -1.0;
@@ -375,7 +376,7 @@ double tinyaiClassifierGetInferenceTime(const TinyAIImageClassifier *classifier)
 /**
  * Get memory usage statistics
  */
-bool tinyaiClassifierGetMemoryUsage(const TinyAIImageClassifier *classifier, size_t *modelMemory,
+bool hyperionClassifierGetMemoryUsage(const HyperionImageClassifier *classifier, size_t *modelMemory,
                                     size_t *totalMemory)
 {
     if (!classifier || !modelMemory || !totalMemory) {
@@ -385,7 +386,7 @@ bool tinyaiClassifierGetMemoryUsage(const TinyAIImageClassifier *classifier, siz
     /* Calculate model memory */
     size_t mModel = 0;
     if (classifier->model) {
-        mModel = tinyaiGetModelSizeBytes(classifier->model);
+        mModel = hyperionGetModelSizeBytes(classifier->model);
     }
 
     /* Calculate label memory */
@@ -398,7 +399,7 @@ bool tinyaiClassifierGetMemoryUsage(const TinyAIImageClassifier *classifier, siz
     mLabels += classifier->numLabels * sizeof(char *);
 
     /* Calculate total memory */
-    size_t mTotal = mModel + mLabels + sizeof(TinyAIImageClassifier);
+    size_t mTotal = mModel + mLabels + sizeof(HyperionImageClassifier);
 
     /* Set output parameters */
     *modelMemory = mModel;
@@ -410,7 +411,7 @@ bool tinyaiClassifierGetMemoryUsage(const TinyAIImageClassifier *classifier, siz
 /**
  * Format prediction as a string
  */
-bool tinyaiFormatPrediction(const TinyAIPrediction *prediction, char *buffer, size_t bufferSize)
+bool hyperionFormatPrediction(const HyperionPrediction *prediction, char *buffer, size_t bufferSize)
 {
     if (!prediction || !buffer || bufferSize <= 0) {
         return false;
@@ -427,7 +428,7 @@ bool tinyaiFormatPrediction(const TinyAIPrediction *prediction, char *buffer, si
 /**
  * Enable or disable SIMD acceleration
  */
-bool tinyaiClassifierEnableSIMD(TinyAIImageClassifier *classifier, bool enable)
+bool hyperionClassifierEnableSIMD(HyperionImageClassifier *classifier, bool enable)
 {
     if (!classifier) {
         return false;
@@ -437,7 +438,7 @@ bool tinyaiClassifierEnableSIMD(TinyAIImageClassifier *classifier, bool enable)
 
     /* Apply to model if available */
     if (classifier->model) {
-        return tinyaiEnableModelSIMD(classifier->model, enable);
+        return hyperionEnableModelSIMD(classifier->model, enable);
     }
 
     return true;

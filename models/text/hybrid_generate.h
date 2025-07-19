@@ -1,14 +1,14 @@
 /**
  * @file hybrid_generate.h
- * @brief Hybrid text generation interface for TinyAI
+ * @brief Hybrid text generation interface for Hyperion
  *
  * This file defines the interface for text generation that can
  * transparently switch between local and remote execution based
  * on MCP client availability and configuration.
  */
 
-#ifndef TINYAI_HYBRID_GENERATE_H
-#define TINYAI_HYBRID_GENERATE_H
+#ifndef HYPERION_HYBRID_GENERATE_H
+#define HYPERION_HYBRID_GENERATE_H
 
 #include "../../core/mcp/mcp_client.h"
 #include "generate.h"
@@ -20,24 +20,24 @@ extern "C" {
 /**
  * @brief Context for hybrid text generation
  */
-typedef struct TinyAIHybridGenerate TinyAIHybridGenerate;
+typedef struct HyperionHybridGenerate HyperionHybridGenerate;
 
 /**
  * @brief Create a hybrid generation context
  *
  * @param localModel Local model to use when MCP is unavailable or for local execution
  * @param mcpClient MCP client for remote execution (can be NULL for local-only)
- * @return TinyAIHybridGenerate* Context or NULL on failure
+ * @return HyperionHybridGenerate* Context or NULL on failure
  */
-TinyAIHybridGenerate *tinyaiCreateHybridGenerate(TinyAIModel     *localModel,
-                                                 TinyAIMcpClient *mcpClient);
+HyperionHybridGenerate *hyperionCreateHybridGenerate(HyperionModel     *localModel,
+                                                 HyperionMcpClient *mcpClient);
 
 /**
  * @brief Destroy a hybrid generation context
  *
  * @param ctx Context to destroy
  */
-void tinyaiDestroyHybridGenerate(TinyAIHybridGenerate *ctx);
+void hyperionDestroyHybridGenerate(HyperionHybridGenerate *ctx);
 
 /**
  * @brief Generate text using the hybrid context
@@ -51,7 +51,7 @@ void tinyaiDestroyHybridGenerate(TinyAIHybridGenerate *ctx);
  * @param maxTokens Maximum number of tokens to generate
  * @return int Number of tokens generated or negative value on error
  */
-int tinyaiHybridGenerateText(TinyAIHybridGenerate *ctx, const TinyAIGenerationParams *params,
+int hyperionHybridGenerateText(HyperionHybridGenerate *ctx, const HyperionGenerationParams *params,
                              int *outputTokens, int maxTokens);
 
 /**
@@ -61,7 +61,7 @@ int tinyaiHybridGenerateText(TinyAIHybridGenerate *ctx, const TinyAIGenerationPa
  * @return true if remote execution was used
  * @return false if local execution was used
  */
-bool tinyaiHybridGenerateUsedRemote(TinyAIHybridGenerate *ctx);
+bool hyperionHybridGenerateUsedRemote(HyperionHybridGenerate *ctx);
 
 /**
  * @brief Get execution statistics for the last generation
@@ -71,7 +71,7 @@ bool tinyaiHybridGenerateUsedRemote(TinyAIHybridGenerate *ctx);
  * @param remoteTimeMs Output parameter for remote execution time in milliseconds
  * @param tokensPerSecond Output parameter for tokens per second
  */
-void tinyaiHybridGenerateGetStats(TinyAIHybridGenerate *ctx, double *localTimeMs,
+void hyperionHybridGenerateGetStats(HyperionHybridGenerate *ctx, double *localTimeMs,
                                   double *remoteTimeMs, double *tokensPerSecond);
 
 /**
@@ -82,7 +82,7 @@ void tinyaiHybridGenerateGetStats(TinyAIHybridGenerate *ctx, double *localTimeMs
  * @return true if the requested mode is available
  * @return false if the requested mode is not available (will use fallback)
  */
-bool tinyaiHybridGenerateForceMode(TinyAIHybridGenerate *ctx, bool forceRemote);
+bool hyperionHybridGenerateForceMode(HyperionHybridGenerate *ctx, bool forceRemote);
 
 /**
  * @brief Check if MCP remote generation is available
@@ -91,7 +91,7 @@ bool tinyaiHybridGenerateForceMode(TinyAIHybridGenerate *ctx, bool forceRemote);
  * @return true if remote generation is available
  * @return false if remote generation is not available
  */
-bool tinyaiHybridGenerateHasRemote(TinyAIHybridGenerate *ctx);
+bool hyperionHybridGenerateHasRemote(HyperionHybridGenerate *ctx);
 
 /**
  * @brief Get the execution decision for a given prompt and parameters
@@ -104,11 +104,11 @@ bool tinyaiHybridGenerateHasRemote(TinyAIHybridGenerate *ctx);
  * @return true if remote execution would be used
  * @return false if local execution would be used
  */
-bool tinyaiHybridGenerateWouldUseRemote(TinyAIHybridGenerate         *ctx,
-                                        const TinyAIGenerationParams *params);
+bool hyperionHybridGenerateWouldUseRemote(HyperionHybridGenerate         *ctx,
+                                        const HyperionGenerationParams *params);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* TINYAI_HYBRID_GENERATE_H */
+#endif /* HYPERION_HYBRID_GENERATE_H */

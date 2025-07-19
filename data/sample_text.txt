@@ -1,6 +1,6 @@
-TinyAI is a lightweight neural network framework designed to run efficiently on resource-constrained devices. It features 4-bit weight quantization to minimize memory usage while maintaining good accuracy.
+Hyperion is a lightweight neural network framework designed to run efficiently on resource-constrained devices. It features 4-bit weight quantization to minimize memory usage while maintaining good accuracy.
 
-Key features of TinyAI include:
+Key features of Hyperion include:
 
 1. Memory Efficiency: Uses 4-bit quantization for neural network weights, reducing memory footprint by up to 8x compared to full precision.
 
@@ -16,6 +16,6 @@ The tokenizer component is responsible for converting text into token IDs and ba
 
 The quantization utilities convert full-precision (FP32) model weights to 4-bit representation, with support for multiple quantization schemes including linear quantization and non-uniform quantization. This allows models to run efficiently on devices with limited memory and computational resources.
 
-Model weights can be stored and loaded in a custom binary format that preserves the quantized representation, eliminating the need for re-quantization during model loading. This further improves startup performance for applications using TinyAI.
+Model weights can be stored and loaded in a custom binary format that preserves the quantized representation, eliminating the need for re-quantization during model loading. This further improves startup performance for applications using Hyperion.
 
-TinyAI is designed with a modular architecture that allows for easy extension and customization. New model architectures, tokenization strategies, and quantization schemes can be added with minimal changes to the core framework.
+Hyperion is designed with a modular architecture that allows for easy extension and customization. New model architectures, tokenization strategies, and quantization schemes can be added with minimal changes to the core framework.

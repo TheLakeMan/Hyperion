@@ -1,8 +1,8 @@
-# TinyAI Optimization API
+# Hyperion Optimization API
 
 ## Overview
 
-The TinyAI Optimization API provides tools for memory optimization, performance tuning, and model efficiency. This document covers the core optimization components and their usage.
+The Hyperion Optimization API provides tools for memory optimization, performance tuning, and model efficiency. This document covers the core optimization components and their usage.
 
 ## Memory Optimization
 
@@ -19,45 +19,45 @@ typedef struct {
     bool enable_in_place_ops;     // Whether to use in-place operations
     float memory_speed_tradeoff;  // 0.0 (prioritize memory) to 1.0 (prioritize speed)
     size_t max_memory_budget;     // Maximum memory budget in bytes
-} TinyAIMemoryOptimizerConfig;
+} HyperionMemoryOptimizerConfig;
 
 /**
  * Create a memory optimizer
  */
-TinyAIMemoryOptimizer* tinyaiCreateMemoryOptimizer(const TinyAIMemoryOptimizerConfig* config);
+HyperionMemoryOptimizer* hyperionCreateMemoryOptimizer(const HyperionMemoryOptimizerConfig* config);
 
 /**
  * Free a memory optimizer
  */
-void tinyaiFreeMemoryOptimizer(TinyAIMemoryOptimizer* optimizer);
+void hyperionFreeMemoryOptimizer(HyperionMemoryOptimizer* optimizer);
 
 /**
  * Get current memory statistics
  */
-TinyAIMemoryStats tinyaiGetMemoryOptimizerStats(const TinyAIMemoryOptimizer* optimizer);
+HyperionMemoryStats hyperionGetMemoryOptimizerStats(const HyperionMemoryOptimizer* optimizer);
 
 /**
  * Set memory/speed tradeoff
  */
-void tinyaiSetMemorySpeedTradeoff(TinyAIMemoryOptimizer* optimizer, float tradeoff);
+void hyperionSetMemorySpeedTradeoff(HyperionMemoryOptimizer* optimizer, float tradeoff);
 
 /**
  * Enable or disable in-place operations
  */
-void tinyaiEnableInPlaceOperations(TinyAIMemoryOptimizer* optimizer, bool enable);
+void hyperionEnableInPlaceOperations(HyperionMemoryOptimizer* optimizer, bool enable);
 
 /**
  * Execute a function with tensor reuse
  */
-bool tinyaiExecuteWithTensorReuse(TinyAIMemoryOptimizer* optimizer, 
-                                 TinyAITensorReuseFunction func, 
+bool hyperionExecuteWithTensorReuse(HyperionMemoryOptimizer* optimizer, 
+                                 HyperionTensorReuseFunction func, 
                                  void* user_data);
 
 /**
  * Optimize memory usage
  */
-bool tinyaiOptimizeMemoryUsage(TinyAIMemoryOptimizer* optimizer, 
-                              TinyAIModel* model, 
+bool hyperionOptimizeMemoryUsage(HyperionMemoryOptimizer* optimizer, 
+                              HyperionModel* model, 
                               size_t memory_budget);
 ```
 
@@ -74,42 +74,42 @@ typedef struct {
     int prefetch_window;          // Number of layers to prefetch
     bool enable_adaptive_window;  // Whether to adapt prefetch window size
     size_t max_memory_usage;      // Maximum memory usage in bytes
-} TinyAIProgressiveLoaderConfig;
+} HyperionProgressiveLoaderConfig;
 
 /**
  * Create a progressive loader
  */
-TinyAIProgressiveLoader* tinyaiCreateProgressiveLoader(const TinyAIProgressiveLoaderConfig* config);
+HyperionProgressiveLoader* hyperionCreateProgressiveLoader(const HyperionProgressiveLoaderConfig* config);
 
 /**
  * Free a progressive loader
  */
-void tinyaiFreeProgressiveLoader(TinyAIProgressiveLoader* loader);
+void hyperionFreeProgressiveLoader(HyperionProgressiveLoader* loader);
 
 /**
  * Load a layer
  */
-bool tinyaiLoadLayer(TinyAIProgressiveLoader* loader, int layer_index);
+bool hyperionLoadLayer(HyperionProgressiveLoader* loader, int layer_index);
 
 /**
  * Unload a layer
  */
-bool tinyaiUnloadLayer(TinyAIProgressiveLoader* loader, int layer_index);
+bool hyperionUnloadLayer(HyperionProgressiveLoader* loader, int layer_index);
 
 /**
  * Get layer loading status
  */
-TinyAILayerStatus tinyaiGetLayerStatus(const TinyAIProgressiveLoader* loader, int layer_index);
+HyperionLayerStatus hyperionGetLayerStatus(const HyperionProgressiveLoader* loader, int layer_index);
 
 /**
  * Set layer priority
  */
-void tinyaiSetLayerPriority(TinyAIProgressiveLoader* loader, int layer_index, int priority);
+void hyperionSetLayerPriority(HyperionProgressiveLoader* loader, int layer_index, int priority);
 
 /**
  * Get memory usage statistics
  */
-TinyAIMemoryStats tinyaiGetProgressiveLoaderStats(const TinyAIProgressiveLoader* loader);
+HyperionMemoryStats hyperionGetProgressiveLoaderStats(const HyperionProgressiveLoader* loader);
 ```
 
 ### Layer Scheduler
@@ -125,76 +125,76 @@ typedef struct {
     float memory_speed_tradeoff;  // 0.0 (prioritize memory) to 1.0 (prioritize speed)
     bool recompute_activations;   // Whether to recompute rather than store activations
     size_t max_activation_memory; // Maximum memory for activations
-} TinyAILayerSchedulerConfig;
+} HyperionLayerSchedulerConfig;
 
 /**
  * Create a layer scheduler
  */
-TinyAILayerScheduler* tinyaiCreateLayerScheduler(TinyAIModel* model, 
-                                               const TinyAILayerSchedulerConfig* config);
+HyperionLayerScheduler* hyperionCreateLayerScheduler(HyperionModel* model, 
+                                               const HyperionLayerSchedulerConfig* config);
 
 /**
  * Free a layer scheduler
  */
-void tinyaiFreeLayerScheduler(TinyAILayerScheduler* scheduler);
+void hyperionFreeLayerScheduler(HyperionLayerScheduler* scheduler);
 
 /**
  * Create an execution plan
  */
-TinyAIExecutionPlan* tinyaiCreateExecutionPlan(TinyAILayerScheduler* scheduler);
+HyperionExecutionPlan* hyperionCreateExecutionPlan(HyperionLayerScheduler* scheduler);
 
 /**
  * Execute a layer with memory optimization
  */
-bool tinyaiExecuteLayerWithMemoryOptimization(TinyAILayerScheduler* scheduler, 
+bool hyperionExecuteLayerWithMemoryOptimization(HyperionLayerScheduler* scheduler, 
                                             int layer_index, 
-                                            TinyAITensor* input, 
-                                            TinyAITensor* output);
+                                            HyperionTensor* input, 
+                                            HyperionTensor* output);
 
 /**
  * Set checkpointing strategy
  */
-bool tinyaiSetLayerCheckpointingStrategy(TinyAILayerScheduler* scheduler, 
+bool hyperionSetLayerCheckpointingStrategy(HyperionLayerScheduler* scheduler, 
                                        int layer_index,
-                                       TinyAICheckpointStrategy strategy);
+                                       HyperionCheckpointStrategy strategy);
 
 /**
  * Get memory usage estimate
  */
-TinyAIMemoryEstimate tinyaiEstimateMemoryUsage(TinyAILayerScheduler* scheduler);
+HyperionMemoryEstimate hyperionEstimateMemoryUsage(HyperionLayerScheduler* scheduler);
 ```
 
 ## Performance Optimization
 
 ### SIMD Acceleration
 
-TinyAI provides SIMD-accelerated operations for improved performance.
+Hyperion provides SIMD-accelerated operations for improved performance.
 
 ```c
 /**
  * SIMD operation types
  */
 typedef enum {
-    TINYAI_SIMD_OP_MATRIX_MUL,    // Matrix multiplication
-    TINYAI_SIMD_OP_CONV,          // Convolution
-    TINYAI_SIMD_OP_ACTIVATION,    // Activation functions
-    TINYAI_SIMD_OP_ATTENTION      // Attention mechanisms
-} TinyAISIMDOpType;
+    HYPERION_SIMD_OP_MATRIX_MUL,    // Matrix multiplication
+    HYPERION_SIMD_OP_CONV,          // Convolution
+    HYPERION_SIMD_OP_ACTIVATION,    // Activation functions
+    HYPERION_SIMD_OP_ATTENTION      // Attention mechanisms
+} HyperionSIMDOpType;
 
 /**
  * Enable SIMD acceleration
  */
-bool tinyaiEnableSIMD(TinyAIModel* model, TinyAISIMDOpType op_type, bool enable);
+bool hyperionEnableSIMD(HyperionModel* model, HyperionSIMDOpType op_type, bool enable);
 
 /**
  * Get SIMD capabilities
  */
-TinyAISIMDCapabilities tinyaiGetSIMDCapabilities();
+HyperionSIMDCapabilities hyperionGetSIMDCapabilities();
 
 /**
  * Set SIMD optimization level
  */
-void tinyaiSetSIMDOptimizationLevel(TinyAIModel* model, int level);
+void hyperionSetSIMDOptimizationLevel(HyperionModel* model, int level);
 ```
 
 ### Cache Optimization
@@ -210,22 +210,22 @@ typedef struct {
     int cache_line_size;      // Cache line size
     bool enable_prefetch;     // Whether to enable prefetching
     int prefetch_distance;    // Prefetch distance in cache lines
-} TinyAICacheConfig;
+} HyperionCacheConfig;
 
 /**
  * Configure cache optimization
  */
-bool tinyaiConfigureCacheOptimization(TinyAIModel* model, const TinyAICacheConfig* config);
+bool hyperionConfigureCacheOptimization(HyperionModel* model, const HyperionCacheConfig* config);
 
 /**
  * Get cache statistics
  */
-TinyAICacheStats tinyaiGetCacheStats(const TinyAIModel* model);
+HyperionCacheStats hyperionGetCacheStats(const HyperionModel* model);
 
 /**
  * Optimize memory layout
  */
-bool tinyaiOptimizeMemoryLayout(TinyAIModel* model);
+bool hyperionOptimizeMemoryLayout(HyperionModel* model);
 ```
 
 ## Usage Examples
@@ -234,65 +234,65 @@ bool tinyaiOptimizeMemoryLayout(TinyAIModel* model);
 
 ```c
 // Create memory optimizer
-TinyAIMemoryOptimizerConfig config = {
+HyperionMemoryOptimizerConfig config = {
     .enable_tensor_reuse = true,
     .enable_in_place_ops = true,
     .memory_speed_tradeoff = 0.5f,
     .max_memory_budget = 1024 * 1024 * 1024  // 1GB
 };
-TinyAIMemoryOptimizer* optimizer = tinyaiCreateMemoryOptimizer(&config);
+HyperionMemoryOptimizer* optimizer = hyperionCreateMemoryOptimizer(&config);
 
 // Optimize model memory usage
-tinyaiOptimizeMemoryUsage(optimizer, model, 512 * 1024 * 1024);  // 512MB budget
+hyperionOptimizeMemoryUsage(optimizer, model, 512 * 1024 * 1024);  // 512MB budget
 
 // Execute with tensor reuse
-tinyaiExecuteWithTensorReuse(optimizer, my_function, my_data);
+hyperionExecuteWithTensorReuse(optimizer, my_function, my_data);
 
 // Free optimizer
-tinyaiFreeMemoryOptimizer(optimizer);
+hyperionFreeMemoryOptimizer(optimizer);
 ```
 
 ### Progressive Loading
 
 ```c
 // Create progressive loader
-TinyAIProgressiveLoaderConfig loader_config = {
+HyperionProgressiveLoaderConfig loader_config = {
     .enable_prefetch = true,
     .prefetch_window = 3,
     .enable_adaptive_window = true,
     .max_memory_usage = 256 * 1024 * 1024  // 256MB
 };
-TinyAIProgressiveLoader* loader = tinyaiCreateProgressiveLoader(&loader_config);
+HyperionProgressiveLoader* loader = hyperionCreateProgressiveLoader(&loader_config);
 
 // Load and unload layers as needed
-tinyaiLoadLayer(loader, 0);
-tinyaiLoadLayer(loader, 1);
-tinyaiUnloadLayer(loader, 0);
+hyperionLoadLayer(loader, 0);
+hyperionLoadLayer(loader, 1);
+hyperionUnloadLayer(loader, 0);
 
 // Free loader
-tinyaiFreeProgressiveLoader(loader);
+hyperionFreeProgressiveLoader(loader);
 ```
 
 ### Layer Scheduling
 
 ```c
 // Create layer scheduler
-TinyAILayerSchedulerConfig scheduler_config = {
+HyperionLayerSchedulerConfig scheduler_config = {
     .enable_checkpointing = true,
     .memory_speed_tradeoff = 0.7f,
     .recompute_activations = false,
     .max_activation_memory = 128 * 1024 * 1024  // 128MB
 };
-TinyAILayerScheduler* scheduler = tinyaiCreateLayerScheduler(model, &scheduler_config);
+HyperionLayerScheduler* scheduler = hyperionCreateLayerScheduler(model, &scheduler_config);
 
 // Create and execute plan
-TinyAIExecutionPlan* plan = tinyaiCreateExecutionPlan(scheduler);
+HyperionExecutionPlan* plan = hyperionCreateExecutionPlan(scheduler);
 for (int i = 0; i < num_layers; i++) {
-    tinyaiExecuteLayerWithMemoryOptimization(scheduler, i, input, output);
+    hyperionExecuteLayerWithMemoryOptimization(scheduler, i, input, output);
 }
 
 // Free scheduler
-tinyaiFreeLayerScheduler(scheduler);
+hyperionFreeLayerScheduler(scheduler);
 ```
 
 ## Best Practices

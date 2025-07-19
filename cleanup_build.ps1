@@ -1,6 +1,6 @@
 # PowerShell script to clean up build artifacts for GitHub publishing
 
-Write-Host "TinyAI Cleanup Script - Preparing for GitHub Publishing" -ForegroundColor Cyan
+Write-Host "Hyperion Cleanup Script - Preparing for GitHub Publishing" -ForegroundColor Cyan
 Write-Host "------------------------------------------------" -ForegroundColor Cyan
 Write-Host ""
 

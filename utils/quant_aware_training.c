@@ -1,6 +1,6 @@
 /**
  * @file quant_aware_training.c
- * @brief Implementation of quantization-aware training utilities for TinyAI
+ * @brief Implementation of quantization-aware training utilities for Hyperion
  */
 
 #include "quant_aware_training.h"
@@ -30,18 +30,18 @@ static float calculateQuantError(float real, float quantized)
 }
 
 /* Calculate step size for a given precision */
-static float calculateStepSize(TinyAIMixedPrecType precision)
+static float calculateStepSize(HyperionMixedPrecType precision)
 {
     switch (precision) {
-    case TINYAI_MIXED_PREC_FP32:
+    case HYPERION_MIXED_PREC_FP32:
         return 0.0f; /* No quantization */
-    case TINYAI_MIXED_PREC_FP16:
+    case HYPERION_MIXED_PREC_FP16:
         return 1.0f / 1024.0f; /* Approximate for FP16 */
-    case TINYAI_MIXED_PREC_INT8:
+    case HYPERION_MIXED_PREC_INT8:
         return 1.0f / 127.0f;
-    case TINYAI_MIXED_PREC_INT4:
+    case HYPERION_MIXED_PREC_INT4:
         return 1.0f / 7.0f;
-    case TINYAI_MIXED_PREC_INT2:
+    case HYPERION_MIXED_PREC_INT2:
         return 1.0f / 1.0f;
     default:
         return 0.0f;
@@ -50,8 +50,8 @@ static float calculateStepSize(TinyAIMixedPrecType precision)
 
 /* Implementation of public API */
 
-bool tinyaiInitQuantAwareTraining(const char                           *modelPath,
-                                  const TinyAIQuantAwareTrainingConfig *config)
+bool hyperionInitQuantAwareTraining(const char                           *modelPath,
+                                  const HyperionQuantAwareTrainingConfig *config)
 {
     /* This would be a complete implementation that initializes a training environment
      * with quantization-awareness enabled. We provide a placeholder implementation.
@@ -74,8 +74,8 @@ bool tinyaiInitQuantAwareTraining(const char                           *modelPat
     return true;
 }
 
-bool tinyaiTrainWithQuantAwareness(const char *modelPath, const char *outputModelPath,
-                                   const TinyAIQuantAwareTrainingConfig *config)
+bool hyperionTrainWithQuantAwareness(const char *modelPath, const char *outputModelPath,
+                                   const HyperionQuantAwareTrainingConfig *config)
 {
     /* This would implement the complete training loop with quantization awareness.
      * In a real implementation, this would:
@@ -101,8 +101,8 @@ bool tinyaiTrainWithQuantAwareness(const char *modelPath, const char *outputMode
     return true;
 }
 
-float tinyaiStraightThroughEstimator(float realValue, float quantizedValue,
-                                     TinyAIMixedPrecType precision)
+float hyperionStraightThroughEstimator(float realValue, float quantizedValue,
+                                     HyperionMixedPrecType precision)
 {
     /* Implements the straight-through estimator (STE) for backpropagation through
      * non-differentiable quantization operations.
@@ -123,7 +123,7 @@ float tinyaiStraightThroughEstimator(float realValue, float quantizedValue,
     }
 }
 
-bool tinyaiSimulateQuantizationNoise(float *weights, int numElements, TinyAIMixedPrecType precision,
+bool hyperionSimulateQuantizationNoise(float *weights, int numElements, HyperionMixedPrecType precision,
                                      float strength)
 {
     /* Add controlled noise to simulate quantization effects during training */
@@ -144,7 +144,7 @@ bool tinyaiSimulateQuantizationNoise(float *weights, int numElements, TinyAIMixe
     return true;
 }
 
-bool tinyaiQuantizeForForwardPass(float *weights, int numElements, TinyAIMixedPrecType precision,
+bool hyperionQuantizeForForwardPass(float *weights, int numElements, HyperionMixedPrecType precision,
                                   float *outQuantized)
 {
     /* Simulate quantization during the forward pass */
@@ -153,7 +153,7 @@ bool tinyaiQuantizeForForwardPass(float *weights, int numElements, TinyAIMixedPr
     }
 
     /* For high precision, just copy the weights */
-    if (precision == TINYAI_MIXED_PREC_FP32) {
+    if (precision == HYPERION_MIXED_PREC_FP32) {
         memcpy(outQuantized, weights, numElements * sizeof(float));
         return true;
     }
@@ -161,19 +161,19 @@ bool tinyaiQuantizeForForwardPass(float *weights, int numElements, TinyAIMixedPr
     /* Get quantization parameters for the precision */
     float min, max;
     switch (precision) {
-    case TINYAI_MIXED_PREC_FP16:
+    case HYPERION_MIXED_PREC_FP16:
         min = -65504.0f;
         max = 65504.0f;
         break;
-    case TINYAI_MIXED_PREC_INT8:
+    case HYPERION_MIXED_PREC_INT8:
         min = -128.0f;
         max = 127.0f;
         break;
-    case TINYAI_MIXED_PREC_INT4:
+    case HYPERION_MIXED_PREC_INT4:
         min = -8.0f;
         max = 7.0f;
         break;
-    case TINYAI_MIXED_PREC_INT2:
+    case HYPERION_MIXED_PREC_INT2:
         min = -2.0f;
         max = 1.0f;
         break;
@@ -219,8 +219,8 @@ bool tinyaiQuantizeForForwardPass(float *weights, int numElements, TinyAIMixedPr
     return true;
 }
 
-bool tinyaiEvaluateQuantizedAccuracy(const char *modelPath, const char *datasetPath,
-                                     const TinyAIQuantAwareTrainingConfig *config, float *accuracy)
+bool hyperionEvaluateQuantizedAccuracy(const char *modelPath, const char *datasetPath,
+                                     const HyperionQuantAwareTrainingConfig *config, float *accuracy)
 {
     /* This would evaluate model accuracy while simulating quantization effects */
     if (!modelPath || !datasetPath || !config || !accuracy) {
@@ -240,18 +240,18 @@ bool tinyaiEvaluateQuantizedAccuracy(const char *modelPath, const char *datasetP
     return true;
 }
 
-TinyAIQuantAwareTrainingConfig *tinyaiCreateDefaultQuantAwareTrainingConfig(void)
+HyperionQuantAwareTrainingConfig *hyperionCreateDefaultQuantAwareTrainingConfig(void)
 {
-    TinyAIQuantAwareTrainingConfig *config =
-        (TinyAIQuantAwareTrainingConfig *)malloc(sizeof(TinyAIQuantAwareTrainingConfig));
+    HyperionQuantAwareTrainingConfig *config =
+        (HyperionQuantAwareTrainingConfig *)malloc(sizeof(HyperionQuantAwareTrainingConfig));
 
     if (!config) {
         return NULL;
     }
 
     /* Initialize with reasonable default values */
-    config->weightPrecision                = TINYAI_MIXED_PREC_INT8;
-    config->activationPrecision            = TINYAI_MIXED_PREC_INT8;
+    config->weightPrecision                = HYPERION_MIXED_PREC_INT8;
+    config->activationPrecision            = HYPERION_MIXED_PREC_INT8;
     config->useSymmetricQuantization       = true;
     config->usePerChannelQuantization      = true;
     config->learningRate                   = 1e-4f;
@@ -266,10 +266,10 @@ TinyAIQuantAwareTrainingConfig *tinyaiCreateDefaultQuantAwareTrainingConfig(void
     return config;
 }
 
-bool tinyaiExportQuantAwareModel(const char *modelPath, const char *exportPath,
-                                 const TinyAIQuantAwareTrainingConfig *config)
+bool hyperionExportQuantAwareModel(const char *modelPath, const char *exportPath,
+                                 const HyperionQuantAwareTrainingConfig *config)
 {
-    /* This would export a quantization-aware trained model to TinyAI format */
+    /* This would export a quantization-aware trained model to Hyperion format */
     if (!modelPath || !exportPath || !config) {
         return false;
     }
@@ -278,14 +278,14 @@ bool tinyaiExportQuantAwareModel(const char *modelPath, const char *exportPath,
     /* In a real implementation, this would:
      * 1. Load the trained model
      * 2. Apply actual quantization based on the configuration
-     * 3. Export in TinyAI format
+     * 3. Export in Hyperion format
      */
 
     return true;
 }
 
-bool tinyaiFineTuneWithQuantAwareness(const char *modelPath, const char *outputModelPath,
-                                      const TinyAIQuantAwareTrainingConfig *config,
+bool hyperionFineTuneWithQuantAwareness(const char *modelPath, const char *outputModelPath,
+                                      const HyperionQuantAwareTrainingConfig *config,
                                       int                                   freezeLayers)
 {
     /* This would implement fine-tuning of a pre-trained model with quantization awareness */

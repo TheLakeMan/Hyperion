@@ -2,7 +2,7 @@
  * @file main.c
  * @brief Main program for media tagging example
  *
- * This example demonstrates how to use TinyAI's media tagging capabilities
+ * This example demonstrates how to use Hyperion's media tagging capabilities
  * to automatically tag and describe images, audio, and text files.
  */
 
@@ -45,18 +45,18 @@ void print_usage(const char *progname)
 }
 
 /* Process a single file */
-bool process_file(TinyAIMediaTagger *tagger, const char *filepath, const char *outputDir,
+bool process_file(HyperionMediaTagger *tagger, const char *filepath, const char *outputDir,
                   const char *format, bool generateDescription)
 {
-    TinyAITag       tags[MAX_TAGS];
+    HyperionTag       tags[MAX_TAGS];
     char            outputPath[MAX_PATH_LENGTH];
     char            description[MAX_DESCRIPTION_LENGTH];
-    TinyAIMediaType mediaType;
+    HyperionMediaType mediaType;
 
     printf("Processing: %s\n", filepath);
 
     /* Tag the file */
-    int numTags = tinyaiMediaTaggerTagFile(tagger, filepath, tags, MAX_TAGS, &mediaType);
+    int numTags = hyperionMediaTaggerTagFile(tagger, filepath, tags, MAX_TAGS, &mediaType);
     if (numTags <= 0) {
         fprintf(stderr, "Error: Failed to tag file %s\n", filepath);
         return false;
@@ -74,7 +74,7 @@ bool process_file(TinyAIMediaTagger *tagger, const char *filepath, const char *o
 
     /* Generate description if requested */
     if (generateDescription) {
-        if (tinyaiMediaTaggerGenerateDescription(tagger, tags, numTags, description,
+        if (hyperionMediaTaggerGenerateDescription(tagger, tags, numTags, description,
                                                  MAX_DESCRIPTION_LENGTH, mediaType)) {
             printf("Description:\n%s\n", description);
         }
@@ -95,7 +95,7 @@ bool process_file(TinyAIMediaTagger *tagger, const char *filepath, const char *o
              format);
 
     /* Save tags to file */
-    if (tinyaiMediaTaggerSaveTags(tags, numTags, outputPath, format)) {
+    if (hyperionMediaTaggerSaveTags(tags, numTags, outputPath, format)) {
         printf("Tags saved to: %s\n", outputPath);
     }
     else {
@@ -103,13 +103,13 @@ bool process_file(TinyAIMediaTagger *tagger, const char *filepath, const char *o
     }
 
     /* Free tags */
-    tinyaiMediaTaggerFreeTags(tags, numTags);
+    hyperionMediaTaggerFreeTags(tags, numTags);
 
     return true;
 }
 
 /* Process all supported files in a directory */
-int process_directory(TinyAIMediaTagger *tagger, const char *dirPath, const char *outputDir,
+int process_directory(HyperionMediaTagger *tagger, const char *dirPath, const char *outputDir,
                       const char *format, bool generateDescription)
 {
     char filepath[MAX_PATH_LENGTH];
@@ -144,7 +144,7 @@ int process_directory(TinyAIMediaTagger *tagger, const char *dirPath, const char
         snprintf(filepath, sizeof(filepath), "%s\\%s", dirPath, findData.cFileName);
 
         /* Check if file has a supported extension */
-        TinyAIMediaType type = tinyaiMediaTaggerDetectType(filepath);
+        HyperionMediaType type = hyperionMediaTaggerDetectType(filepath);
         if (type != TINYAI_MEDIA_TYPE_UNKNOWN) {
             if (process_file(tagger, filepath, outputDir, format, generateDescription)) {
                 filesProcessed++;
@@ -174,7 +174,7 @@ int process_directory(TinyAIMediaTagger *tagger, const char *dirPath, const char
         snprintf(filepath, sizeof(filepath), "%s/%s", dirPath, entry->d_name);
 
         /* Check if file has a supported extension */
-        TinyAIMediaType type = tinyaiMediaTaggerDetectType(filepath);
+        HyperionMediaType type = hyperionMediaTaggerDetectType(filepath);
         if (type != TINYAI_MEDIA_TYPE_UNKNOWN) {
             if (process_file(tagger, filepath, outputDir, format, generateDescription)) {
                 filesProcessed++;
@@ -281,8 +281,8 @@ int main(int argc, char *argv[])
     }
 
     /* Create tagger configuration */
-    TinyAIMediaTaggerConfig config;
-    memset(&config, 0, sizeof(TinyAIMediaTaggerConfig));
+    HyperionMediaTaggerConfig config;
+    memset(&config, 0, sizeof(HyperionMediaTaggerConfig));
     config.imageModelPath      = image_model_path;
     config.imageWeightsPath    = image_weights_path;
     config.textModelPath       = text_model_path;
@@ -298,7 +298,7 @@ int main(int argc, char *argv[])
     printf("Initializing media tagger...\n");
     clock_t start_time = clock();
 
-    TinyAIMediaTagger *tagger = tinyaiMediaTaggerCreate(&config);
+    HyperionMediaTagger *tagger = hyperionMediaTaggerCreate(&config);
     if (!tagger) {
         fprintf(stderr, "Error: Failed to create media tagger\n");
         return 1;
@@ -310,7 +310,7 @@ int main(int argc, char *argv[])
 
     /* Get memory usage statistics */
     size_t weightMemory, activationMemory;
-    if (tinyaiMediaTaggerGetMemoryUsage(tagger, &weightMemory, &activationMemory)) {
+    if (hyperionMediaTaggerGetMemoryUsage(tagger, &weightMemory, &activationMemory)) {
         printf("Memory usage:\n");
         printf("  Weights: %.2f KB\n", weightMemory / 1024.0);
         printf("  Activations: %.2f KB\n", activationMemory / 1024.0);
@@ -348,7 +348,7 @@ int main(int argc, char *argv[])
            (double)(end_time - start_time) / CLOCKS_PER_SEC);
 
     /* Clean up */
-    tinyaiMediaTaggerFree(tagger);
+    hyperionMediaTaggerFree(tagger);
 
     return files_processed > 0 ? 0 : 1;
 }

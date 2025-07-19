@@ -1,13 +1,13 @@
 /**
  * @file document_processor.h
- * @brief Header for document processor in TinyAI
+ * @brief Header for document processor in Hyperion
  *
- * This header defines the document processor API for TinyAI, which provides
+ * This header defines the document processor API for Hyperion, which provides
  * document classification, summarization, and information extraction.
  */
 
-#ifndef TINYAI_DOCUMENT_PROCESSOR_H
-#define TINYAI_DOCUMENT_PROCESSOR_H
+#ifndef HYPERION_DOCUMENT_PROCESSOR_H
+#define HYPERION_DOCUMENT_PROCESSOR_H
 
 #include "../../models/text/generate.h"
 #include "../../models/text/tokenizer.h"
@@ -22,16 +22,16 @@ extern "C" {
  * Document processor modes
  */
 typedef enum {
-    TINYAI_DOC_MODE_CLASSIFY,    /* Document classification */
-    TINYAI_DOC_MODE_SUMMARIZE,   /* Document summarization */
-    TINYAI_DOC_MODE_EXTRACT_INFO /* Information extraction */
-} TinyAIDocumentProcessorMode;
+    HYPERION_DOC_MODE_CLASSIFY,    /* Document classification */
+    HYPERION_DOC_MODE_SUMMARIZE,   /* Document summarization */
+    HYPERION_DOC_MODE_EXTRACT_INFO /* Information extraction */
+} HyperionDocumentProcessorMode;
 
 /**
  * Document processor configuration
  */
 typedef struct {
-    TinyAIDocumentProcessorMode mode;            /* Processing mode */
+    HyperionDocumentProcessorMode mode;            /* Processing mode */
     const char                 *modelPath;       /* Path to model structure */
     const char                 *weightsPath;     /* Path to model weights */
     const char                 *tokenizerPath;   /* Path to tokenizer vocab */
@@ -41,12 +41,12 @@ typedef struct {
     int                         maxOutputLength; /* Maximum output length in tokens */
     int                         numClasses;      /* Number of classes for classification mode */
     const char                **classLabels;     /* Class labels for classification mode */
-} TinyAIDocumentProcessorConfig;
+} HyperionDocumentProcessorConfig;
 
 /**
  * Document processor handle
  */
-typedef struct TinyAIDocumentProcessor TinyAIDocumentProcessor;
+typedef struct HyperionDocumentProcessor HyperionDocumentProcessor;
 
 /**
  * Classification result
@@ -55,7 +55,7 @@ typedef struct {
     int         classId;    /* Class ID */
     float       confidence; /* Confidence score (0-1) */
     const char *label;      /* Class label (if available) */
-} TinyAIDocumentClassResult;
+} HyperionDocumentClassResult;
 
 /**
  * Create a document processor
@@ -63,14 +63,14 @@ typedef struct {
  * @param config Configuration for the processor
  * @return New processor or NULL on error
  */
-TinyAIDocumentProcessor *tinyaiDocumentProcessorCreate(const TinyAIDocumentProcessorConfig *config);
+HyperionDocumentProcessor *hyperionDocumentProcessorCreate(const HyperionDocumentProcessorConfig *config);
 
 /**
  * Free a document processor
  *
  * @param processor Processor to free
  */
-void tinyaiDocumentProcessorFree(TinyAIDocumentProcessor *processor);
+void hyperionDocumentProcessorFree(HyperionDocumentProcessor *processor);
 
 /**
  * Process a document file
@@ -81,7 +81,7 @@ void tinyaiDocumentProcessorFree(TinyAIDocumentProcessor *processor);
  * @param outputSize Size of output buffer
  * @return True on success, false on failure
  */
-bool tinyaiDocumentProcessFile(TinyAIDocumentProcessor *processor, const char *filePath,
+bool hyperionDocumentProcessFile(HyperionDocumentProcessor *processor, const char *filePath,
                                char *outputBuffer, int outputSize);
 
 /**
@@ -93,7 +93,7 @@ bool tinyaiDocumentProcessFile(TinyAIDocumentProcessor *processor, const char *f
  * @param outputSize Size of output buffer
  * @return True on success, false on failure
  */
-bool tinyaiDocumentProcessText(TinyAIDocumentProcessor *processor, const char *text,
+bool hyperionDocumentProcessText(HyperionDocumentProcessor *processor, const char *text,
                                char *outputBuffer, int outputSize);
 
 /**
@@ -105,8 +105,8 @@ bool tinyaiDocumentProcessText(TinyAIDocumentProcessor *processor, const char *t
  * @param maxResults Maximum number of results to return
  * @return Number of results or -1 on error
  */
-int tinyaiDocumentClassify(TinyAIDocumentProcessor *processor, const char *text,
-                           TinyAIDocumentClassResult *results, int maxResults);
+int hyperionDocumentClassify(HyperionDocumentProcessor *processor, const char *text,
+                           HyperionDocumentClassResult *results, int maxResults);
 
 /**
  * Summarize a document
@@ -117,7 +117,7 @@ int tinyaiDocumentClassify(TinyAIDocumentProcessor *processor, const char *text,
  * @param maxLength Maximum length of summary
  * @return True on success, false on failure
  */
-bool tinyaiDocumentSummarize(TinyAIDocumentProcessor *processor, const char *text, char *summary,
+bool hyperionDocumentSummarize(HyperionDocumentProcessor *processor, const char *text, char *summary,
                              int maxLength);
 
 /**
@@ -130,7 +130,7 @@ bool tinyaiDocumentSummarize(TinyAIDocumentProcessor *processor, const char *tex
  * @param maxLength Maximum length of result
  * @return True on success, false on failure
  */
-bool tinyaiDocumentExtractInfo(TinyAIDocumentProcessor *processor, const char *text,
+bool hyperionDocumentExtractInfo(HyperionDocumentProcessor *processor, const char *text,
                                const char *prompt, char *result, int maxLength);
 
 /**
@@ -141,7 +141,7 @@ bool tinyaiDocumentExtractInfo(TinyAIDocumentProcessor *processor, const char *t
  * @param activationMemory Output parameter for activation memory (in bytes)
  * @return True on success, false on failure
  */
-bool tinyaiDocumentProcessorGetMemoryUsage(const TinyAIDocumentProcessor *processor,
+bool hyperionDocumentProcessorGetMemoryUsage(const HyperionDocumentProcessor *processor,
                                            size_t *weightMemory, size_t *activationMemory);
 
 /**
@@ -151,10 +151,10 @@ bool tinyaiDocumentProcessorGetMemoryUsage(const TinyAIDocumentProcessor *proces
  * @param enable Whether to enable SIMD
  * @return True on success, false on failure
  */
-bool tinyaiDocumentProcessorEnableSIMD(TinyAIDocumentProcessor *processor, bool enable);
+bool hyperionDocumentProcessorEnableSIMD(HyperionDocumentProcessor *processor, bool enable);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* TINYAI_DOCUMENT_PROCESSOR_H */
+#endif /* HYPERION_DOCUMENT_PROCESSOR_H */

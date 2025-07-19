@@ -1,8 +1,8 @@
-# TinyAI Debugging and Troubleshooting Guide
+# Hyperion Debugging and Troubleshooting Guide
 
 ## Overview
 
-This comprehensive guide covers debugging and troubleshooting in TinyAI, including common issues, debugging tools, logging, and solutions for various problems.
+This comprehensive guide covers debugging and troubleshooting in Hyperion, including common issues, debugging tools, logging, and solutions for various problems.
 
 ## Table of Contents
 1. [Debugging Tools](#debugging-tools)
@@ -33,25 +33,25 @@ This comprehensive guide covers debugging and troubleshooting in TinyAI, includi
 1. **Configure Logging**
    ```c
    // Set log level
-   tinyaiSetLogLevel(TINYAI_LOG_DEBUG);
+   hyperionSetLogLevel(HYPERION_LOG_DEBUG);
 
    // Configure log output
-   tinyaiConfigureLogging(TINYAI_LOG_FILE | TINYAI_LOG_CONSOLE);
+   hyperionConfigureLogging(HYPERION_LOG_FILE | HYPERION_LOG_CONSOLE);
 
    // Set log file
-   tinyaiSetLogFile("tinyai_debug.log");
+   hyperionSetLogFile("hyperion_debug.log");
    ```
 
 2. **Log Categories**
    ```c
    // Memory logging
-   tinyaiEnableMemoryLogging(true);
+   hyperionEnableMemoryLogging(true);
 
    // Performance logging
-   tinyaiEnablePerformanceLogging(true);
+   hyperionEnablePerformanceLogging(true);
 
    // Model logging
-   tinyaiEnableModelLogging(true);
+   hyperionEnableModelLogging(true);
    ```
 
 ### Memory Debugger
@@ -59,20 +59,20 @@ This comprehensive guide covers debugging and troubleshooting in TinyAI, includi
 1. **Enable Memory Debugging**
    ```c
    // Initialize with debug options
-   TinyAIMemoryConfig mem_config = {
+   HyperionMemoryConfig mem_config = {
        .track_allocations = true,
        .track_stack_traces = true,
        .enable_guard_pages = true,
        .check_corruption = true
    };
-   tinyaiInitMemory(&mem_config);
+   hyperionInitMemory(&mem_config);
    ```
 
 2. **Track Memory Operations**
    ```c
    // Get allocation info
-   TinyAIMemoryDebugInfo debug_info;
-   tinyaiGetMemoryDebugInfo(&debug_info);
+   HyperionMemoryDebugInfo debug_info;
+   hyperionGetMemoryDebugInfo(&debug_info);
    printf("Active allocations: %zu\n", debug_info.active_allocations);
    printf("Total allocations: %zu\n", debug_info.total_allocations);
    ```
@@ -82,26 +82,26 @@ This comprehensive guide covers debugging and troubleshooting in TinyAI, includi
 1. **Enable Profiling**
    ```c
    // Configure profiler
-   TinyAIProfilerConfig config = {
+   HyperionProfilerConfig config = {
        .track_functions = true,
        .track_memory = true,
        .track_cache = true,
        .sample_interval_ms = 1
    };
-   tinyaiInitProfiler(&config);
+   hyperionInitProfiler(&config);
    ```
 
 2. **Collect Profiles**
    ```c
    // Start profiling
-   tinyaiStartProfiling();
+   hyperionStartProfiling();
 
    // Your code here
    run_operations();
 
    // Stop and save profile
-   tinyaiStopProfiling();
-   tinyaiSaveProfile("profile.json");
+   hyperionStopProfiling();
+   hyperionSaveProfile("profile.json");
    ```
 
 ### Error Tracking
@@ -109,11 +109,11 @@ This comprehensive guide covers debugging and troubleshooting in TinyAI, includi
 1. **Error Handling**
    ```c
    // Set error callback
-   tinyaiSetErrorCallback(error_handler);
+   hyperionSetErrorCallback(error_handler);
 
    // Get error details
-   TinyAIError error;
-   tinyaiGetLastError(&error);
+   HyperionError error;
+   hyperionGetLastError(&error);
    printf("Error: %s\n", error.message);
    printf("Location: %s:%d\n", error.file, error.line);
    ```
@@ -122,13 +122,13 @@ This comprehensive guide covers debugging and troubleshooting in TinyAI, includi
    ```c
    // Check error type
    switch (error.type) {
-       case TINYAI_ERROR_MEMORY:
+       case HYPERION_ERROR_MEMORY:
            handle_memory_error(&error);
            break;
-       case TINYAI_ERROR_PERFORMANCE:
+       case HYPERION_ERROR_PERFORMANCE:
            handle_performance_error(&error);
            break;
-       case TINYAI_ERROR_MODEL:
+       case HYPERION_ERROR_MODEL:
            handle_model_error(&error);
            break;
    }
@@ -141,23 +141,23 @@ This comprehensive guide covers debugging and troubleshooting in TinyAI, includi
 1. **Memory Allocation Failures**
    
    **Symptoms:**
-   - `TINYAI_ERROR_MEMORY` errors
+   - `HYPERION_ERROR_MEMORY` errors
    - Unexpected crashes
    - High memory usage warnings
 
    **Solutions:**
    ```c
    // Check memory budget
-   TinyAIMemoryConfig mem_config = {
+   HyperionMemoryConfig mem_config = {
        .initial_pool_size = 1024 * 1024 * 1024,  // 1GB
        .max_pool_size = 2 * 1024 * 1024 * 1024,  // 2GB
        .track_allocations = true,
        .enable_optimization = true
    };
-   tinyaiInitMemory(&mem_config);
+   hyperionInitMemory(&mem_config);
 
    // Enable memory optimization
-   TinyAIMemoryOptimizerConfig opt_config = {
+   HyperionMemoryOptimizerConfig opt_config = {
        .enable_tensor_reuse = true,
        .enable_in_place_ops = true,
        .memory_speed_tradeoff = 0.5f
@@ -174,15 +174,15 @@ This comprehensive guide covers debugging and troubleshooting in TinyAI, includi
    **Solutions:**
    ```c
    // Enable leak detection
-   TinyAIMemoryDebugConfig debug_config = {
+   HyperionMemoryDebugConfig debug_config = {
        .track_allocations = true,
        .track_stack_traces = true
    };
-   tinyaiEnableMemoryDebug(&debug_config);
+   hyperionEnableMemoryDebug(&debug_config);
 
    // Check for leaks
-   TinyAIMemoryLeakReport report;
-   tinyaiCheckMemoryLeaks(&report);
+   HyperionMemoryLeakReport report;
+   hyperionCheckMemoryLeaks(&report);
    ```
 
 ### Performance Issues
@@ -197,15 +197,15 @@ This comprehensive guide covers debugging and troubleshooting in TinyAI, includi
    **Solutions:**
    ```c
    // Enable optimizations
-   tinyaiEnableSIMD(model, TINYAI_SIMD_OP_ALL, true);
-   tinyaiSetMemorySpeedTradeoff(optimizer, 0.8f);
+   hyperionEnableSIMD(model, HYPERION_SIMD_OP_ALL, true);
+   hyperionSetMemorySpeedTradeoff(optimizer, 0.8f);
 
    // Configure cache
-   TinyAICacheConfig cache_config = {
+   HyperionCacheConfig cache_config = {
        .block_size = 64,
        .enable_prefetch = true
    };
-   tinyaiConfigureCacheOptimization(model, &cache_config);
+   hyperionConfigureCacheOptimization(model, &cache_config);
    ```
 
 2. **Resource Utilization**
@@ -218,15 +218,15 @@ This comprehensive guide covers debugging and troubleshooting in TinyAI, includi
    **Solutions:**
    ```c
    // Configure resource limits
-   tinyaiSetResourceLimits(model, &(TinyAIResourceLimits){
+   hyperionSetResourceLimits(model, &(HyperionResourceLimits){
        .max_cpu_percent = 80,
        .max_memory_mb = 1024,
        .max_threads = 4
    });
 
    // Monitor usage
-   TinyAIResourceUsage usage;
-   tinyaiGetResourceUsage(model, &usage);
+   HyperionResourceUsage usage;
+   hyperionGetResourceUsage(model, &usage);
    ```
 
 ### Model Issues
@@ -241,11 +241,11 @@ This comprehensive guide covers debugging and troubleshooting in TinyAI, includi
    **Solutions:**
    ```c
    // Verify model
-   tinyaiVerifyModel(model_path);
+   hyperionVerifyModel(model_path);
 
    // Check compatibility
-   TinyAIModelInfo info;
-   tinyaiGetModelInfo(model_path, &info);
+   HyperionModelInfo info;
+   hyperionGetModelInfo(model_path, &info);
    ```
 
 2. **Generation Issues**
@@ -258,14 +258,14 @@ This comprehensive guide covers debugging and troubleshooting in TinyAI, includi
    **Solutions:**
    ```c
    // Adjust parameters
-   TinyAIGenerationConfig config = {
+   HyperionGenerationConfig config = {
        .temperature = 0.8f,
        .top_k = 50,
        .top_p = 0.9f
    };
 
    // Enable debug output
-   tinyaiEnableGenerationDebug(true);
+   hyperionEnableGenerationDebug(true);
    ```
 
 ## Debugging Techniques
@@ -275,18 +275,18 @@ This comprehensive guide covers debugging and troubleshooting in TinyAI, includi
 1. **Stack Trace Analysis**
    ```c
    // Enable stack traces
-   tinyaiEnableStackTraces(true);
+   hyperionEnableStackTraces(true);
 
    // Get allocation stack trace
-   const char* trace = tinyaiGetAllocationTrace(ptr);
+   const char* trace = hyperionGetAllocationTrace(ptr);
    printf("Allocated at:\n%s\n", trace);
    ```
 
 2. **Heap Analysis**
    ```c
    // Get heap statistics
-   TinyAIHeapStats stats;
-   tinyaiGetHeapStats(&stats);
+   HyperionHeapStats stats;
+   hyperionGetHeapStats(&stats);
    printf("Fragmentation: %.2f%%\n", stats.fragmentation * 100);
    ```
 
@@ -295,18 +295,18 @@ This comprehensive guide covers debugging and troubleshooting in TinyAI, includi
 1. **Hotspot Analysis**
    ```c
    // Enable hotspot detection
-   tinyaiEnableHotspotDetection(true);
+   hyperionEnableHotspotDetection(true);
 
    // Get hotspots
-   TinyAIHotspotReport report;
-   tinyaiGetHotspots(&report);
+   HyperionHotspotReport report;
+   hyperionGetHotspots(&report);
    ```
 
 2. **Bottleneck Detection**
    ```c
    // Analyze bottlenecks
-   TinyAIBottleneckReport report;
-   tinyaiAnalyzeBottlenecks(model, &report);
+   HyperionBottleneckReport report;
+   hyperionAnalyzeBottlenecks(model, &report);
    ```
 
 ## Best Practices
@@ -316,13 +316,13 @@ This comprehensive guide covers debugging and troubleshooting in TinyAI, includi
 1. **Defensive Programming**
    ```c
    // Check inputs
-   if (!tinyaiValidateInputs(inputs)) {
-       return TINYAI_ERROR_INVALID_INPUT;
+   if (!hyperionValidateInputs(inputs)) {
+       return HYPERION_ERROR_INVALID_INPUT;
    }
 
    // Handle errors
-   if (result != TINYAI_SUCCESS) {
-       tinyaiLogError("Operation failed: %s", tinyaiGetErrorString(result));
+   if (result != HYPERION_SUCCESS) {
+       hyperionLogError("Operation failed: %s", hyperionGetErrorString(result));
        return result;
    }
    ```
@@ -330,9 +330,9 @@ This comprehensive guide covers debugging and troubleshooting in TinyAI, includi
 2. **Resource Management**
    ```c
    // Use cleanup handlers
-   TinyAICleanupHandler handler;
-   tinyaiInitCleanupHandler(&handler);
-   tinyaiAddCleanup(&handler, resource, cleanup_func);
+   HyperionCleanupHandler handler;
+   hyperionInitCleanupHandler(&handler);
+   hyperionAddCleanup(&handler, resource, cleanup_func);
    ```
 
 ### Logging
@@ -340,8 +340,8 @@ This comprehensive guide covers debugging and troubleshooting in TinyAI, includi
 1. **Structured Logging**
    ```c
    // Configure structured logging
-   tinyaiConfigureStructuredLogging(&(TinyAILogConfig){
-       .format = TINYAI_LOG_JSON,
+   hyperionConfigureStructuredLogging(&(HyperionLogConfig){
+       .format = HYPERION_LOG_JSON,
        .include_timestamp = true,
        .include_thread_id = true
    });
@@ -350,7 +350,7 @@ This comprehensive guide covers debugging and troubleshooting in TinyAI, includi
 2. **Log Rotation**
    ```c
    // Configure log rotation
-   tinyaiConfigureLogRotation(&(TinyAILogRotationConfig){
+   hyperionConfigureLogRotation(&(HyperionLogRotationConfig){
        .max_size_mb = 100,
        .max_files = 5,
        .compress = true
@@ -362,16 +362,16 @@ This comprehensive guide covers debugging and troubleshooting in TinyAI, includi
 1. **Unit Testing**
    ```c
    // Create test context
-   TinyAITestContext* ctx = tinyaiCreateTestContext();
+   HyperionTestContext* ctx = hyperionCreateTestContext();
 
    // Add test case
-   tinyaiAddTest(ctx, "memory_test", test_memory_management);
+   hyperionAddTest(ctx, "memory_test", test_memory_management);
    ```
 
 2. **Integration Testing**
    ```c
    // Configure test environment
-   tinyaiConfigureTestEnv(&(TinyAITestConfig){
+   hyperionConfigureTestEnv(&(HyperionTestConfig){
        .mock_memory = true,
        .mock_io = true
    });
@@ -388,4 +388,4 @@ This comprehensive guide covers debugging and troubleshooting in TinyAI, includi
 - [ ] Test error conditions
 - [ ] Document issues and solutions
 - [ ] Review error logs
-- [ ] Validate fixes 
+- [ ] Validate fixes

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Linux-specific Testing Script for TinyAI
+Linux-specific Testing Script for Hyperion
 
-This script runs TinyAI tests on Linux platforms:
+This script runs Hyperion tests on Linux platforms:
 - Sets up the Linux-specific environment
 - Runs tests appropriate for Linux
 - Collects and formats test results
@@ -40,7 +40,7 @@ LINUX_TEST_CATEGORIES = [
 ]
 
 def find_project_root():
-    """Find the root directory of the TinyAI project."""
+    """Find the root directory of the Hyperion project."""
     current_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     while current_dir != os.path.dirname(current_dir):  # Stop at filesystem root
         if os.path.isfile(os.path.join(current_dir, "CMakeLists.txt")) and \
@@ -260,7 +260,7 @@ def check_build_environment():
     return environment_status
 
 def build_project():
-    """Build TinyAI project on Linux."""
+    """Build Hyperion project on Linux."""
     project_root = find_project_root()
     build_dir = os.path.join(project_root, "build")
     
@@ -294,7 +294,7 @@ def build_project():
     return True, "Build successful"
 
 def run_tests(test_categories=None, verbose=False):
-    """Run TinyAI tests on Linux."""
+    """Run Hyperion tests on Linux."""
     project_root = find_project_root()
     build_dir = os.path.join(project_root, "build")
     
@@ -316,7 +316,7 @@ def run_tests(test_categories=None, verbose=False):
         if category == "core":
             # Run core tests
             core_test_result = subprocess.run(
-                [os.path.join(build_dir, "tinyai_tests"), "core"], 
+                [os.path.join(build_dir, "hyperion_tests"), "core"], 
                 cwd=project_root, 
                 capture_output=True, 
                 text=True
@@ -340,7 +340,7 @@ def run_tests(test_categories=None, verbose=False):
         elif category == "text":
             # Run text model tests
             text_test_result = subprocess.run(
-                [os.path.join(build_dir, "tinyai_tests"), "text"], 
+                [os.path.join(build_dir, "hyperion_tests"), "text"], 
                 cwd=project_root, 
                 capture_output=True, 
                 text=True
@@ -487,7 +487,7 @@ def run_tests(test_categories=None, verbose=False):
             
             # Low memory test
             low_memory_test_result = subprocess.run(
-                [os.path.join(build_dir, "tinyai_tests"), "memory_constraint"], 
+                [os.path.join(build_dir, "hyperion_tests"), "memory_constraint"], 
                 cwd=project_root, 
                 capture_output=True, 
                 text=True
@@ -510,7 +510,7 @@ def run_tests(test_categories=None, verbose=False):
             
             # Error handling test
             error_handling_test_result = subprocess.run(
-                [os.path.join(build_dir, "tinyai_tests"), "error_handling"], 
+                [os.path.join(build_dir, "hyperion_tests"), "error_handling"], 
                 cwd=project_root, 
                 capture_output=True, 
                 text=True
@@ -539,7 +539,7 @@ def run_tests(test_categories=None, verbose=False):
     return results
 
 def main():
-    parser = argparse.ArgumentParser(description="Linux-specific Testing Script for TinyAI")
+    parser = argparse.ArgumentParser(description="Linux-specific Testing Script for Hyperion")
     parser.add_argument("--tests", help="Comma-separated list of tests to run (all if not provided)")
     parser.add_argument("--verbose", action="store_true", help="Show detailed output")
     args = parser.parse_args()

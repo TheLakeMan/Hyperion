@@ -1,6 +1,6 @@
 # Speech Recognition Example
 
-This example demonstrates how to use TinyAI's audio processing capabilities to perform lightweight speech recognition. The implementation focuses on efficient, on-device speech-to-text conversion with minimal memory requirements.
+This example demonstrates how to use Hyperion's audio processing capabilities to perform lightweight speech recognition. The implementation focuses on efficient, on-device speech-to-text conversion with minimal memory requirements.
 
 ## Overview
 
@@ -23,22 +23,22 @@ The speech recognition example showcases:
 
 ```bash
 # Basic usage with default parameters
-./tinyai_asr input.wav
+./hyperion_asr input.wav
 
 # Specify output file for transcription
-./tinyai_asr input.wav --output transcript.txt
+./hyperion_asr input.wav --output transcript.txt
 
 # Real-time processing from microphone
-./tinyai_asr --mic
+./hyperion_asr --mic
 
 # Set language model weight (0.0-1.0, higher values give more weight to language model)
-./tinyai_asr input.wav --lm-weight 0.7
+./hyperion_asr input.wav --lm-weight 0.7
 
 # Show detailed information during processing
-./tinyai_asr input.wav --verbose
+./hyperion_asr input.wav --verbose
 
 # Set recognition mode (options: fast, balanced, accurate)
-./tinyai_asr input.wav --mode balanced
+./hyperion_asr input.wav --mode balanced
 ```
 
 ## Technical Implementation

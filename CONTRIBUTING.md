@@ -1,6 +1,6 @@
-# Contributing to TinyAI
+# Contributing to Hyperion
 
-Thank you for your interest in contributing to TinyAI! This document outlines the process for contributing to the project and helps ensure a smooth collaboration experience.
+Thank you for your interest in contributing to Hyperion! This document outlines the process for contributing to the project and helps ensure a smooth collaboration experience.
 
 ## Code of Conduct
 
@@ -51,8 +51,8 @@ Please include:
 
 ```bash
 # Clone the repository
-git clone https://github.com/TheLakeMan/tinyai.git
-cd tinyai
+git clone https://github.com/TheLakeMan/Hyperion.git
+cd Hyperion
 
 # Create a build directory
 mkdir build
@@ -91,7 +91,7 @@ Example:
  * @param param2 Description of param2
  * @return Description of return value
  */
-int tinyai_function_name(int param1, const char *param2) {
+int hyperion_function_name(int param1, const char *param2) {
     /* Function implementation */
     if (param1 < 0) {
         return -1;  /* Error case */
@@ -113,10 +113,10 @@ int tinyai_function_name(int param1, const char *param2) {
 
 ## License
 
-By contributing to TinyAI, you agree that your contributions will be licensed under the project's [MIT License](LICENSE).
+By contributing to Hyperion, you agree that your contributions will be licensed under the project's [MIT License](LICENSE).
 
 ## Questions?
 
 Feel free to reach out to the maintainers if you have any questions or need help with the contribution process.
 
-Thank you for contributing to TinyAI!
+Thank you for contributing to Hyperion!

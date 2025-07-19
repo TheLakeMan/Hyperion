@@ -1,6 +1,6 @@
 /**
  * @file image_captioner.h
- * @brief Header for multimodal image captioning in TinyAI
+ * @brief Header for multimodal image captioning in Hyperion
  */
 
 #ifndef TINYAI_IMAGE_CAPTIONER_H
@@ -24,7 +24,7 @@ typedef enum {
     TINYAI_FUSION_ADDITION,       /* Add features */
     TINYAI_FUSION_MULTIPLICATION, /* Multiply features */
     TINYAI_FUSION_ATTENTION       /* Use attention mechanism */
-} TinyAIFusionMethod;
+} HyperionFusionMethod;
 
 /**
  * Image captioner configuration
@@ -43,17 +43,17 @@ typedef struct {
     float temperature; /* Sampling temperature */
 
     /* Fusion settings */
-    TinyAIFusionMethod fusionMethod; /* Method to fuse image and text features */
+    HyperionFusionMethod fusionMethod; /* Method to fuse image and text features */
 
     /* Optimization options */
     bool useQuantization; /* Whether to use quantization */
     bool useSIMD;         /* Whether to use SIMD acceleration */
-} TinyAICaptionerConfig;
+} HyperionCaptionerConfig;
 
 /**
  * Image captioner
  */
-typedef struct TinyAIImageCaptioner TinyAIImageCaptioner;
+typedef struct HyperionImageCaptioner HyperionImageCaptioner;
 
 /**
  * Callback for streaming text generation
@@ -62,7 +62,7 @@ typedef struct TinyAIImageCaptioner TinyAIImageCaptioner;
  * @param user_data User-provided data pointer
  * @return True to continue generation, false to stop
  */
-typedef bool (*TinyAICaptionerStreamCallback)(const char *token, bool is_partial, void *user_data);
+typedef bool (*HyperionCaptionerStreamCallback)(const char *token, bool is_partial, void *user_data);
 
 /**
  * Create a new image captioner
@@ -70,14 +70,14 @@ typedef bool (*TinyAICaptionerStreamCallback)(const char *token, bool is_partial
  * @param config Captioner configuration
  * @return New captioner or NULL on error
  */
-TinyAIImageCaptioner *tinyaiCaptionerCreate(const TinyAICaptionerConfig *config);
+HyperionImageCaptioner *hyperionCaptionerCreate(const HyperionCaptionerConfig *config);
 
 /**
  * Free an image captioner
  *
  * @param captioner Captioner to free
  */
-void tinyaiCaptionerFree(TinyAIImageCaptioner *captioner);
+void hyperionCaptionerFree(HyperionImageCaptioner *captioner);
 
 /**
  * Generate a caption for an image file
@@ -88,8 +88,8 @@ void tinyaiCaptionerFree(TinyAIImageCaptioner *captioner);
  * @param user_data User data to pass to the callback
  * @return Generated caption (caller must free) or NULL on error
  */
-char *tinyaiGenerateCaption(TinyAIImageCaptioner *captioner, const char *imagePath,
-                            TinyAICaptionerStreamCallback stream_callback, void *user_data);
+char *hyperionGenerateCaption(HyperionImageCaptioner *captioner, const char *imagePath,
+                            HyperionCaptionerStreamCallback stream_callback, void *user_data);
 
 /**
  * Generate a caption for an in-memory image
@@ -100,8 +100,8 @@ char *tinyaiGenerateCaption(TinyAIImageCaptioner *captioner, const char *imagePa
  * @param user_data User data to pass to the callback
  * @return Generated caption (caller must free) or NULL on error
  */
-char *tinyaiGenerateCaptionFromImage(TinyAIImageCaptioner *captioner, const TinyAIImage *image,
-                                     TinyAICaptionerStreamCallback stream_callback,
+char *hyperionGenerateCaptionFromImage(HyperionImageCaptioner *captioner, const HyperionImage *image,
+                                     HyperionCaptionerStreamCallback stream_callback,
                                      void                         *user_data);
 
 /**
@@ -110,7 +110,7 @@ char *tinyaiGenerateCaptionFromImage(TinyAIImageCaptioner *captioner, const Tiny
  * @param captioner Captioner
  * @return Encoding time in milliseconds or -1 if not available
  */
-double tinyaiCaptionerGetVisionEncodingTime(const TinyAIImageCaptioner *captioner);
+double hyperionCaptionerGetVisionEncodingTime(const HyperionImageCaptioner *captioner);
 
 /**
  * Get the generation time for the text model in milliseconds
@@ -118,7 +118,7 @@ double tinyaiCaptionerGetVisionEncodingTime(const TinyAIImageCaptioner *captione
  * @param captioner Captioner
  * @return Generation time in milliseconds or -1 if not available
  */
-double tinyaiCaptionerGetTextGenerationTime(const TinyAIImageCaptioner *captioner);
+double hyperionCaptionerGetTextGenerationTime(const HyperionImageCaptioner *captioner);
 
 /**
  * Get memory usage statistics
@@ -129,7 +129,7 @@ double tinyaiCaptionerGetTextGenerationTime(const TinyAIImageCaptioner *captione
  * @param totalMemory Output parameter for total memory (in bytes)
  * @return True on success, false on failure
  */
-bool tinyaiCaptionerGetMemoryUsage(const TinyAIImageCaptioner *captioner, size_t *visionModelMemory,
+bool hyperionCaptionerGetMemoryUsage(const HyperionImageCaptioner *captioner, size_t *visionModelMemory,
                                    size_t *languageModelMemory, size_t *totalMemory);
 
 /**
@@ -139,7 +139,7 @@ bool tinyaiCaptionerGetMemoryUsage(const TinyAIImageCaptioner *captioner, size_t
  * @param method Fusion method to use
  * @return True on success, false on failure
  */
-bool tinyaiCaptionerSetFusionMethod(TinyAIImageCaptioner *captioner, TinyAIFusionMethod method);
+bool hyperionCaptionerSetFusionMethod(HyperionImageCaptioner *captioner, HyperionFusionMethod method);
 
 /**
  * Set generation parameters
@@ -150,7 +150,7 @@ bool tinyaiCaptionerSetFusionMethod(TinyAIImageCaptioner *captioner, TinyAIFusio
  * @param beamWidth Beam search width (1 for greedy search)
  * @return True on success, false on failure
  */
-bool tinyaiCaptionerSetGenerationParams(TinyAIImageCaptioner *captioner, float temperature,
+bool hyperionCaptionerSetGenerationParams(HyperionImageCaptioner *captioner, float temperature,
                                         int maxTokens, int beamWidth);
 
 /**
@@ -160,7 +160,7 @@ bool tinyaiCaptionerSetGenerationParams(TinyAIImageCaptioner *captioner, float t
  * @param enable Whether to enable SIMD
  * @return True on success, false on failure
  */
-bool tinyaiCaptionerEnableSIMD(TinyAIImageCaptioner *captioner, bool enable);
+bool hyperionCaptionerEnableSIMD(HyperionImageCaptioner *captioner, bool enable);
 
 /**
  * Convert fusion method string to enum
@@ -168,7 +168,7 @@ bool tinyaiCaptionerEnableSIMD(TinyAIImageCaptioner *captioner, bool enable);
  * @param methodStr String representation of fusion method
  * @return Fusion method enum value or TINYAI_FUSION_ATTENTION if not recognized
  */
-TinyAIFusionMethod tinyaiGetFusionMethodFromString(const char *methodStr);
+HyperionFusionMethod hyperionGetFusionMethodFromString(const char *methodStr);
 
 #ifdef __cplusplus
 }

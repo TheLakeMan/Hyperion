@@ -1,9 +1,9 @@
 /**
  * @file stb_image_loader.c
- * @brief Image loading implementation using STB Image library for TinyAI
+ * @brief Image loading implementation using STB Image library for Hyperion
  */
 
-#include "image_model.h"
+#include "image_model.h" 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -17,12 +17,12 @@
 /**
  * Load an image from a file using STB Image library
  * @param filepath Path to the image file
- * @return Newly allocated TinyAIImage, or NULL on failure
+ * @return Newly allocated HyperionImage, or NULL on failure
  */
-TinyAIImage *tinyaiImageLoadFromFile(const char *filepath)
+HyperionImage *hyperionImageLoadFromFile(const char *filepath)
 {
     if (!filepath) {
-        fprintf(stderr, "Error: NULL filepath provided to tinyaiImageLoadFromFile\n");
+        fprintf(stderr, "Error: NULL filepath provided to hyperionImageLoadFromFile\n");
         return NULL;
     }
 
@@ -37,16 +37,16 @@ TinyAIImage *tinyaiImageLoadFromFile(const char *filepath)
     }
 
     /* Convert channels to our format enum */
-    TinyAIImageFormat format;
+    HyperionImageFormat format;
     switch (channels) {
     case 1:
-        format = TINYAI_IMAGE_FORMAT_GRAYSCALE;
+        format = HYPERION_IMAGE_FORMAT_GRAYSCALE;
         break;
     case 3:
-        format = TINYAI_IMAGE_FORMAT_RGB;
+        format = HYPERION_IMAGE_FORMAT_RGB;
         break;
     case 4:
-        format = TINYAI_IMAGE_FORMAT_RGBA;
+        format = HYPERION_IMAGE_FORMAT_RGBA;
         break;
     default:
         fprintf(stderr, "Unsupported number of channels: %d\n", channels);
@@ -55,7 +55,7 @@ TinyAIImage *tinyaiImageLoadFromFile(const char *filepath)
     }
 
     /* Create our image structure */
-    TinyAIImage *image = tinyaiImageCreate(width, height, format);
+    HyperionImage *image = hyperionImageCreate(width, height, format);
     if (!image) {
         stbi_image_free(data);
         return NULL;
@@ -77,7 +77,7 @@ TinyAIImage *tinyaiImageLoadFromFile(const char *filepath)
  * @param format Output format (jpg, png, bmp, tga)
  * @return true on success, false on failure
  */
-bool tinyaiImageSaveToFile(const TinyAIImage *image, const char *filepath, const char *format)
+bool hyperionImageSaveToFile(const HyperionImage *image, const char *filepath, const char *format)
 {
     if (!image || !filepath || !format) {
         return false;
@@ -88,13 +88,13 @@ bool tinyaiImageSaveToFile(const TinyAIImage *image, const char *filepath, const
 
     /* Determine channels from our format */
     switch (image->format) {
-    case TINYAI_IMAGE_FORMAT_GRAYSCALE:
+    case HYPERION_IMAGE_FORMAT_GRAYSCALE:
         channels = 1;
         break;
-    case TINYAI_IMAGE_FORMAT_RGB:
+    case HYPERION_IMAGE_FORMAT_RGB:
         channels = 3;
         break;
-    case TINYAI_IMAGE_FORMAT_BGR:
+    case HYPERION_IMAGE_FORMAT_BGR:
         /* Need to convert BGR to RGB for saving */
         {
             unsigned char *rgb_data = (unsigned char *)malloc(image->width * image->height * 3);
@@ -127,7 +127,7 @@ bool tinyaiImageSaveToFile(const TinyAIImage *image, const char *filepath, const
             return result != 0;
         }
         break;
-    case TINYAI_IMAGE_FORMAT_RGBA:
+    case HYPERION_IMAGE_FORMAT_RGBA:
         channels = 4;
         break;
     default:
@@ -164,7 +164,7 @@ bool tinyaiImageSaveToFile(const TinyAIImage *image, const char *filepath, const
  * @param targetHeight Height to resize all images to (0 for no resize)
  * @return Array of loaded images, or NULL on failure
  */
-TinyAIImage **tinyaiImageLoadDataset(const char **filepaths, int numImages, int targetWidth,
+HyperionImage **hyperionImageLoadDataset(const char **filepaths, int numImages, int targetWidth,
                                      int targetHeight)
 {
     if (!filepaths || numImages <= 0) {
@@ -172,19 +172,19 @@ TinyAIImage **tinyaiImageLoadDataset(const char **filepaths, int numImages, int 
     }
 
     /* Allocate array for images */
-    TinyAIImage **images = (TinyAIImage **)malloc(numImages * sizeof(TinyAIImage *));
+    HyperionImage **images = (HyperionImage **)malloc(numImages * sizeof(HyperionImage *));
     if (!images) {
         return NULL;
     }
 
     /* Zero out the array */
-    memset(images, 0, numImages * sizeof(TinyAIImage *));
+    memset(images, 0, numImages * sizeof(HyperionImage *));
 
     /* Load each image */
     bool success = true;
     for (int i = 0; i < numImages; i++) {
         /* Load the original image */
-        images[i] = tinyaiImageLoadFromFile(filepaths[i]);
+        images[i] = hyperionImageLoadFromFile(filepaths[i]);
         if (!images[i]) {
             success = false;
             break;
@@ -195,19 +195,19 @@ TinyAIImage **tinyaiImageLoadDataset(const char **filepaths, int numImages, int 
             (images[i]->width != targetWidth || images[i]->height != targetHeight)) {
 
             /* Create a new preprocessed image */
-            TinyAIImagePreprocessParams params;
-            tinyaiImagePreprocessParamsDefault(&params);
+            HyperionImagePreprocessParams params;
+            hyperionImagePreprocessParamsDefault(&params);
             params.targetWidth  = targetWidth;
             params.targetHeight = targetHeight;
 
-            TinyAIImage *resized = tinyaiImagePreprocess(images[i], &params);
+            HyperionImage *resized = hyperionImagePreprocess(images[i], &params);
             if (!resized) {
                 success = false;
                 break;
             }
 
             /* Replace the original with the resized version */
-            tinyaiImageFree(images[i]);
+            hyperionImageFree(images[i]);
             images[i] = resized;
         }
     }
@@ -216,7 +216,7 @@ TinyAIImage **tinyaiImageLoadDataset(const char **filepaths, int numImages, int 
     if (!success) {
         for (int i = 0; i < numImages; i++) {
             if (images[i]) {
-                tinyaiImageFree(images[i]);
+                hyperionImageFree(images[i]);
             }
         }
         free(images);
@@ -231,7 +231,7 @@ TinyAIImage **tinyaiImageLoadDataset(const char **filepaths, int numImages, int 
  * @param images Array of images to free
  * @param numImages Number of images in the array
  */
-void tinyaiImageFreeDataset(TinyAIImage **images, int numImages)
+void hyperionImageFreeDataset(HyperionImage **images, int numImages)
 {
     if (!images) {
         return;
@@ -239,7 +239,7 @@ void tinyaiImageFreeDataset(TinyAIImage **images, int numImages)
 
     for (int i = 0; i < numImages; i++) {
         if (images[i]) {
-            tinyaiImageFree(images[i]);
+            hyperionImageFree(images[i]);
         }
     }
 
@@ -255,10 +255,10 @@ void tinyaiImageFreeDataset(TinyAIImage **images, int numImages)
  * @param channels Pointer to store the number of channels
  * @return Pixel data array or NULL on error
  */
-unsigned char *tinyaiLoadImage(const char *filename, int *width, int *height, int *channels)
+unsigned char *hyperionLoadImage(const char *filename, int *width, int *height, int *channels)
 {
     if (!filename || !width || !height || !channels) {
-        fprintf(stderr, "Invalid parameters to tinyaiLoadImage\n");
+        fprintf(stderr, "Invalid parameters to hyperionLoadImage\n");
         return NULL;
     }
 
@@ -276,11 +276,11 @@ unsigned char *tinyaiLoadImage(const char *filename, int *width, int *height, in
 }
 
 /**
- * Free memory allocated by tinyaiLoadImage
+ * Free memory allocated by hyperionLoadImage
  *
  * @param data Pixel data to free
  */
-void tinyaiFreeImage(unsigned char *data)
+void hyperionFreeImage(unsigned char *data)
 {
     if (data) {
         stbi_image_free(data);

@@ -1,6 +1,6 @@
-# TinyAI Pre-Quantized Models
+# Hyperion Pre-Quantized Models
 
-This directory contains pre-quantized models for various tasks, optimized for use with the TinyAI framework. These models are designed to run efficiently on resource-constrained devices while maintaining reasonable accuracy.
+This directory contains pre-quantized models for various tasks, optimized for use with the Hyperion framework. These models are designed to run efficiently on resource-constrained devices while maintaining reasonable accuracy.
 
 ## Directory Structure
 
@@ -18,27 +18,27 @@ pretrained/
 
 | Model Name | Parameters | Size | Description | Use Case |
 |------------|------------|------|-------------|----------|
-| tiny_llm_1m | 1M | 0.5MB | Small language model for simple text generation | Chatbots, simple assistants |
-| tiny_llm_3m | 3M | 1.6MB | Improved language model with better coherence | More complex dialogues, simple Q&A |
-| tiny_llm_7m | 7M | 3.4MB | Enhanced language model for broader knowledge | Task assistance, content generation |
-| tiny_classifier | 2M | 1MB | Text classification model | Sentiment analysis, topic classification |
-| tiny_summarizer | 4M | 2MB | Text summarization model | Document summarization |
+| hyperion_llm_1m | 1M | 0.5MB | Small language model for simple text generation | Chatbots, simple assistants |
+| hyperion_llm_3m | 3M | 1.6MB | Improved language model with better coherence | More complex dialogues, simple Q&A |
+| hyperion_llm_7m | 7M | 3.4MB | Enhanced language model for broader knowledge | Task assistance, content generation |
+| hyperion_classifier | 2M | 1MB | Text classification model | Sentiment analysis, topic classification |
+| hyperion_summarizer | 4M | 2MB | Text summarization model | Document summarization |
 
 ### Image Models
 
 | Model Name | Parameters | Size | Description | Use Case |
 |------------|------------|------|-------------|----------|
-| mobilenet_v2_tiny | 1.4M | 0.7MB | Lightweight image classifier | Basic image classification |
+| mobilenet_v2_hyperion | 1.4M | 0.7MB | Lightweight image classifier | Basic image classification |
 | mobilenet_v2_small | 2.5M | 1.2MB | Improved image classifier | More accurate classification |
 | mobilenet_v2_medium | 3.5M | 1.7MB | Enhanced image classifier | Detailed image classification |
-| tiny_vision_encoder | 5M | 2.5MB | Vision feature extraction | Image feature extraction for multimodal tasks |
+| hyperion_vision_encoder | 5M | 2.5MB | Vision feature extraction | Image feature extraction for multimodal tasks |
 
 ### Multimodal Models
 
 | Model Name | Parameters | Size | Description | Use Case |
 |------------|------------|------|-------------|----------|
-| image_captioner_tiny | 6M | 3MB | Image captioning model | Generating descriptions for images |
-| visual_qa_tiny | 8M | 4MB | Visual question answering | Answering questions about images |
+| image_captioner_hyperion | 6M | 3MB | Image captioning model | Generating descriptions for images |
+| visual_qa_hyperion | 8M | 4MB | Visual question answering | Answering questions about images |
 
 ### Audio Models
 
@@ -61,20 +61,20 @@ For language models, there's also a vocabulary file:
 
 ## Usage
 
-To use these models in your TinyAI application:
+To use these models in your Hyperion application:
 
 ```c
 // Example for loading a language model
-TinyAIModel* model = tinyaiLoadModel(
-    "models/pretrained/language_models/tiny_llm_3m.json",
-    "models/pretrained/language_models/tiny_llm_3m.bin",
-    "models/pretrained/language_models/tiny_llm_3m_vocab.tok"
+HyperionModel* model = hyperionLoadModel(
+    "models/pretrained/language_models/hyperion_llm_3m.json",
+    "models/pretrained/language_models/hyperion_llm_3m.bin",
+    "models/pretrained/language_models/hyperion_llm_3m_vocab.tok"
 );
 
 // Example for loading an image model
-TinyAIImageModel* imageModel = tinyaiLoadImageModel(
-    "models/pretrained/image_models/mobilenet_v2_tiny.json",
-    "models/pretrained/image_models/mobilenet_v2_tiny.bin"
+HyperionImageModel* imageModel = hyperionLoadImageModel(
+    "models/pretrained/image_models/mobilenet_v2_hyperion.json",
+    "models/pretrained/image_models/mobilenet_v2_hyperion.bin"
 );
 ```
 
@@ -82,7 +82,7 @@ See the example applications in the `examples/` directory for complete usage exa
 
 ## Model Quantization
 
-All models in this directory are quantized to 4 bits using TinyAI's symmetric quantization scheme, offering a compression ratio of approximately 8x compared to 32-bit floating point models, with minimal accuracy loss.
+All models in this directory are quantized to 4 bits using Hyperion's symmetric quantization scheme, offering a compression ratio of approximately 8x compared to 32-bit floating point models, with minimal accuracy loss.
 
 The quantization process includes:
 1. Weight clustering to find optimal centroids
@@ -93,21 +93,21 @@ The quantization process includes:
 
 | Model | Inference Time (Raspberry Pi 4) | Memory Usage |
 |-------|----------------------------------|--------------|
-| tiny_llm_1m | ~20ms/token | ~2MB |
-| tiny_llm_3m | ~50ms/token | ~5MB |
-| tiny_llm_7m | ~120ms/token | ~10MB |
-| mobilenet_v2_tiny | ~150ms/image | ~3MB |
+| hyperion_llm_1m | ~20ms/token | ~2MB |
+| hyperion_llm_3m | ~50ms/token | ~5MB |
+| hyperion_llm_7m | ~120ms/token | ~10MB |
+| mobilenet_v2_hyperion | ~150ms/image | ~3MB |
 | keyword_spotter | ~10ms/frame | ~1MB |
 
 Performance measured using SIMD acceleration when available.
 
 ## Adding Your Own Models
 
-You can add your own pre-quantized models to these directories. To convert and quantize your models, use the TinyAI conversion tools in the `tools/` directory:
+You can add your own pre-quantized models to these directories. To convert and quantize your models, use the Hyperion conversion tools in the `tools/` directory:
 
 ```bash
 # Example: Convert and quantize a TensorFlow model
-python tools/convert_tensorflow_to_tinyai.py --model my_model.h5 --output models/pretrained/image_models/my_model --bits 4
+python tools/convert_tensorflow_to_hyperion.py --model my_model.h5 --output models/pretrained/image_models/my_model --bits 4
 ```
 
 ## Limitations
@@ -119,4 +119,4 @@ python tools/convert_tensorflow_to_tinyai.py --model my_model.h5 --output models
 
 ## License Information
 
-These model weights are provided under the MIT license, same as the TinyAI framework. Some models are based on open-source models and may carry additional attributions - see the metadata files for details.
+These model weights are provided under the MIT license, same as the Hyperion framework. Some models are based on open-source models and may carry additional attributions - see the metadata files for details.

@@ -1,6 +1,6 @@
 /**
  * @file chat_model.c
- * @brief Implementation of memory-constrained chatbot functionality in TinyAI
+ * @brief Implementation of memory-constrained chatbot functionality in Hyperion
  */
 
 #include "chat_model.h"
@@ -35,13 +35,13 @@
 /**
  * Internal structure for chat session
  */
-struct TinyAIChatSession {
+struct HyperionChatSession {
     /* Model and tokenizer */
-    TinyAIModel     *model;     /* Language model */
-    TinyAITokenizer *tokenizer; /* Tokenizer */
+    HyperionModel     *model;     /* Language model */
+    HyperionTokenizer *tokenizer; /* Tokenizer */
 
     /* Message history */
-    TinyAIChatMessage *messages;        /* Array of messages */
+    HyperionChatMessage *messages;        /* Array of messages */
     int                messageCount;    /* Number of messages */
     int                messageCapacity; /* Capacity of messages array */
 
@@ -57,54 +57,54 @@ struct TinyAIChatSession {
 
 /* Streaming callback structure */
 typedef struct {
-    TinyAIChatStreamCallback userCallback;
+    HyperionChatStreamCallback userCallback;
     void                    *userData;
     char                    *fullResponse;
     size_t                   responseLen;
     size_t                   responseCapacity;
-    TinyAITokenizer         *tokenizer;
+    HyperionTokenizer         *tokenizer;
 } StreamingContext;
 
 /* Role conversion utilities */
-static const char *getRoleString(TinyAIChatRole role)
+static const char *getRoleString(HyperionChatRole role)
 {
     switch (role) {
-    case TINYAI_ROLE_SYSTEM:
+    case HYPERION_ROLE_SYSTEM:
         return "system";
-    case TINYAI_ROLE_USER:
+    case HYPERION_ROLE_USER:
         return "user";
-    case TINYAI_ROLE_ASSISTANT:
+    case HYPERION_ROLE_ASSISTANT:
         return "assistant";
     default:
         return "unknown";
     }
 }
 
-static TinyAIChatRole getRoleFromString(const char *roleStr)
+static HyperionChatRole getRoleFromString(const char *roleStr)
 {
     if (strcmp(roleStr, "system") == 0) {
-        return TINYAI_ROLE_SYSTEM;
+        return HYPERION_ROLE_SYSTEM;
     }
     else if (strcmp(roleStr, "user") == 0) {
-        return TINYAI_ROLE_USER;
+        return HYPERION_ROLE_USER;
     }
     else if (strcmp(roleStr, "assistant") == 0) {
-        return TINYAI_ROLE_ASSISTANT;
+        return HYPERION_ROLE_ASSISTANT;
     }
-    return TINYAI_ROLE_USER; /* Default to user if unknown */
+    return HYPERION_ROLE_USER; /* Default to user if unknown */
 }
 
 /* Create prompt prefix for role */
-static void createRolePrefix(TinyAIChatRole role, char *prefix, size_t maxLength)
+static void createRolePrefix(HyperionChatRole role, char *prefix, size_t maxLength)
 {
     switch (role) {
-    case TINYAI_ROLE_SYSTEM:
+    case HYPERION_ROLE_SYSTEM:
         snprintf(prefix, maxLength, "System: ");
         break;
-    case TINYAI_ROLE_USER:
+    case HYPERION_ROLE_USER:
         snprintf(prefix, maxLength, "User: ");
         break;
-    case TINYAI_ROLE_ASSISTANT:
+    case HYPERION_ROLE_ASSISTANT:
         snprintf(prefix, maxLength, "Assistant: ");
         break;
     default:
@@ -114,14 +114,14 @@ static void createRolePrefix(TinyAIChatRole role, char *prefix, size_t maxLength
 }
 
 /* Calculate token count for a message */
-static int calculateTokenCount(TinyAITokenizer *tokenizer, const char *text)
+static int calculateTokenCount(HyperionTokenizer *tokenizer, const char *text)
 {
     if (!tokenizer || !text) {
         return 0;
     }
 
     int  tokenCount = 0;
-    int *tokens     = tinyaiTokenizerEncodeText(tokenizer, text, &tokenCount);
+    int *tokens     = hyperionTokenizerEncodeText(tokenizer, text, &tokenCount);
 
     if (tokens) {
         free(tokens);
@@ -132,7 +132,7 @@ static int calculateTokenCount(TinyAITokenizer *tokenizer, const char *text)
 }
 
 /* Calculate memory usage for chat history */
-static size_t calculateHistoryMemoryUsage(TinyAIChatSession *session)
+static size_t calculateHistoryMemoryUsage(HyperionChatSession *session)
 {
     if (!session) {
         return 0;
@@ -141,20 +141,20 @@ static size_t calculateHistoryMemoryUsage(TinyAIChatSession *session)
     size_t total = 0;
     for (int i = 0; i < session->messageCount; i++) {
         /* Message struct size plus content string */
-        total += sizeof(TinyAIChatMessage);
+        total += sizeof(HyperionChatMessage);
         if (session->messages[i].content) {
             total += strlen(session->messages[i].content) + 1;
         }
     }
 
     /* Add array overhead */
-    total += sizeof(TinyAIChatMessage) * (session->messageCapacity - session->messageCount);
+    total += sizeof(HyperionChatMessage) * (session->messageCapacity - session->messageCount);
 
     return total;
 }
 
 /* Prune history to fit within token constraints */
-static void pruneHistory(TinyAIChatSession *session)
+static void pruneHistory(HyperionChatSession *session)
 {
     if (!session || !session->tokenizer || session->messageCount <= 0) {
         return;
@@ -179,7 +179,7 @@ static void pruneHistory(TinyAIChatSession *session)
     /* First pass: remove oldest messages that are not system or most recent user message */
     for (int i = 0; i < session->messageCount && tokensToRemove > 0;) {
         /* Skip system messages and the most recent user message */
-        if (session->messages[i].role == TINYAI_ROLE_SYSTEM) {
+        if (session->messages[i].role == HYPERION_ROLE_SYSTEM) {
             i++;
             continue;
         }
@@ -187,7 +187,7 @@ static void pruneHistory(TinyAIChatSession *session)
         /* Identify the index of the most recent user message */
         int lastUserIdx = -1;
         for (int j = session->messageCount - 1; j >= 0; j--) {
-            if (session->messages[j].role == TINYAI_ROLE_USER) {
+            if (session->messages[j].role == HYPERION_ROLE_USER) {
                 lastUserIdx = j;
                 break;
             }
@@ -216,7 +216,7 @@ static void pruneHistory(TinyAIChatSession *session)
 
     /* Second pass: if we still need to remove tokens, trim assistant responses */
     for (int i = 0; i < session->messageCount && tokensToRemove > 0; i++) {
-        if (session->messages[i].role == TINYAI_ROLE_ASSISTANT) {
+        if (session->messages[i].role == HYPERION_ROLE_ASSISTANT) {
             /* Get token count */
             int tokenCount = session->messages[i].token_count;
 
@@ -242,7 +242,7 @@ static void pruneHistory(TinyAIChatSession *session)
 
                 /* Tokenize the message */
                 int  count  = 0;
-                int *tokens = tinyaiTokenizerEncodeText(session->tokenizer,
+                int *tokens = hyperionTokenizerEncodeText(session->tokenizer,
                                                         session->messages[i].content, &count);
 
                 if (tokens) {
@@ -251,7 +251,7 @@ static void pruneHistory(TinyAIChatSession *session)
                     if (tokensToDecode > 0) {
                         /* Decode the truncated message */
                         char *newContent =
-                            tinyaiTokenizerDecode(session->tokenizer, tokens, tokensToDecode);
+                            hyperionTokenizerDecode(session->tokenizer, tokens, tokensToDecode);
 
                         if (newContent) {
                             /* Replace the message content */
@@ -298,7 +298,7 @@ static int tokenCallbackFunc(int token, void *userData)
     }
 
     /* Decode the token */
-    char *tokenText = tinyaiTokenizerDecodeToken(ctx->tokenizer, token);
+    char *tokenText = hyperionTokenizerDecodeToken(ctx->tokenizer, token);
     if (!tokenText) {
         return 0;
     }
@@ -334,7 +334,7 @@ static int tokenCallbackFunc(int token, void *userData)
 }
 
 /* Create a new chat session */
-TinyAIChatSession *tinyaiChatSessionCreate(const TinyAIChatConfig *config)
+HyperionChatSession *hyperionChatSessionCreate(const HyperionChatConfig *config)
 {
     if (!config || !config->modelPath || !config->weightsPath || !config->tokenizerPath) {
         fprintf(stderr, "Invalid chat session configuration\n");
@@ -342,14 +342,14 @@ TinyAIChatSession *tinyaiChatSessionCreate(const TinyAIChatConfig *config)
     }
 
     /* Allocate session structure */
-    TinyAIChatSession *session = (TinyAIChatSession *)malloc(sizeof(TinyAIChatSession));
+    HyperionChatSession *session = (HyperionChatSession *)malloc(sizeof(HyperionChatSession));
     if (!session) {
         fprintf(stderr, "Failed to allocate chat session\n");
         return NULL;
     }
 
     /* Initialize with defaults */
-    memset(session, 0, sizeof(TinyAIChatSession));
+    memset(session, 0, sizeof(HyperionChatSession));
     session->memoryLimitMB =
         config->memoryLimitMB > 0 ? config->memoryLimitMB : DEFAULT_MEMORY_LIMIT_MB;
     session->maxContextTokens =
@@ -361,7 +361,7 @@ TinyAIChatSession *tinyaiChatSessionCreate(const TinyAIChatConfig *config)
     /* Initial capacity for messages */
     session->messageCapacity = 16;
     session->messages =
-        (TinyAIChatMessage *)malloc(session->messageCapacity * sizeof(TinyAIChatMessage));
+        (HyperionChatMessage *)malloc(session->messageCapacity * sizeof(HyperionChatMessage));
     if (!session->messages) {
         free(session);
         fprintf(stderr, "Failed to allocate chat history\n");
@@ -369,7 +369,7 @@ TinyAIChatSession *tinyaiChatSessionCreate(const TinyAIChatConfig *config)
     }
 
     /* Load tokenizer */
-    session->tokenizer = tinyaiTokenizerCreate(config->tokenizerPath);
+    session->tokenizer = hyperionTokenizerCreate(config->tokenizerPath);
     if (!session->tokenizer) {
         free(session->messages);
         free(session);
@@ -378,9 +378,9 @@ TinyAIChatSession *tinyaiChatSessionCreate(const TinyAIChatConfig *config)
     }
 
     /* Load model */
-    session->model = tinyaiLoadModel(config->modelPath, config->weightsPath, config->tokenizerPath);
+    session->model = hyperionLoadModel(config->modelPath, config->weightsPath, config->tokenizerPath);
     if (!session->model) {
-        tinyaiTokenizerFree(session->tokenizer);
+        hyperionTokenizerFree(session->tokenizer);
         free(session->messages);
         free(session);
         fprintf(stderr, "Failed to load model from %s and %s\n", config->modelPath,
@@ -390,7 +390,7 @@ TinyAIChatSession *tinyaiChatSessionCreate(const TinyAIChatConfig *config)
 
     /* Apply quantization if requested */
     if (config->useQuantization) {
-        if (tinyaiQuantizeModel(session->model) != 0) {
+        if (hyperionQuantizeModel(session->model) != 0) {
             fprintf(stderr, "Warning: Model quantization failed\n");
             /* Continue with unquantized model */
         }
@@ -400,7 +400,7 @@ TinyAIChatSession *tinyaiChatSessionCreate(const TinyAIChatConfig *config)
 }
 
 /* Free chat session */
-void tinyaiChatSessionFree(TinyAIChatSession *session)
+void hyperionChatSessionFree(HyperionChatSession *session)
 {
     if (!session) {
         return;
@@ -408,12 +408,12 @@ void tinyaiChatSessionFree(TinyAIChatSession *session)
 
     /* Free the model */
     if (session->model) {
-        tinyaiDestroyModel(session->model);
+        hyperionDestroyModel(session->model);
     }
 
     /* Free the tokenizer */
     if (session->tokenizer) {
-        tinyaiTokenizerFree(session->tokenizer);
+        hyperionTokenizerFree(session->tokenizer);
     }
 
     /* Free message contents */
@@ -429,7 +429,7 @@ void tinyaiChatSessionFree(TinyAIChatSession *session)
 }
 
 /* Add a message to the chat history */
-bool tinyaiChatAddMessage(TinyAIChatSession *session, TinyAIChatRole role, const char *content)
+bool hyperionChatAddMessage(HyperionChatSession *session, HyperionChatRole role, const char *content)
 {
     if (!session || !content) {
         return false;
@@ -438,8 +438,8 @@ bool tinyaiChatAddMessage(TinyAIChatSession *session, TinyAIChatRole role, const
     /* Check if we need to resize the messages array */
     if (session->messageCount >= session->messageCapacity) {
         int                newCapacity = session->messageCapacity * 2;
-        TinyAIChatMessage *newMessages = (TinyAIChatMessage *)realloc(
-            session->messages, newCapacity * sizeof(TinyAIChatMessage));
+        HyperionChatMessage *newMessages = (HyperionChatMessage *)realloc(
+            session->messages, newCapacity * sizeof(HyperionChatMessage));
         if (!newMessages) {
             fprintf(stderr, "Failed to resize message history\n");
             return false;
@@ -471,8 +471,8 @@ bool tinyaiChatAddMessage(TinyAIChatSession *session, TinyAIChatRole role, const
 }
 
 /* Generate a response to the conversation */
-char *tinyaiChatGenerateResponse(TinyAIChatSession       *session,
-                                 TinyAIChatStreamCallback stream_callback, void *user_data)
+char *hyperionChatGenerateResponse(HyperionChatSession       *session,
+                                 HyperionChatStreamCallback stream_callback, void *user_data)
 {
     if (!session || !session->model || !session->tokenizer) {
         return NULL;
@@ -490,7 +490,7 @@ char *tinyaiChatGenerateResponse(TinyAIChatSession       *session,
     }
 
     /* Add assistant prefix for the response */
-    createRolePrefix(TINYAI_ROLE_ASSISTANT, rolePrefix, MAX_ROLE_PREFIX_LENGTH);
+    createRolePrefix(HYPERION_ROLE_ASSISTANT, rolePrefix, MAX_ROLE_PREFIX_LENGTH);
     contextSize += strlen(rolePrefix);
 
     /* Allocate context buffer */
@@ -510,12 +510,12 @@ char *tinyaiChatGenerateResponse(TinyAIChatSession       *session,
     }
 
     /* Add assistant prefix for the response */
-    createRolePrefix(TINYAI_ROLE_ASSISTANT, rolePrefix, MAX_ROLE_PREFIX_LENGTH);
+    createRolePrefix(HYPERION_ROLE_ASSISTANT, rolePrefix, MAX_ROLE_PREFIX_LENGTH);
     strcat(context, rolePrefix);
 
     /* Tokenize context */
     int  contextTokens = 0;
-    int *tokens        = tinyaiTokenizerEncodeText(session->tokenizer, context, &contextTokens);
+    int *tokens        = hyperionTokenizerEncodeText(session->tokenizer, context, &contextTokens);
 
     if (!tokens) {
         free(context);
@@ -524,14 +524,14 @@ char *tinyaiChatGenerateResponse(TinyAIChatSession       *session,
     }
 
     /* Set up generation parameters */
-    TinyAIGenerationParams params;
-    memset(&params, 0, sizeof(TinyAIGenerationParams));
+    HyperionGenerationParams params;
+    memset(&params, 0, sizeof(HyperionGenerationParams));
     params.promptTokens   = tokens;
     params.promptLength   = contextTokens;
     params.maxTokens      = session->maxTokens;
     params.temperature    = session->temperature;
     params.topP           = session->topP;
-    params.samplingMethod = TINYAI_SAMPLING_TOP_P;
+    params.samplingMethod = HYPERION_SAMPLING_TOP_P;
 
     /* Generate response */
     char *response = NULL;
@@ -558,7 +558,7 @@ char *tinyaiChatGenerateResponse(TinyAIChatSession       *session,
 
         /* Generate with streaming */
         int numTokens =
-            tinyaiGenerateTextWithCallback(session->model, &params, tokenCallbackFunc, &streamCtx);
+            hyperionGenerateTextWithCallback(session->model, &params, tokenCallbackFunc, &streamCtx);
 
         if (numTokens > 0) {
             /* Return the full response */
@@ -581,11 +581,11 @@ char *tinyaiChatGenerateResponse(TinyAIChatSession       *session,
             return NULL;
         }
 
-        int numTokens = tinyaiGenerateText(session->model, &params, outputTokens, params.maxTokens);
+        int numTokens = hyperionGenerateText(session->model, &params, outputTokens, params.maxTokens);
 
         if (numTokens > 0) {
             /* Decode tokens to text */
-            response = tinyaiTokenizerDecode(session->tokenizer, outputTokens, numTokens);
+            response = hyperionTokenizerDecode(session->tokenizer, outputTokens, numTokens);
         }
 
         free(outputTokens);
@@ -597,14 +597,14 @@ char *tinyaiChatGenerateResponse(TinyAIChatSession       *session,
 
     /* Add response to chat history if successful */
     if (response) {
-        tinyaiChatAddMessage(session, TINYAI_ROLE_ASSISTANT, response);
+        hyperionChatAddMessage(session, HYPERION_ROLE_ASSISTANT, response);
     }
 
     return response;
 }
 
 /* Save chat history to a file (JSON format) */
-bool tinyaiChatSaveHistory(TinyAIChatSession *session, const char *filePath)
+bool hyperionChatSaveHistory(HyperionChatSession *session, const char *filePath)
 {
     if (!session || !filePath) {
         return false;
@@ -632,7 +632,7 @@ bool tinyaiChatSaveHistory(TinyAIChatSession *session, const char *filePath)
         while (*content) {
             char c = *content++;
             switch (c) {
-            case '\"':
+            case '"':
                 fprintf(file, "\\\"");
                 break;
             case '\\':
@@ -766,17 +766,17 @@ static char *extractJsonString(const char *json, const char *key)
 }
 
 /* Load chat history from a file (JSON format) */
-bool tinyaiChatLoadHistory(TinyAIChatSession *session, const char *filePath)
+bool hyperionChatLoadHistory(HyperionChatSession *session, const char *filePath)
 {
     if (!session || !filePath) {
         return false;
     }
 
     /* Clear existing history */
-    tinyaiChatClearHistory(session);
+    hyperionChatClearHistory(session);
 
     /* Read file contents */
-    char *fileContents = tinyaiReadTextFile(filePath);
+    char *fileContents = hyperionReadTextFile(filePath);
     if (!fileContents) {
         fprintf(stderr, "Failed to read file: %s\n", filePath);
         return false;
@@ -822,8 +822,8 @@ bool tinyaiChatLoadHistory(TinyAIChatSession *session, const char *filePath)
 
         /* Add message if valid */
         if (roleStr && content) {
-            TinyAIChatRole role = getRoleFromString(roleStr);
-            tinyaiChatAddMessage(session, role, content);
+            HyperionChatRole role = getRoleFromString(roleStr);
+            hyperionChatAddMessage(session, role, content);
         }
 
         /* Free memory */
@@ -842,7 +842,7 @@ bool tinyaiChatLoadHistory(TinyAIChatSession *session, const char *filePath)
 }
 
 /* Get the number of messages in the chat history */
-int tinyaiChatGetMessageCount(TinyAIChatSession *session)
+int hyperionChatGetMessageCount(HyperionChatSession *session)
 {
     if (!session) {
         return 0;
@@ -852,7 +852,7 @@ int tinyaiChatGetMessageCount(TinyAIChatSession *session)
 }
 
 /* Get a message from the chat history */
-bool tinyaiChatGetMessage(TinyAIChatSession *session, int index, TinyAIChatRole *role,
+bool hyperionChatGetMessage(HyperionChatSession *session, int index, HyperionChatRole *role,
                           const char **content)
 {
     if (!session || index < 0 || index >= session->messageCount || !role || !content) {
@@ -866,7 +866,7 @@ bool tinyaiChatGetMessage(TinyAIChatSession *session, int index, TinyAIChatRole 
 }
 
 /* Clear the chat history */
-void tinyaiChatClearHistory(TinyAIChatSession *session)
+void hyperionChatClearHistory(HyperionChatSession *session)
 {
     if (!session) {
         return;
@@ -882,7 +882,7 @@ void tinyaiChatClearHistory(TinyAIChatSession *session)
 }
 
 /* Get current memory usage statistics */
-bool tinyaiChatGetMemoryUsage(TinyAIChatSession *session, size_t *modelMemory,
+bool hyperionChatGetMemoryUsage(HyperionChatSession *session, size_t *modelMemory,
                               size_t *historyMemory, size_t *totalMemory)
 {
     if (!session) {
@@ -894,14 +894,14 @@ bool tinyaiChatGetMemoryUsage(TinyAIChatSession *session, size_t *modelMemory,
     /* Calculate model memory */
     if (session->model) {
         /* Estimate based on model parameters */
-        mModel = tinyaiGetModelSizeBytes(session->model);
+        mModel = hyperionGetModelSizeBytes(session->model);
     }
 
     /* Calculate history memory */
     size_t mHistory = calculateHistoryMemoryUsage(session);
 
     /* Calculate total memory */
-    size_t mTotal = mModel + mHistory + sizeof(TinyAIChatSession);
+    size_t mTotal = mModel + mHistory + sizeof(HyperionChatSession);
 
     /* Add tokenizer memory (rough estimate) */
     if (session->tokenizer) {
@@ -925,7 +925,7 @@ bool tinyaiChatGetMemoryUsage(TinyAIChatSession *session, size_t *modelMemory,
 }
 
 /* Set generation parameters */
-bool tinyaiChatSetGenerationParams(TinyAIChatSession *session, float temperature, int maxTokens,
+bool hyperionChatSetGenerationParams(HyperionChatSession *session, float temperature, int maxTokens,
                                    float topP)
 {
     if (!session) {

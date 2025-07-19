@@ -1,14 +1,14 @@
 /**
  * @file audio_model.h
- * @brief Audio model interface for TinyAI
+ * @brief Audio model interface for Hyperion
  *
- * This header defines the interface for audio models in TinyAI,
+ * This header defines the interface for audio models in Hyperion,
  * including structure definitions and function declarations for
  * audio classification, keyword spotting, and feature extraction.
  */
 
-#ifndef TINYAI_AUDIO_MODEL_H
-#define TINYAI_AUDIO_MODEL_H
+#ifndef HYPERION_AUDIO_MODEL_H
+#define HYPERION_AUDIO_MODEL_H
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -25,7 +25,7 @@ typedef struct {
     int sampleRate;    /* Sample rate in Hz (e.g., 16000) */
     int channels;      /* Number of audio channels (1 for mono, 2 for stereo) */
     int bitsPerSample; /* Bits per sample (8, 16, 24, etc.) */
-} TinyAIAudioFormat;
+} HyperionAudioFormat;
 
 /**
  * Raw audio data
@@ -33,25 +33,25 @@ typedef struct {
 typedef struct {
     void             *data;       /* Pointer to raw audio samples */
     size_t            dataSize;   /* Size of audio data in bytes */
-    TinyAIAudioFormat format;     /* Audio format information */
+    HyperionAudioFormat format;     /* Audio format information */
     int               durationMs; /* Duration in milliseconds */
-} TinyAIAudioData;
+} HyperionAudioData;
 
 /**
  * Audio feature extraction type
  */
 typedef enum {
-    TINYAI_AUDIO_FEATURES_MFCC,        /* Mel-frequency cepstral coefficients */
-    TINYAI_AUDIO_FEATURES_MEL,         /* Mel spectrogram */
-    TINYAI_AUDIO_FEATURES_SPECTROGRAM, /* Regular spectrogram */
-    TINYAI_AUDIO_FEATURES_RAW          /* Raw waveform (no feature extraction) */
-} TinyAIAudioFeaturesType;
+    HYPERION_AUDIO_FEATURES_MFCC,        /* Mel-frequency cepstral coefficients */
+    HYPERION_AUDIO_FEATURES_MEL,         /* Mel spectrogram */
+    HYPERION_AUDIO_FEATURES_SPECTROGRAM, /* Regular spectrogram */
+    HYPERION_AUDIO_FEATURES_RAW          /* Raw waveform (no feature extraction) */
+} HyperionAudioFeaturesType;
 
 /**
  * Audio feature extraction configuration
  */
 typedef struct {
-    TinyAIAudioFeaturesType type;              /* Type of features to extract */
+    HyperionAudioFeaturesType type;              /* Type of features to extract */
     int                     frameLength;       /* Frame length in samples */
     int                     frameShift;        /* Frame shift in samples */
     int                     numFilters;        /* Number of mel filters (for MFCC or MEL) */
@@ -60,7 +60,7 @@ typedef struct {
     bool                    includeDeltaDelta; /* Whether to include delta-delta features */
     bool                    useLogMel;         /* Whether to use log-mel features */
     float                   preEmphasis;       /* Pre-emphasis coefficient (0.0 to disable) */
-} TinyAIAudioFeaturesConfig;
+} HyperionAudioFeaturesConfig;
 
 /**
  * Extracted audio features
@@ -70,21 +70,21 @@ typedef struct {
     size_t                  dataSize;    /* Size of feature data in bytes */
     int                     numFrames;   /* Number of frames */
     int                     numFeatures; /* Number of features per frame */
-    TinyAIAudioFeaturesType type;        /* Type of features */
-} TinyAIAudioFeatures;
+    HyperionAudioFeaturesType type;        /* Type of features */
+} HyperionAudioFeatures;
 
 /**
  * Audio model configuration
  */
 typedef struct {
-    TinyAIAudioFeaturesConfig featuresConfig;      /* Feature extraction configuration */
+    HyperionAudioFeaturesConfig featuresConfig;      /* Feature extraction configuration */
     int                       hiddenSize;          /* Size of hidden layers */
     int                       numLayers;           /* Number of model layers */
     int                       numClasses;          /* Number of output classes */
     bool                      use4BitQuantization; /* Whether to use 4-bit quantization */
     bool                      useSIMD;             /* Whether to use SIMD acceleration */
     const char               *weightsFile;         /* Path to weights file (NULL for random) */
-} TinyAIAudioModelConfig;
+} HyperionAudioModelConfig;
 
 /**
  * Audio model output
@@ -94,26 +94,26 @@ typedef struct {
     float *probabilities;  /* Softmax probabilities */
     int    predictedClass; /* Index of highest probability class */
     float  confidence;     /* Confidence of prediction (0.0-1.0) */
-} TinyAIAudioModelOutput;
+} HyperionAudioModelOutput;
 
 /**
  * Audio model structure
  * Opaque pointer to hide implementation details
  */
-typedef struct TinyAIAudioModel TinyAIAudioModel;
+typedef struct HyperionAudioModel HyperionAudioModel;
 
 /**
  * Create an audio model
  * @param config Configuration for the audio model
  * @return New audio model, or NULL on failure
  */
-TinyAIAudioModel *tinyaiAudioModelCreate(const TinyAIAudioModelConfig *config);
+HyperionAudioModel *hyperionAudioModelCreate(const HyperionAudioModelConfig *config);
 
 /**
  * Free an audio model
  * @param model The model to free
  */
-void tinyaiAudioModelFree(TinyAIAudioModel *model);
+void hyperionAudioModelFree(HyperionAudioModel *model);
 
 /**
  * Process audio data with the model
@@ -122,8 +122,8 @@ void tinyaiAudioModelFree(TinyAIAudioModel *model);
  * @param output The output structure to fill
  * @return true on success, false on failure
  */
-bool tinyaiAudioModelProcess(TinyAIAudioModel *model, const TinyAIAudioData *audio,
-                             TinyAIAudioModelOutput *output);
+bool hyperionAudioModelProcess(HyperionAudioModel *model, const HyperionAudioData *audio,
+                             HyperionAudioModelOutput *output);
 
 /**
  * Extract features from audio data
@@ -132,15 +132,15 @@ bool tinyaiAudioModelProcess(TinyAIAudioModel *model, const TinyAIAudioData *aud
  * @param features Output structure to receive extracted features
  * @return true on success, false on failure
  */
-bool tinyaiAudioFeaturesExtract(const TinyAIAudioData           *audio,
-                                const TinyAIAudioFeaturesConfig *config,
-                                TinyAIAudioFeatures             *features);
+bool hyperionAudioFeaturesExtract(const HyperionAudioData           *audio,
+                                const HyperionAudioFeaturesConfig *config,
+                                HyperionAudioFeatures             *features);
 
 /**
  * Free audio features
  * @param features The features to free
  */
-void tinyaiAudioFeaturesFree(TinyAIAudioFeatures *features);
+void hyperionAudioFeaturesFree(HyperionAudioFeatures *features);
 
 /**
  * Load audio data from a file
@@ -148,13 +148,13 @@ void tinyaiAudioFeaturesFree(TinyAIAudioFeatures *features);
  * @param audio Output structure to receive audio data
  * @return true on success, false on failure
  */
-bool tinyaiAudioDataLoad(const char *path, TinyAIAudioData *audio);
+bool hyperionAudioDataLoad(const char *path, HyperionAudioData *audio);
 
 /**
  * Free audio data
  * @param audio The audio data to free
  */
-void tinyaiAudioDataFree(TinyAIAudioData *audio);
+void hyperionAudioDataFree(HyperionAudioData *audio);
 
 /**
  * Initialize audio model output structure
@@ -162,13 +162,13 @@ void tinyaiAudioDataFree(TinyAIAudioData *audio);
  * @param numClasses Number of output classes
  * @return true on success, false on failure
  */
-bool tinyaiAudioModelOutputInit(TinyAIAudioModelOutput *output, int numClasses);
+bool hyperionAudioModelOutputInit(HyperionAudioModelOutput *output, int numClasses);
 
 /**
  * Free audio model output
  * @param output The output to free
  */
-void tinyaiAudioModelOutputFree(TinyAIAudioModelOutput *output);
+void hyperionAudioModelOutputFree(HyperionAudioModelOutput *output);
 
 /**
  * Enable SIMD acceleration for audio model
@@ -176,10 +176,10 @@ void tinyaiAudioModelOutputFree(TinyAIAudioModelOutput *output);
  * @param enable Whether to enable SIMD
  * @return true on success, false on failure
  */
-bool tinyaiAudioModelEnableSIMD(TinyAIAudioModel *model, bool enable);
+bool hyperionAudioModelEnableSIMD(HyperionAudioModel *model, bool enable);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* TINYAI_AUDIO_MODEL_H */
+#endif /* HYPERION_AUDIO_MODEL_H */

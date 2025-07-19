@@ -1,10 +1,10 @@
 # Chatbot Example
 
-This document explains how to use and customize the TinyAI chatbot example application.
+This document explains how to use and customize the Hyperion chatbot example application.
 
 ## Overview
 
-The TinyAI chatbot example demonstrates how to build a memory-efficient conversational AI using the TinyAI framework. The example includes:
+The Hyperion chatbot example demonstrates how to build a memory-efficient conversational AI using the Hyperion framework. The example includes:
 
 - A small-footprint language model for text generation
 - Memory management techniques for constrained environments
@@ -56,7 +56,7 @@ This will start an interactive chat session where you can type messages and rece
 
 ### Chat Model
 
-The chat model (`chat_model.c`) implements a specialized wrapper around the core TinyAI text generation model with optimizations for memory efficiency and conversation handling:
+The chat model (`chat_model.c`) implements a specialized wrapper around the core Hyperion text generation model with optimizations for memory efficiency and conversation handling:
 
 ```c
 // Initialize the chat model
@@ -148,15 +148,15 @@ To integrate the chatbot with other modalities (like image or audio):
 
 ```c
 // Example of multimodal integration
-#include "tinyai/models/multimodal.h"
+#include "hyperion/models/multimodal.h"
 
 // Initialize image model
-TinyAIImageModel* img_model = tinyai_load_image_model("path/to/image_model.tmai");
+HyperionImageModel* img_model = hyperion_load_image_model("path/to/image_model.tmai");
 
 // Process image and get description
 const char* image_path = "input.jpg";
 char image_description[512];
-tinyai_describe_image(img_model, image_path, image_description, sizeof(image_description));
+hyperion_describe_image(img_model, image_path, image_description, sizeof(image_description));
 
 // Add the image description to chat context
 char prompt[1024];
@@ -168,7 +168,7 @@ const char* response = chat_model_generate_response(model);
 printf("Response: %s\n", response);
 
 // Clean up
-tinyai_free_image_model(img_model);
+hyperion_free_image_model(img_model);
 chat_model_free(model);
 ```
 

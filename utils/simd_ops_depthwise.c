@@ -1,6 +1,6 @@
 /**
  * @file simd_ops_depthwise.c
- * @brief SIMD-accelerated depthwise convolution operations for TinyAI
+ * @brief SIMD-accelerated depthwise convolution operations for Hyperion
  *
  * This file implements SIMD-optimized versions of depthwise convolution operations
  * used in neural networks, with support for 4-bit quantized weights.
@@ -43,7 +43,7 @@
  * Reference implementation of depthwise convolution with 4-bit quantized weights
  * (This is the same as in simd_ops_conv.c, included here for completeness)
  */
-void tinyaiDepthwiseConv2d4BitReference(float *output, const float *input, const uint8_t *weights,
+void hyperionDepthwiseConv2d4BitReference(float *output, const float *input, const uint8_t *weights,
                                         const float *biases, const float *scaleFactors, int inWidth,
                                         int inHeight, int inChannels, int outWidth, int outHeight,
                                         int multiplier, int kernelSize, int stride, int padding)
@@ -120,7 +120,7 @@ void tinyaiDepthwiseConv2d4BitReference(float *output, const float *input, const
 /**
  * SSE2-optimized implementation of depthwise convolution with 4-bit quantized weights
  */
-void tinyaiDepthwiseConv2d4BitSSE2(float *output, const float *input, const uint8_t *weights,
+void hyperionDepthwiseConv2d4BitSSE2(float *output, const float *input, const uint8_t *weights,
                                    const float *biases, const float *scaleFactors, int inWidth,
                                    int inHeight, int inChannels, int outWidth, int outHeight,
                                    int multiplier, int kernelSize, int stride, int padding)
@@ -216,7 +216,7 @@ void tinyaiDepthwiseConv2d4BitSSE2(float *output, const float *input, const uint
 /**
  * AVX2-optimized implementation of depthwise convolution with 4-bit quantized weights
  */
-void tinyaiDepthwiseConv2d4BitAVX2(float *output, const float *input, const uint8_t *weights,
+void hyperionDepthwiseConv2d4BitAVX2(float *output, const float *input, const uint8_t *weights,
                                    const float *biases, const float *scaleFactors, int inWidth,
                                    int inHeight, int inChannels, int outWidth, int outHeight,
                                    int multiplier, int kernelSize, int stride, int padding)
@@ -318,7 +318,7 @@ void tinyaiDepthwiseConv2d4BitAVX2(float *output, const float *input, const uint
  * Update the main depthwise convolution function to use the appropriate
  * SIMD implementation based on the available hardware
  */
-void tinyaiSimdDepthwiseConv2d4Bit(float *output, const float *input, const uint8_t *weights,
+void hyperionSimdDepthwiseConv2d4Bit(float *output, const float *input, const uint8_t *weights,
                                    const float *biases, const float *scaleFactors, int inWidth,
                                    int inHeight, int inChannels, int outWidth, int outHeight,
                                    int multiplier, int kernelSize, int stride, int padding)
@@ -332,7 +332,7 @@ void tinyaiSimdDepthwiseConv2d4Bit(float *output, const float *input, const uint
     /* Use the most advanced SIMD version available */
 #if defined(HAS_AVX2_SUPPORT)
     if (g_hasAVX2) {
-        tinyaiDepthwiseConv2d4BitAVX2(output, input, weights, biases, scaleFactors, inWidth,
+        hyperionDepthwiseConv2d4BitAVX2(output, input, weights, biases, scaleFactors, inWidth,
                                       inHeight, inChannels, outWidth, outHeight, multiplier,
                                       kernelSize, stride, padding);
         return;
@@ -341,7 +341,7 @@ void tinyaiSimdDepthwiseConv2d4Bit(float *output, const float *input, const uint
 
 #if defined(HAS_SSE2_SUPPORT)
     if (g_hasSSE2) {
-        tinyaiDepthwiseConv2d4BitSSE2(output, input, weights, biases, scaleFactors, inWidth,
+        hyperionDepthwiseConv2d4BitSSE2(output, input, weights, biases, scaleFactors, inWidth,
                                       inHeight, inChannels, outWidth, outHeight, multiplier,
                                       kernelSize, stride, padding);
         return;
@@ -349,7 +349,7 @@ void tinyaiSimdDepthwiseConv2d4Bit(float *output, const float *input, const uint
 #endif
 
     /* Fallback to reference implementation */
-    tinyaiDepthwiseConv2d4BitReference(output, input, weights, biases, scaleFactors, inWidth,
+    hyperionDepthwiseConv2d4BitReference(output, input, weights, biases, scaleFactors, inWidth,
                                        inHeight, inChannels, outWidth, outHeight, multiplier,
                                        kernelSize, stride, padding);
 }

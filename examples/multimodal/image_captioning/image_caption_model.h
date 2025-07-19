@@ -1,6 +1,6 @@
 /**
  * @file image_caption_model.h
- * @brief Header for image captioning using multimodal model in TinyAI
+ * @brief Header for image captioning using multimodal model in Hyperion
  */
 
 #ifndef TINYAI_IMAGE_CAPTION_MODEL_H
@@ -27,12 +27,12 @@ typedef struct {
     bool  useSIMD;         /* Whether to use SIMD acceleration */
     char *weightsFile;     /* Path to weights file */
     char *vocabFile;       /* Path to vocabulary file */
-} TinyAIImageCaptionConfig;
+} HyperionImageCaptionConfig;
 
 /**
  * Image captioning model handle
  */
-typedef struct TinyAIImageCaptionModel TinyAIImageCaptionModel;
+typedef struct HyperionImageCaptionModel HyperionImageCaptionModel;
 
 /**
  * Create an image captioning model
@@ -40,14 +40,14 @@ typedef struct TinyAIImageCaptionModel TinyAIImageCaptionModel;
  * @param config Configuration for the model
  * @return Model handle, or NULL on failure
  */
-TinyAIImageCaptionModel *tinyaiImageCaptionModelCreate(const TinyAIImageCaptionConfig *config);
+HyperionImageCaptionModel *hyperionImageCaptionModelCreate(const HyperionImageCaptionConfig *config);
 
 /**
  * Free an image captioning model
  *
  * @param model Model to free
  */
-void tinyaiImageCaptionModelFree(TinyAIImageCaptionModel *model);
+void hyperionImageCaptionModelFree(HyperionImageCaptionModel *model);
 
 /**
  * Generate a caption for an image
@@ -58,7 +58,7 @@ void tinyaiImageCaptionModelFree(TinyAIImageCaptionModel *model);
  * @param maxLength Maximum length of the caption buffer
  * @return true on success, false on failure
  */
-bool tinyaiImageCaptionGenerate(TinyAIImageCaptionModel *model, const char *imagePath,
+bool hyperionImageCaptionGenerate(HyperionImageCaptionModel *model, const char *imagePath,
                                 char *caption, int maxLength);
 
 /**
@@ -70,7 +70,7 @@ bool tinyaiImageCaptionGenerate(TinyAIImageCaptionModel *model, const char *imag
  * @param maxLength Maximum length of the caption buffer
  * @return true on success, false on failure
  */
-bool tinyaiImageCaptionGenerateFromImage(TinyAIImageCaptionModel *model, const TinyAIImage *image,
+bool hyperionImageCaptionGenerateFromImage(HyperionImageCaptionModel *model, const HyperionImage *image,
                                          char *caption, int maxLength);
 
 /**
@@ -81,7 +81,7 @@ bool tinyaiImageCaptionGenerateFromImage(TinyAIImageCaptionModel *model, const T
  * @param activationMemory Output parameter for activation memory (in bytes)
  * @return true on success, false on failure
  */
-bool tinyaiImageCaptionModelGetMemoryUsage(const TinyAIImageCaptionModel *model,
+bool hyperionImageCaptionModelGetMemoryUsage(const HyperionImageCaptionModel *model,
                                            size_t *weightMemory, size_t *activationMemory);
 
 /**
@@ -91,10 +91,10 @@ bool tinyaiImageCaptionModelGetMemoryUsage(const TinyAIImageCaptionModel *model,
  * @param enable Whether to enable SIMD
  * @return true on success, false on failure
  */
-bool tinyaiImageCaptionModelEnableSIMD(TinyAIImageCaptionModel *model, bool enable);
+bool hyperionImageCaptionModelEnableSIMD(HyperionImageCaptionModel *model, bool enable);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* TINYAI_IMAGE_CAPTION_MODEL_H */
+#endif /* HYPERION_IMAGE_CAPTION_MODEL_H */

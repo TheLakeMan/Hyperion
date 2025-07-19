@@ -1,12 +1,12 @@
 /**
- * TinyAI Picol Header
+ * Hyperion Picol Header
  * 
  * This header defines the core data structures and functions for the Picol
- * interpreter that serves as the foundation of TinyAI.
+ * interpreter that serves as the foundation of Hyperion.
  */
 
-#ifndef TINYAI_PICOL_H
-#define TINYAI_PICOL_H
+#ifndef HYPERION_PICOL_H
+#define HYPERION_PICOL_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -95,4 +95,4 @@ void picolRegisterCoreCommands(picolInterp *i);
 }
 #endif
 
-#endif /* TINYAI_PICOL_H */
+#endif /* HYPERION_PICOL_H */

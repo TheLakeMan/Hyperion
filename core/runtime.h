@@ -1,12 +1,12 @@
 /**
- * TinyAI Runtime Header
+ * Hyperion Runtime Header
  * 
- * This header defines the runtime environment for TinyAI, including module
+ * This header defines the runtime environment for Hyperion, including module
  * loading, resource management, error handling, and event systems.
  */
 
-#ifndef TINYAI_RUNTIME_H
-#define TINYAI_RUNTIME_H
+#ifndef HYPERION_RUNTIME_H
+#define HYPERION_RUNTIME_H
 
 #include "picol.h"
 
@@ -18,7 +18,7 @@
  * @param path Directory path to search for modules
  * @return 1 on success, 0 on failure
  */
-int tinyaiAddModulePath(const char *path);
+int hyperionAddModulePath(const char *path);
 
 /**
  * Register a module
@@ -30,7 +30,7 @@ int tinyaiAddModulePath(const char *path);
  * @param dependencies Comma-separated list of dependencies
  * @return 1 on success, 0 on failure
  */
-int tinyaiRegisterModule(const char *name, int (*initFunc)(picolInterp*), 
+int hyperionRegisterModule(const char *name, int (*initFunc)(picolInterp*), 
                       int (*cleanupFunc)(picolInterp*), const char *version,
                       const char *dependencies);
 
@@ -41,7 +41,7 @@ int tinyaiRegisterModule(const char *name, int (*initFunc)(picolInterp*),
  * @param name Module name
  * @return 1 on success, 0 on failure
  */
-int tinyaiLoadModule(picolInterp *interp, const char *name);
+int hyperionLoadModule(picolInterp *interp, const char *name);
 
 /**
  * Unload a module
@@ -50,7 +50,7 @@ int tinyaiLoadModule(picolInterp *interp, const char *name);
  * @param name Module name
  * @return 1 on success, 0 on failure
  */
-int tinyaiUnloadModule(picolInterp *interp, const char *name);
+int hyperionUnloadModule(picolInterp *interp, const char *name);
 
 /* ----------------- Resource Management ----------------- */
 
@@ -72,7 +72,7 @@ typedef enum {
  * @param cleanupFunc Cleanup function
  * @return Resource ID or -1 on error
  */
-int tinyaiRegisterResource(ResourceType type, void *handle, const char *description,
+int hyperionRegisterResource(ResourceType type, void *handle, const char *description,
                         int (*cleanupFunc)(void *handle));
 
 /**
@@ -81,12 +81,12 @@ int tinyaiRegisterResource(ResourceType type, void *handle, const char *descript
  * @param resourceId Resource ID
  * @return 1 on success, 0 on failure
  */
-int tinyaiReleaseResource(int resourceId);
+int hyperionReleaseResource(int resourceId);
 
 /**
  * Release all resources
  */
-void tinyaiReleaseAllResources();
+void hyperionReleaseAllResources();
 
 /* ----------------- Error Handling ----------------- */
 
@@ -111,7 +111,7 @@ typedef enum {
  * @param format Error message format string
  * @param ... Format arguments
  */
-void tinyaiSetError(ErrorType type, int code, const char *format, ...);
+void hyperionSetError(ErrorType type, int code, const char *format, ...);
 
 /**
  * Get the last error
@@ -121,12 +121,12 @@ void tinyaiSetError(ErrorType type, int code, const char *format, ...);
  * @param message Buffer to store the error message
  * @param maxLen Maximum length of the message buffer
  */
-void tinyaiGetError(ErrorType *type, int *code, char *message, size_t maxLen);
+void hyperionGetError(ErrorType *type, int *code, char *message, size_t maxLen);
 
 /**
  * Clear the last error
  */
-void tinyaiClearError();
+void hyperionClearError();
 
 /* ----------------- Event System ----------------- */
 
@@ -136,7 +136,7 @@ void tinyaiClearError();
  * @param name Event name
  * @return Event ID or -1 on error
  */
-int tinyaiRegisterEvent(const char *name);
+int hyperionRegisterEvent(const char *name);
 
 /**
  * Register an event handler
@@ -147,7 +147,7 @@ int tinyaiRegisterEvent(const char *name);
  * @param userData User data to pass to the handler
  * @return 1 on success, 0 on failure
  */
-int tinyaiRegisterEventHandler(const char *eventName, int priority,
+int hyperionRegisterEventHandler(const char *eventName, int priority,
                             int (*handler)(void *data), void *userData);
 
 /**
@@ -157,7 +157,7 @@ int tinyaiRegisterEventHandler(const char *eventName, int priority,
  * @param data Data to pass to handlers
  * @return 1 on success, 0 on failure
  */
-int tinyaiTriggerEvent(const char *eventName, void *data);
+int hyperionTriggerEvent(const char *eventName, void *data);
 
 /* ----------------- Initialization ----------------- */
 
@@ -167,13 +167,13 @@ int tinyaiTriggerEvent(const char *eventName, void *data);
  * @param interp Picol interpreter
  * @return 0 on success, non-zero on error
  */
-int tinyaiRuntimeInit(picolInterp *interp);
+int hyperionRuntimeInit(picolInterp *interp);
 
 /**
  * Clean up the runtime
  * 
  * @param interp Picol interpreter
  */
-void tinyaiRuntimeCleanup(picolInterp *interp);
+void hyperionRuntimeCleanup(picolInterp *interp);
 
-#endif /* TINYAI_RUNTIME_H */
+#endif /* HYPERION_RUNTIME_H */

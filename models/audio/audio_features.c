@@ -1,6 +1,6 @@
 /**
  * @file audio_features.c
- * @brief Implementation of audio feature extraction for TinyAI
+ * @brief Implementation of audio feature extraction for Hyperion
  */
 
 #include "audio_features.h"
@@ -19,7 +19,7 @@
 #define DEFAULT_FFT_SIZE 512
 #define DEFAULT_NUM_FILTERS 26
 #define DEFAULT_NUM_COEFFICIENTS 13
-#define DEFAULT_WINDOW TINYAI_WINDOW_HAMMING
+#define DEFAULT_WINDOW HYPERION_WINDOW_HAMMING
 #define DEFAULT_FMIN 0.0f
 #define DEFAULT_FMAX 8000.0f
 #define DEFAULT_PREEMPHASIS 0.97f
@@ -29,7 +29,7 @@
  * @param options Options structure to initialize
  * @return true on success, false on failure
  */
-bool tinyaiAudioFeaturesInitAdvancedOptions(TinyAIAudioFeaturesAdvancedOptions *options)
+bool hyperionAudioFeaturesInitAdvancedOptions(HyperionAudioFeaturesAdvancedOptions *options)
 {
     if (!options) {
         return false;
@@ -59,7 +59,7 @@ bool tinyaiAudioFeaturesInitAdvancedOptions(TinyAIAudioFeaturesAdvancedOptions *
  * @param output Output buffer (can be same as input)
  * @return true on success, false on failure
  */
-bool tinyaiAudioApplyWindow(const float *samples, int numSamples, TinyAIWindowType windowType,
+bool hyperionAudioApplyWindow(const float *samples, int numSamples, HyperionWindowType windowType,
                             float param, float *output)
 {
     if (!samples || !output || numSamples <= 0) {
@@ -68,7 +68,7 @@ bool tinyaiAudioApplyWindow(const float *samples, int numSamples, TinyAIWindowTy
 
     /* Apply window function */
     switch (windowType) {
-    case TINYAI_WINDOW_HAMMING:
+    case HYPERION_WINDOW_HAMMING:
         /* Hamming window: w(n) = 0.54 - 0.46 * cos(2*PI*n/(N-1)) */
         for (int i = 0; i < numSamples; i++) {
             float n      = (float)i;
@@ -78,7 +78,7 @@ bool tinyaiAudioApplyWindow(const float *samples, int numSamples, TinyAIWindowTy
         }
         break;
 
-    case TINYAI_WINDOW_HANN:
+    case HYPERION_WINDOW_HANN:
         /* Hann window: w(n) = 0.5 * (1 - cos(2*PI*n/(N-1))) */
         for (int i = 0; i < numSamples; i++) {
             float n      = (float)i;
@@ -88,7 +88,7 @@ bool tinyaiAudioApplyWindow(const float *samples, int numSamples, TinyAIWindowTy
         }
         break;
 
-    case TINYAI_WINDOW_BLACKMAN:
+    case HYPERION_WINDOW_BLACKMAN:
         /* Blackman window: w(n) = 0.42 - 0.5*cos(2*PI*n/(N-1)) + 0.08*cos(4*PI*n/(N-1)) */
         for (int i = 0; i < numSamples; i++) {
             float n = (float)i;
@@ -99,7 +99,7 @@ bool tinyaiAudioApplyWindow(const float *samples, int numSamples, TinyAIWindowTy
         }
         break;
 
-    case TINYAI_WINDOW_RECTANGULAR:
+    case HYPERION_WINDOW_RECTANGULAR:
         /* Rectangular window: no windowing */
         if (samples != output) {
             memcpy(output, samples, numSamples * sizeof(float));
@@ -194,7 +194,7 @@ static void fft(float *real, float *imag, int size)
  * @param imag Output imaginary part of FFT
  * @return true on success, false on failure
  */
-bool tinyaiAudioComputeFFT(const float *samples, int numSamples, int fftSize, float *real,
+bool hyperionAudioComputeFFT(const float *samples, int numSamples, int fftSize, float *real,
                            float *imag)
 {
     if (!samples || !real || !imag || numSamples <= 0 || fftSize <= 0 || fftSize < numSamples) {
@@ -236,7 +236,7 @@ bool tinyaiAudioComputeFFT(const float *samples, int numSamples, int fftSize, fl
  * @param usePower Whether to compute power (otherwise magnitude)
  * @return true on success, false on failure
  */
-bool tinyaiAudioComputeSpectrum(const float *real, const float *imag, int size, float *output,
+bool hyperionAudioComputeSpectrum(const float *real, const float *imag, int size, float *output,
                                 bool usePower)
 {
     if (!real || !imag || !output || size <= 0) {
@@ -283,7 +283,7 @@ static float melToFreq(float m) { return 700.0f * (expf(m / 1127.0f) - 1.0f); }
  * @param filterBank Output filter bank coefficients (numFilters x (fftSize/2+1))
  * @return true on success, false on failure
  */
-bool tinyaiAudioCreateMelFilterBank(int numFilters, int fftSize, int sampleRate, float fMin,
+bool hyperionAudioCreateMelFilterBank(int numFilters, int fftSize, int sampleRate, float fMin,
                                     float fMax, float *filterBank)
 {
     if (!filterBank || numFilters <= 0 || fftSize <= 0 || sampleRate <= 0 || fMin >= fMax) {
@@ -366,7 +366,7 @@ bool tinyaiAudioCreateMelFilterBank(int numFilters, int fftSize, int sampleRate,
  * @param melEnergies Output mel filter energies
  * @return true on success, false on failure
  */
-bool tinyaiAudioApplyMelFilterBank(const float *spectrum, int spectrumSize, const float *filterBank,
+bool hyperionAudioApplyMelFilterBank(const float *spectrum, int spectrumSize, const float *filterBank,
                                    int numFilters, float *melEnergies)
 {
     if (!spectrum || !filterBank || !melEnergies || spectrumSize <= 0 || numFilters <= 0) {
@@ -439,7 +439,7 @@ static void dct(const float *input, float *output, int inputSize, int outputSize
  * @param lifterCoeff Liftering coefficient (0 to disable)
  * @return true on success, false on failure
  */
-bool tinyaiAudioComputeMFCC(const float *melEnergies, int numFilters, int numCoefficients,
+bool hyperionAudioComputeMFCC(const float *melEnergies, int numFilters, int numCoefficients,
                             float *coefficients, float lifterCoeff)
 {
     if (!melEnergies || !coefficients || numFilters <= 0 || numCoefficients <= 0 ||
@@ -523,8 +523,8 @@ static void removeDC(float *samples, int numSamples)
  * @return true on success, false on failure
  */
 static bool extractMFCCFrame(const float *frame, int frameLength,
-                             const TinyAIAudioFeaturesConfig          *config,
-                             const TinyAIAudioFeaturesAdvancedOptions *advancedOptions,
+                             const HyperionAudioFeaturesConfig          *config,
+                             const HyperionAudioFeaturesAdvancedOptions *advancedOptions,
                              float                                    *coefficients)
 {
     if (!frame || !config || !coefficients || frameLength <= 0) {
@@ -532,9 +532,9 @@ static bool extractMFCCFrame(const float *frame, int frameLength,
     }
 
     /* Use default options if not provided */
-    TinyAIAudioFeaturesAdvancedOptions defaultOptions;
+    HyperionAudioFeaturesAdvancedOptions defaultOptions;
     if (!advancedOptions) {
-        tinyaiAudioFeaturesInitAdvancedOptions(&defaultOptions);
+        hyperionAudioFeaturesInitAdvancedOptions(&defaultOptions);
         advancedOptions = &defaultOptions;
     }
 
@@ -579,26 +579,26 @@ static bool extractMFCCFrame(const float *frame, int frameLength,
     }
 
     /* Apply window function */
-    tinyaiAudioApplyWindow(preemphasizedFrame, frameLength, advancedOptions->windowType,
+    hyperionAudioApplyWindow(preemphasizedFrame, frameLength, advancedOptions->windowType,
                            advancedOptions->windowParam, windowedFrame);
 
     /* Compute FFT */
-    tinyaiAudioComputeFFT(windowedFrame, frameLength, fftSize, real, imag);
+    hyperionAudioComputeFFT(windowedFrame, frameLength, fftSize, real, imag);
 
     /* Compute power/magnitude spectrum */
-    tinyaiAudioComputeSpectrum(real, imag, fftSize, spectrum, advancedOptions->usePower);
+    hyperionAudioComputeSpectrum(real, imag, fftSize, spectrum, advancedOptions->usePower);
 
     /* Create mel filter bank - use default 16kHz sample rate */
     int sampleRate = 16000; /* Standard sample rate for speech processing */
-    tinyaiAudioCreateMelFilterBank(config->numFilters, fftSize, sampleRate, advancedOptions->fMin,
+    hyperionAudioCreateMelFilterBank(config->numFilters, fftSize, sampleRate, advancedOptions->fMin,
                                    advancedOptions->fMax, filterBank);
 
     /* Apply mel filter bank */
-    tinyaiAudioApplyMelFilterBank(spectrum, fftSize / 2 + 1, filterBank, config->numFilters,
+    hyperionAudioApplyMelFilterBank(spectrum, fftSize / 2 + 1, filterBank, config->numFilters,
                                   melEnergies);
 
     /* Compute MFCCs */
-    tinyaiAudioComputeMFCC(melEnergies, config->numFilters, config->numCoefficients, coefficients,
+    hyperionAudioComputeMFCC(melEnergies, config->numFilters, config->numCoefficients, coefficients,
                            advancedOptions->lifterCoeff);
 
     /* Free temporary buffers */
@@ -622,19 +622,19 @@ static bool extractMFCCFrame(const float *frame, int frameLength,
  * @param features Output structure to receive extracted features
  * @return true on success, false on failure
  */
-static bool extractAudioFeatures(const TinyAIAudioData                    *audio,
-                                 const TinyAIAudioFeaturesConfig          *config,
-                                 const TinyAIAudioFeaturesAdvancedOptions *advancedOptions,
-                                 TinyAIAudioFeaturesType featureType, TinyAIAudioFeatures *features)
+static bool extractAudioFeatures(const HyperionAudioData                    *audio,
+                                 const HyperionAudioFeaturesConfig          *config,
+                                 const HyperionAudioFeaturesAdvancedOptions *advancedOptions,
+                                 HyperionAudioFeaturesType featureType, HyperionAudioFeatures *features)
 {
     if (!audio || !config || !features || !audio->data) {
         return false;
     }
 
     /* Use default options if not provided */
-    TinyAIAudioFeaturesAdvancedOptions defaultOptions;
+    HyperionAudioFeaturesAdvancedOptions defaultOptions;
     if (!advancedOptions) {
-        tinyaiAudioFeaturesInitAdvancedOptions(&defaultOptions);
+        hyperionAudioFeaturesInitAdvancedOptions(&defaultOptions);
         advancedOptions = &defaultOptions;
     }
 
@@ -661,16 +661,16 @@ static bool extractAudioFeatures(const TinyAIAudioData                    *audio
     /* Determine feature dimensions */
     int featuresPerFrame = 0;
     switch (featureType) {
-    case TINYAI_AUDIO_FEATURES_MFCC:
+    case HYPERION_AUDIO_FEATURES_MFCC:
         featuresPerFrame = config->numCoefficients;
         break;
-    case TINYAI_AUDIO_FEATURES_MEL:
+    case HYPERION_AUDIO_FEATURES_MEL:
         featuresPerFrame = config->numFilters;
         break;
-    case TINYAI_AUDIO_FEATURES_SPECTROGRAM:
+    case HYPERION_AUDIO_FEATURES_SPECTROGRAM:
         featuresPerFrame = advancedOptions->fftSize / 2 + 1;
         break;
-    case TINYAI_AUDIO_FEATURES_RAW:
+    case HYPERION_AUDIO_FEATURES_RAW:
         featuresPerFrame = frameLength;
         break;
     default:
@@ -705,7 +705,7 @@ static bool extractAudioFeatures(const TinyAIAudioData                    *audio
         float *featureVector = features->data + i * featuresPerFrame;
 
         switch (featureType) {
-        case TINYAI_AUDIO_FEATURES_MFCC:
+        case HYPERION_AUDIO_FEATURES_MFCC:
             if (!extractMFCCFrame(frame, frameLength, config, advancedOptions, featureVector)) {
                 free(samples);
                 free(features->data);
@@ -714,15 +714,15 @@ static bool extractAudioFeatures(const TinyAIAudioData                    *audio
             }
             break;
 
-        case TINYAI_AUDIO_FEATURES_MEL:
+        case HYPERION_AUDIO_FEATURES_MEL:
             /* TODO: Implement Mel spectrogram extraction */
             break;
 
-        case TINYAI_AUDIO_FEATURES_SPECTROGRAM:
+        case HYPERION_AUDIO_FEATURES_SPECTROGRAM:
             /* TODO: Implement spectrogram extraction */
             break;
 
-        case TINYAI_AUDIO_FEATURES_RAW:
+        case HYPERION_AUDIO_FEATURES_RAW:
             /* Just copy the raw samples */
             memcpy(featureVector, frame, frameLength * sizeof(float));
             break;
@@ -754,11 +754,11 @@ static bool extractAudioFeatures(const TinyAIAudioData                    *audio
  * @param features Output structure to receive extracted features
  * @return true on success, false on failure
  */
-bool tinyaiAudioExtractMFCC(const TinyAIAudioData *audio, const TinyAIAudioFeaturesConfig *config,
-                            const TinyAIAudioFeaturesAdvancedOptions *advancedOptions,
-                            TinyAIAudioFeatures                      *features)
+bool hyperionAudioExtractMFCC(const HyperionAudioData *audio, const HyperionAudioFeaturesConfig *config,
+                            const HyperionAudioFeaturesAdvancedOptions *advancedOptions,
+                            HyperionAudioFeatures                      *features)
 {
-    return extractAudioFeatures(audio, config, advancedOptions, TINYAI_AUDIO_FEATURES_MFCC,
+    return extractAudioFeatures(audio, config, advancedOptions, HYPERION_AUDIO_FEATURES_MFCC,
                                 features);
 }
 
@@ -770,12 +770,12 @@ bool tinyaiAudioExtractMFCC(const TinyAIAudioData *audio, const TinyAIAudioFeatu
  * @param features Output structure to receive extracted features
  * @return true on success, false on failure
  */
-bool tinyaiAudioExtractMelSpectrogram(const TinyAIAudioData                    *audio,
-                                      const TinyAIAudioFeaturesConfig          *config,
-                                      const TinyAIAudioFeaturesAdvancedOptions *advancedOptions,
-                                      TinyAIAudioFeatures                      *features)
+bool hyperionAudioExtractMelSpectrogram(const HyperionAudioData                    *audio,
+                                      const HyperionAudioFeaturesConfig          *config,
+                                      const HyperionAudioFeaturesAdvancedOptions *advancedOptions,
+                                      HyperionAudioFeatures                      *features)
 {
-    return extractAudioFeatures(audio, config, advancedOptions, TINYAI_AUDIO_FEATURES_MEL,
+    return extractAudioFeatures(audio, config, advancedOptions, HYPERION_AUDIO_FEATURES_MEL,
                                 features);
 }
 
@@ -787,11 +787,11 @@ bool tinyaiAudioExtractMelSpectrogram(const TinyAIAudioData                    *
  * @param features Output structure to receive extracted features
  * @return true on success, false on failure
  */
-bool tinyaiAudioExtractSpectrogram(const TinyAIAudioData                    *audio,
-                                   const TinyAIAudioFeaturesConfig          *config,
-                                   const TinyAIAudioFeaturesAdvancedOptions *advancedOptions,
-                                   TinyAIAudioFeatures                      *features)
+bool hyperionAudioExtractSpectrogram(const HyperionAudioData                    *audio,
+                                   const HyperionAudioFeaturesConfig          *config,
+                                   const HyperionAudioFeaturesAdvancedOptions *advancedOptions,
+                                   HyperionAudioFeatures                      *features)
 {
-    return extractAudioFeatures(audio, config, advancedOptions, TINYAI_AUDIO_FEATURES_SPECTROGRAM,
+    return extractAudioFeatures(audio, config, advancedOptions, HYPERION_AUDIO_FEATURES_SPECTROGRAM,
                                 features);
 }

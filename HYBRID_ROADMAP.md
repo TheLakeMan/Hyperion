@@ -1,10 +1,10 @@
-# TinyAI Hybrid Capability Roadmap
+# Hyperion Hybrid Capability Roadmap
 
-This document outlines the comprehensive roadmap for developing TinyAI with hybrid capabilities, combining the power of standalone offline functionality with optional MCP (Model Context Protocol) server enhancements.
+This document outlines the comprehensive roadmap for developing Hyperion with hybrid capabilities, combining the power of standalone offline functionality with optional MCP (Model Context Protocol) server enhancements.
 
 ## Vision
 
-TinyAI aims to provide a unique AI framework that delivers:
+Hyperion aims to provide a unique AI framework that delivers:
 
 1. **Full Standalone Functionality** - Complete AI capabilities without requiring internet connectivity
 2. **Optional Enhanced Capabilities** - Leveraging MCP servers when available for expanded features
@@ -112,7 +112,7 @@ TinyAI aims to provide a unique AI framework that delivers:
    - Add basic knowledge retrieval capabilities
 
 3. **Client Integration**
-   - Implement MCP client in TinyAI core
+   - Implement MCP client in Hyperion core
    - Add automatic service discovery
    - Create connection management with error handling
    - Implement transparent fallback to local execution
@@ -242,20 +242,20 @@ TinyAI aims to provide a unique AI framework that delivers:
 
 ```c
 // Example API showing hybrid execution pattern
-int tinyaiGenerateText(TinyAIContext *ctx, const char *prompt, char *output, int maxLength) {
+int hyperionGenerateText(HyperionContext *ctx, const char *prompt, char *output, int maxLength) {
   // Check execution preference and capability
   if (ctx->mcpAvailable && !ctx->forceOffline && 
       (ctx->preferMCP || prompt_requires_extended_context(prompt, ctx))) {
     // Try MCP execution
-    int result = tinyaiGenerateTextMCP(ctx, prompt, output, maxLength);
-    if (result == TINYAI_SUCCESS) {
+    int result = hyperionGenerateTextMCP(ctx, prompt, output, maxLength);
+    if (result == HYPERION_SUCCESS) {
       return result;
     }
     // Fall back to local if MCP failed
   }
   
   // Local execution
-  return tinyaiGenerateTextLocal(ctx, prompt, output, maxLength);
+  return hyperionGenerateTextLocal(ctx, prompt, output, maxLength);
 }
 ```
 
@@ -283,7 +283,7 @@ When using the CLI or API, clear indicators will show:
 
 ### Developer Tools
 
-Developers integrating TinyAI will have access to:
+Developers integrating Hyperion will have access to:
 
 1. Execution logs for understanding processing path
 2. Performance comparison tools
@@ -300,4 +300,4 @@ This hybrid approach provides several key advantages:
 4. **Future-Proof Architecture** - Separating interface from implementation allows ongoing enhancement
 5. **Graceful Degradation** - No sudden loss of functionality when connectivity changes
 
-By implementing this roadmap, TinyAI will offer a unique combination of efficiency, privacy, and capability enhancement that stands apart from current AI frameworks that require either constant connectivity or accept significant capability limitations.
+By implementing this roadmap, Hyperion will offer a unique combination of efficiency, privacy, and capability enhancement that stands apart from current AI frameworks that require either constant connectivity or accept significant capability limitations.

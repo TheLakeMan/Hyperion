@@ -2,13 +2,13 @@
 
 ## Overview
 
-The Models API provides functions for loading, managing, and using AI models in TinyAI, including text generation, image processing, and multimodal capabilities.
+The Models API provides functions for loading, managing, and using AI models in Hyperion, including text generation, image processing, and multimodal capabilities.
 
 ## Model Management
 
-### `tinyai_load_model()`
+### `hyperion_load_model()`
 ```c
-TinyAIModel* tinyai_load_model(const char* path);
+HyperionModel* hyperion_load_model(const char* path);
 ```
 Loads a model from a file.
 
@@ -20,16 +20,16 @@ Loads a model from a file.
 
 **Example:**
 ```c
-TinyAIModel* model = tinyai_load_model("model.tmai");
+HyperionModel* model = hyperion_load_model("model.tmai");
 if (!model) {
-    printf("Error: %s\n", tinyai_get_error());
+    printf("Error: %s\n", hyperion_get_error());
     return 1;
 }
 ```
 
-### `tinyai_free_model()`
+### `hyperion_free_model()`
 ```c
-void tinyai_free_model(TinyAIModel* model);
+void hyperion_free_model(HyperionModel* model);
 ```
 Frees a loaded model.
 
@@ -38,9 +38,9 @@ Frees a loaded model.
 
 ## Text Generation
 
-### `tinyai_generate_text()`
+### `hyperion_generate_text()`
 ```c
-void tinyai_generate_text(TinyAIModel* model, const char* prompt, char* output, size_t max_length, int max_tokens);
+void hyperion_generate_text(HyperionModel* model, const char* prompt, char* output, size_t max_length, int max_tokens);
 ```
 Generates text based on a prompt.
 
@@ -53,15 +53,15 @@ Generates text based on a prompt.
 
 **Example:**
 ```c
-const char* prompt = "TinyAI is";
+const char* prompt = "Hyperion is";
 char output[256];
-tinyai_generate_text(model, prompt, output, sizeof(output), 50);
+hyperion_generate_text(model, prompt, output, sizeof(output), 50);
 printf("Generated: %s\n", output);
 ```
 
-### `tinyai_generate_text_with_config()`
+### `hyperion_generate_text_with_config()`
 ```c
-void tinyai_generate_text_with_config(TinyAIModel* model, const char* prompt, char* output, size_t max_length, const TinyAIGenerationConfig* config);
+void hyperion_generate_text_with_config(HyperionModel* model, const char* prompt, char* output, size_t max_length, const HyperionGenerationConfig* config);
 ```
 Generates text with custom configuration.
 
@@ -74,19 +74,19 @@ Generates text with custom configuration.
 
 **Example:**
 ```c
-TinyAIGenerationConfig config = {
+HyperionGenerationConfig config = {
     .temperature = 0.7f,
     .top_k = 40,
     .top_p = 0.9f
 };
-tinyai_generate_text_with_config(model, prompt, output, sizeof(output), &config);
+hyperion_generate_text_with_config(model, prompt, output, sizeof(output), &config);
 ```
 
 ## Image Processing
 
-### `tinyai_process_image()`
+### `hyperion_process_image()`
 ```c
-void tinyai_process_image(TinyAIModel* model, const TinyAIImage* image, TinyAIImage* output);
+void hyperion_process_image(HyperionModel* model, const HyperionImage* image, HyperionImage* output);
 ```
 Processes an image using a model.
 
@@ -97,17 +97,17 @@ Processes an image using a model.
 
 **Example:**
 ```c
-TinyAIImage input, output;
+HyperionImage input, output;
 // Load input image
-tinyai_process_image(model, &input, &output);
+hyperion_process_image(model, &input, &output);
 // Use processed image
 ```
 
 ## Multimodal Operations
 
-### `tinyai_process_multimodal()`
+### `hyperion_process_multimodal()`
 ```c
-void tinyai_process_multimodal(TinyAIModel* model, const TinyAIMultimodalInput* input, TinyAIMultimodalOutput* output);
+void hyperion_process_multimodal(HyperionModel* model, const HyperionMultimodalInput* input, HyperionMultimodalOutput* output);
 ```
 Processes multimodal input (text and image).
 
@@ -118,74 +118,74 @@ Processes multimodal input (text and image).
 
 **Example:**
 ```c
-TinyAIMultimodalInput input = {
+HyperionMultimodalInput input = {
     .text = "Describe this image",
     .image = &image
 };
-TinyAIMultimodalOutput output;
-tinyai_process_multimodal(model, &input, &output);
+HyperionMultimodalOutput output;
+hyperion_process_multimodal(model, &input, &output);
 printf("Description: %s\n", output.text);
 ```
 
 ## Data Types
 
-### `TinyAIModel`
+### `HyperionModel`
 ```c
 typedef struct {
     void* internal;
-    TinyAIModelType type;
+    HyperionModelType type;
     size_t parameter_count;
-} TinyAIModel;
+} HyperionModel;
 ```
 Model structure.
 
-### `TinyAIGenerationConfig`
+### `HyperionGenerationConfig`
 ```c
 typedef struct {
     float temperature;
     int top_k;
     float top_p;
     int max_tokens;
-} TinyAIGenerationConfig;
+} HyperionGenerationConfig;
 ```
 Text generation configuration.
 
-### `TinyAIImage`
+### `HyperionImage`
 ```c
 typedef struct {
     int width;
     int height;
     int channels;
     uint8_t* data;
-} TinyAIImage;
+} HyperionImage;
 ```
 Image structure.
 
-### `TinyAIMultimodalInput`
+### `HyperionMultimodalInput`
 ```c
 typedef struct {
     const char* text;
-    const TinyAIImage* image;
-} TinyAIMultimodalInput;
+    const HyperionImage* image;
+} HyperionMultimodalInput;
 ```
 Multimodal input structure.
 
-### `TinyAIMultimodalOutput`
+### `HyperionMultimodalOutput`
 ```c
 typedef struct {
     char* text;
-    TinyAIImage* image;
-} TinyAIMultimodalOutput;
+    HyperionImage* image;
+} HyperionMultimodalOutput;
 ```
 Multimodal output structure.
 
-### `TinyAIModelType`
+### `HyperionModelType`
 ```c
 typedef enum {
-    TINYAI_MODEL_TEXT,
-    TINYAI_MODEL_IMAGE,
-    TINYAI_MODEL_MULTIMODAL
-} TinyAIModelType;
+    HYPERION_MODEL_TEXT,
+    HYPERION_MODEL_IMAGE,
+    HYPERION_MODEL_MULTIMODAL
+} HyperionModelType;
 ```
 Model type enumeration.
 
@@ -203,72 +203,72 @@ Model type enumeration.
 ### Text Generation
 ```c
 // Load model
-TinyAIModel* model = tinyai_load_model("text_model.tmai");
+HyperionModel* model = hyperion_load_model("text_model.tmai");
 if (!model) {
-    printf("Error: %s\n", tinyai_get_error());
+    printf("Error: %s\n", hyperion_get_error());
     return 1;
 }
 
 // Configure generation
-TinyAIGenerationConfig config = {
+HyperionGenerationConfig config = {
     .temperature = 0.7f,
     .top_k = 40,
     .top_p = 0.9f
 };
 
 // Generate text
-const char* prompt = "TinyAI is";
+const char* prompt = "Hyperion is";
 char output[256];
-tinyai_generate_text_with_config(model, prompt, output, sizeof(output), &config);
+hyperion_generate_text_with_config(model, prompt, output, sizeof(output), &config);
 printf("Generated: %s\n", output);
 
 // Clean up
-tinyai_free_model(model);
+hyperion_free_model(model);
 ```
 
 ### Image Processing
 ```c
 // Load model
-TinyAIModel* model = tinyai_load_model("image_model.tmai");
+HyperionModel* model = hyperion_load_model("image_model.tmai");
 if (!model) {
-    printf("Error: %s\n", tinyai_get_error());
+    printf("Error: %s\n", hyperion_get_error());
     return 1;
 }
 
 // Process image
-TinyAIImage input, output;
+HyperionImage input, output;
 // Load input image
-tinyai_process_image(model, &input, &output);
+hyperion_process_image(model, &input, &output);
 // Use processed image
 
 // Clean up
-tinyai_free_model(model);
+hyperion_free_model(model);
 ```
 
 ### Multimodal Processing
 ```c
 // Load model
-TinyAIModel* model = tinyai_load_model("multimodal_model.tmai");
+HyperionModel* model = hyperion_load_model("multimodal_model.tmai");
 if (!model) {
-    printf("Error: %s\n", tinyai_get_error());
+    printf("Error: %s\n", hyperion_get_error());
     return 1;
 }
 
 // Process multimodal input
-TinyAIMultimodalInput input = {
+HyperionMultimodalInput input = {
     .text = "Describe this image",
     .image = &image
 };
-TinyAIMultimodalOutput output;
-tinyai_process_multimodal(model, &input, &output);
+HyperionMultimodalOutput output;
+hyperion_process_multimodal(model, &input, &output);
 printf("Description: %s\n", output.text);
 
 // Clean up
-tinyai_free_model(model);
+hyperion_free_model(model);
 ```
 
 ## Related Documentation
 
 - [Core API](core.md)
 - [Memory Management API](memory.md)
-- [Performance Tools API](performance.md) 
+- [Performance Tools API](performance.md)

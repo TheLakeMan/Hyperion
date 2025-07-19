@@ -1,6 +1,6 @@
-# TinyAI Documentation
+# Hyperion Documentation
 
-Welcome to the TinyAI documentation. This guide will help you understand and use the TinyAI framework effectively.
+Welcome to the Hyperion documentation. This guide will help you understand and use the Hyperion framework effectively.
 
 ## Getting Started
 - [Installation Guide](getting-started/installation.md)
@@ -27,12 +27,12 @@ Welcome to the TinyAI documentation. This guide will help you understand and use
 ## Development
 - [Contributing Guide](development/contributing.md)
 - [Architecture Overview](development/architecture.md)
-- [Testing Guide](development/testing.md)
+- [Testing Guide](development.md)
 
 ## Additional Resources
 - [Project Progress](../PROJECT_PROGRESS.md)
 - [Technical Documentation](../TECHNICAL_DOCUMENTATION.md)
-- [GitHub Repository](https://github.com/TheLakeMan/tinyai)
+- [GitHub Repository](https://github.com/TheLakeMan/hyperion)
 
 ## Support
 If you need help or have questions:

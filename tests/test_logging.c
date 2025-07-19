@@ -1,7 +1,7 @@
 /**
- * TinyAI Logging System Test
+ * Hyperion Logging System Test
  *
- * This file contains tests for the TinyAI logging system.
+ * This file contains tests for the Hyperion logging system.
  */
 
 #include "../core/logging.h"
@@ -15,12 +15,12 @@
 /* Test log handler callback data */
 typedef struct {
     int            messages_received;
-    TinyAILogLevel last_level;
+    HyperionLogLevel last_level;
     char           last_message[4096];
 } TestLogHandlerData;
 
 /* Test log handler callback function */
-static void test_log_handler(TinyAILogLevel level, const char *message, void *user_data)
+static void test_log_handler(HyperionLogLevel level, const char *message, void *user_data)
 {
     TestLogHandlerData *data = (TestLogHandlerData *)user_data;
     data->messages_received++;
@@ -35,10 +35,10 @@ void test_basic_logging()
     printf("Testing basic logging functionality... ");
 
     /* Initialize logging system */
-    tinyai_logging_init();
+    hyperion_logging_init();
 
     /* Set log level to INFO */
-    tinyai_set_log_level(TINYAI_LOG_INFO);
+    hyperion_set_log_level(TINYAI_LOG_INFO);
 
     /* Log messages at different levels */
     TINYAI_LOG_ERROR("This is an error message");
@@ -48,7 +48,7 @@ void test_basic_logging()
     TINYAI_LOG_TRACE("This is a trace message (should not be logged)");
 
     /* Change log level to DEBUG */
-    tinyai_set_log_level(TINYAI_LOG_DEBUG);
+    hyperion_set_log_level(TINYAI_LOG_DEBUG);
 
     /* Log a debug message (should be logged now) */
     TINYAI_LOG_DEBUG("This is a debug message (should be logged)");
@@ -63,40 +63,40 @@ void test_custom_handler()
     printf("Testing custom log handler... ");
 
     /* Initialize logging system */
-    tinyai_logging_init();
+    hyperion_logging_init();
 
     /* Set up custom handler data */
     TestLogHandlerData handler_data = {0};
 
     /* Register custom handler */
-    tinyai_register_log_handler(test_log_handler, &handler_data);
+    hyperion_register_log_handler(test_log_handler, &handler_data);
 
     /* Set log level */
-    tinyai_set_log_level(TINYAI_LOG_DEBUG);
+    hyperion_set_log_level(TINYAI_LOG_DEBUG);
 
     /* Configure logging output to only use custom handler */
-    TinyAILogConfig config;
-    tinyai_get_logging_config(&config);
+    HyperionLogConfig config;
+    hyperion_get_logging_config(&config);
     config.output = TINYAI_LOG_OUTPUT_CUSTOM;
-    tinyai_configure_logging(&config);
+    hyperion_configure_logging(&config);
 
     /* Log messages */
-    tinyai_log(TINYAI_LOG_ERROR, "Custom handler error message");
+    hyperion_log(TINYAI_LOG_ERROR, "Custom handler error message");
     assert(handler_data.messages_received == 1);
     assert(handler_data.last_level == TINYAI_LOG_ERROR);
     assert(strstr(handler_data.last_message, "Custom handler error message") != NULL);
 
-    tinyai_log(TINYAI_LOG_DEBUG, "Custom handler debug message");
+    hyperion_log(TINYAI_LOG_DEBUG, "Custom handler debug message");
     assert(handler_data.messages_received == 2);
     assert(handler_data.last_level == TINYAI_LOG_DEBUG);
     assert(strstr(handler_data.last_message, "Custom handler debug message") != NULL);
 
-    tinyai_log(TINYAI_LOG_TRACE, "Custom handler trace message (should not be logged)");
+    hyperion_log(TINYAI_LOG_TRACE, "Custom handler trace message (should not be logged)");
     assert(handler_data.messages_received == 2); /* Should not have increased */
 
     /* Reset output configuration */
     config.output = TINYAI_LOG_OUTPUT_CONSOLE;
-    tinyai_configure_logging(&config);
+    hyperion_configure_logging(&config);
 
     printf("PASS\n");
 }
@@ -107,18 +107,18 @@ void test_log_file_output()
     printf("Testing log file output... ");
 
     /* Initialize logging system */
-    tinyai_logging_init();
+    hyperion_logging_init();
 
     /* Set log file path */
     const char *test_log_file = "test_log.txt";
-    tinyai_set_log_file(test_log_file);
+    hyperion_set_log_file(test_log_file);
 
     /* Configure logging output to use both console and file */
-    TinyAILogConfig config;
-    tinyai_get_logging_config(&config);
+    HyperionLogConfig config;
+    hyperion_get_logging_config(&config);
     config.output = TINYAI_LOG_OUTPUT_CONSOLE | TINYAI_LOG_OUTPUT_FILE;
     config.level  = TINYAI_LOG_INFO;
-    tinyai_configure_logging(&config);
+    hyperion_configure_logging(&config);
 
     /* Log some messages */
     char       timestamp_str[32];
@@ -129,7 +129,7 @@ void test_log_file_output()
     TINYAI_LOG_INFO("Test log file message at %s", timestamp_str);
 
     /* Close log file */
-    tinyai_set_log_file(NULL);
+    hyperion_set_log_file(NULL);
 
     /* Verify log file exists and contains message */
     FILE *log_file = fopen(test_log_file, "r");
@@ -155,27 +155,27 @@ void test_log_formatting()
     printf("Testing log formatting... ");
 
     /* Initialize logging system */
-    tinyai_logging_init();
+    hyperion_logging_init();
 
     /* Set up custom handler data */
     TestLogHandlerData handler_data = {0};
 
     /* Register custom handler */
-    tinyai_register_log_handler(test_log_handler, &handler_data);
+    hyperion_register_log_handler(test_log_handler, &handler_data);
 
     /* Set configuration to use custom handler only */
-    TinyAILogConfig config;
-    tinyai_get_logging_config(&config);
+    HyperionLogConfig config;
+    hyperion_get_logging_config(&config);
     config.output            = TINYAI_LOG_OUTPUT_CUSTOM;
     config.level             = TINYAI_LOG_INFO;
     config.include_timestamp = true;
     config.include_level     = true;
     config.include_source    = true;
-    tinyai_configure_logging(&config);
+    hyperion_configure_logging(&config);
 
     /* Test plain format */
     config.format = TINYAI_LOG_FORMAT_PLAIN;
-    tinyai_configure_logging(&config);
+    hyperion_configure_logging(&config);
 
     TINYAI_LOG_INFO("Plain format message");
     assert(handler_data.messages_received == 1);
@@ -185,7 +185,7 @@ void test_log_formatting()
 
     /* Test JSON format */
     config.format = TINYAI_LOG_FORMAT_JSON;
-    tinyai_configure_logging(&config);
+    hyperion_configure_logging(&config);
 
     TINYAI_LOG_INFO("JSON format message");
     assert(handler_data.messages_received == 2);
@@ -195,7 +195,7 @@ void test_log_formatting()
 
     /* Test CSV format */
     config.format = TINYAI_LOG_FORMAT_CSV;
-    tinyai_configure_logging(&config);
+    hyperion_configure_logging(&config);
 
     TINYAI_LOG_INFO("CSV format message");
     assert(handler_data.messages_received == 3);
@@ -203,7 +203,7 @@ void test_log_formatting()
     /* Reset output configuration */
     config.format = TINYAI_LOG_FORMAT_PLAIN;
     config.output = TINYAI_LOG_OUTPUT_CONSOLE;
-    tinyai_configure_logging(&config);
+    hyperion_configure_logging(&config);
 
     printf("PASS\n");
 }
@@ -214,21 +214,21 @@ void test_log_rotation()
     printf("Testing log rotation... ");
 
     /* Initialize logging system */
-    tinyai_logging_init();
+    hyperion_logging_init();
 
     /* Set log file path */
     const char *test_log_file = "rotation_test.log";
 
     /* Configure log rotation */
-    TinyAILogConfig config;
-    tinyai_get_logging_config(&config);
+    HyperionLogConfig config;
+    hyperion_get_logging_config(&config);
     config.output                   = TINYAI_LOG_OUTPUT_FILE;
     config.level                    = TINYAI_LOG_INFO;
     config.log_file_path            = test_log_file;
     config.rotation.enable_rotation = true;
     config.rotation.max_size        = 1024; /* Small size for testing */
     config.rotation.max_files       = 3;
-    tinyai_configure_logging(&config);
+    hyperion_configure_logging(&config);
 
     /* Generate enough logs to trigger multiple rotations */
     char log_line[100];
@@ -239,7 +239,7 @@ void test_log_rotation()
     }
 
     /* Close log file */
-    tinyai_set_log_file(NULL);
+    hyperion_set_log_file(NULL);
 
     /* Check if rotation files exist */
     FILE *file;
@@ -279,20 +279,20 @@ void test_conditional_logging()
     printf("Testing conditional logging macros... ");
 
     /* Initialize logging system */
-    tinyai_logging_init();
+    hyperion_logging_init();
 
     /* Set up custom handler data */
     TestLogHandlerData handler_data = {0};
 
     /* Register custom handler */
-    tinyai_register_log_handler(test_log_handler, &handler_data);
+    hyperion_register_log_handler(test_log_handler, &handler_data);
 
     /* Set configuration to use custom handler only */
-    TinyAILogConfig config;
-    tinyai_get_logging_config(&config);
+    HyperionLogConfig config;
+    hyperion_get_logging_config(&config);
     config.output = TINYAI_LOG_OUTPUT_CUSTOM;
     config.level  = TINYAI_LOG_INFO;
-    tinyai_configure_logging(&config);
+    hyperion_configure_logging(&config);
 
     /* Reset message count */
     handler_data.messages_received = 0;
@@ -310,7 +310,7 @@ void test_conditional_logging()
 
     /* Reset output configuration */
     config.output = TINYAI_LOG_OUTPUT_CONSOLE;
-    tinyai_configure_logging(&config);
+    hyperion_configure_logging(&config);
 
     printf("PASS\n");
 }
@@ -318,7 +318,7 @@ void test_conditional_logging()
 /* Main function */
 int main()
 {
-    printf("Running TinyAI logging system tests...\n");
+    printf("Running Hyperion logging system tests...\n");
 
     /* Run tests */
     test_basic_logging();
@@ -329,7 +329,7 @@ int main()
     test_conditional_logging();
 
     /* Shut down logging system */
-    tinyai_logging_shutdown();
+    hyperion_logging_shutdown();
 
     printf("All logging tests passed!\n");
     return 0;

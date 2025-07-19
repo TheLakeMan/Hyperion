@@ -6,13 +6,13 @@
 #include <string.h>
 
 // Memory optimizer structure
-struct TinyAIMemoryOptimizer {
-    TinyAIMemoryOptimizerConfig config;
-    TinyAIMemoryOptimizerStats  stats;
-    struct TinyAIMemoryPool    *memory_pool;
+struct HyperionMemoryOptimizer {
+    HyperionMemoryOptimizerConfig config;
+    HyperionMemoryStats  stats;
+    struct HyperionMemoryPool    *memory_pool;
 
     // Tensor reuse tracking
-    struct TinyAITensor **reusable_tensors;
+    struct HyperionTensor **reusable_tensors;
     int                   num_reusable_tensors;
     int                   max_reusable_tensors;
 
@@ -22,10 +22,10 @@ struct TinyAIMemoryOptimizer {
 };
 
 // Create a memory optimizer
-struct TinyAIMemoryOptimizer *tinyaiCreateMemoryOptimizer(void)
+struct HyperionMemoryOptimizer *hyperionCreateMemoryOptimizer(void)
 {
-    struct TinyAIMemoryOptimizer *optimizer =
-        (struct TinyAIMemoryOptimizer *)malloc(sizeof(struct TinyAIMemoryOptimizer));
+    struct HyperionMemoryOptimizer *optimizer =
+        (struct HyperionMemoryOptimizer *)malloc(sizeof(struct HyperionMemoryOptimizer));
     if (!optimizer)
         return NULL;
 
@@ -41,7 +41,7 @@ struct TinyAIMemoryOptimizer *tinyaiCreateMemoryOptimizer(void)
     optimizer->stats.deallocations  = 0;
 
     // Create memory pool
-    optimizer->memory_pool = tinyaiCreateMemoryPool(1024 * 1024 * 1024); // 1GB default
+    optimizer->memory_pool = hyperionCreateMemoryPool(1024 * 1024 * 1024); // 1GB default
     if (!optimizer->memory_pool) {
         free(optimizer);
         return NULL;
@@ -49,10 +49,10 @@ struct TinyAIMemoryOptimizer *tinyaiCreateMemoryOptimizer(void)
 
     // Initialize tensor reuse tracking
     optimizer->max_reusable_tensors = optimizer->config.max_tensor_reuse;
-    optimizer->reusable_tensors = (struct TinyAITensor **)calloc(optimizer->max_reusable_tensors,
-                                                                 sizeof(struct TinyAITensor *));
+    optimizer->reusable_tensors = (struct HyperionTensor **)calloc(optimizer->max_reusable_tensors,
+                                                                 sizeof(struct HyperionTensor *));
     if (!optimizer->reusable_tensors) {
-        tinyaiFreeMemoryPool(optimizer->memory_pool);
+        hyperionFreeMemoryPool(optimizer->memory_pool);
         free(optimizer);
         return NULL;
     }
@@ -65,7 +65,7 @@ struct TinyAIMemoryOptimizer *tinyaiCreateMemoryOptimizer(void)
 }
 
 // Free memory optimizer resources
-void tinyaiFreeMemoryOptimizer(struct TinyAIMemoryOptimizer *optimizer)
+void hyperionFreeMemoryOptimizer(struct HyperionMemoryOptimizer *optimizer)
 {
     if (!optimizer)
         return;
@@ -73,23 +73,23 @@ void tinyaiFreeMemoryOptimizer(struct TinyAIMemoryOptimizer *optimizer)
     // Free reusable tensors
     for (int i = 0; i < optimizer->num_reusable_tensors; i++) {
         if (optimizer->reusable_tensors[i]) {
-            tinyaiFreeTensor(optimizer->reusable_tensors[i]);
+            hyperionFreeTensor(optimizer->reusable_tensors[i]);
         }
     }
 
     free(optimizer->reusable_tensors);
-    tinyaiFreeMemoryPool(optimizer->memory_pool);
+    hyperionFreeMemoryPool(optimizer->memory_pool);
     free(optimizer);
 }
 
 // Get current memory optimizer statistics
-TinyAIMemoryOptimizerStats tinyaiGetMemoryOptimizerStats(struct TinyAIMemoryOptimizer *optimizer)
+HyperionMemoryStats hyperionGetMemoryOptimizerStats(struct HyperionMemoryOptimizer *optimizer)
 {
-    return optimizer ? optimizer->stats : (TinyAIMemoryOptimizerStats){0};
+    return optimizer ? optimizer->stats : (HyperionMemoryStats){0};
 }
 
 // Set memory/speed tradeoff
-void tinyaiSetMemorySpeedTradeoff(struct TinyAIMemoryOptimizer *optimizer, float tradeoff)
+void hyperionSetMemorySpeedTradeoff(struct HyperionMemoryOptimizer *optimizer, float tradeoff)
 {
     if (!optimizer)
         return;
@@ -99,7 +99,7 @@ void tinyaiSetMemorySpeedTradeoff(struct TinyAIMemoryOptimizer *optimizer, float
 }
 
 // Enable in-place operations for a layer
-bool tinyaiEnableInPlaceOperations(struct TinyAIMemoryOptimizer *optimizer, int layer_index)
+bool hyperionEnableInPlaceOperations(struct HyperionMemoryOptimizer *optimizer, int layer_index)
 {
     if (!optimizer)
         return false;
@@ -110,18 +110,18 @@ bool tinyaiEnableInPlaceOperations(struct TinyAIMemoryOptimizer *optimizer, int 
 }
 
 // Execute a function with tensor reuse
-bool tinyaiExecuteWithTensorReuse(struct TinyAIMemoryOptimizer *optimizer,
-                                  struct TinyAIModel *model, int layer_index,
-                                  struct TinyAITensor *input, struct TinyAITensor *output)
+bool hyperionExecuteWithTensorReuse(struct HyperionMemoryOptimizer *optimizer,
+                                  struct HyperionModel *model, int layer_index,
+                                  struct HyperionTensor *input, struct HyperionTensor *output)
 {
     if (!optimizer || !model || !input || !output)
         return false;
 
     // Check if we can reuse a tensor
-    struct TinyAITensor *reusable_tensor = NULL;
+    struct HyperionTensor *reusable_tensor = NULL;
     for (int i = 0; i < optimizer->num_reusable_tensors; i++) {
         if (optimizer->reusable_tensors[i] &&
-            tinyaiGetTensorSize(optimizer->reusable_tensors[i]) >= tinyaiGetTensorSize(output)) {
+            hyperionGetTensorSize(optimizer->reusable_tensors[i]) >= hyperionGetTensorSize(output)) {
             reusable_tensor                = optimizer->reusable_tensors[i];
             optimizer->reusable_tensors[i] = NULL;
             optimizer->stats.tensors_reused++;
@@ -132,39 +132,39 @@ bool tinyaiExecuteWithTensorReuse(struct TinyAIMemoryOptimizer *optimizer,
     // If no reusable tensor found, create a new one
     if (!reusable_tensor) {
         reusable_tensor =
-            tinyaiCreateTensor(tinyaiGetTensorShape(output), tinyaiGetTensorDataType(output));
+            hyperionCreateTensor(hyperionGetTensorShape(output), hyperionGetTensorDataType(output));
         if (!reusable_tensor)
             return false;
         optimizer->stats.allocations++;
     }
 
     // Execute the layer
-    bool success = tinyaiExecuteLayer(model, layer_index, input, reusable_tensor);
+    bool success = hyperionExecuteLayer(model, layer_index, input, reusable_tensor);
     if (!success) {
         if (reusable_tensor != output) {
-            tinyaiFreeTensor(reusable_tensor);
+            hyperionFreeTensor(reusable_tensor);
         }
         return false;
     }
 
     // Copy result to output if needed
     if (reusable_tensor != output) {
-        tinyaiCopyTensor(reusable_tensor, output);
+        hyperionCopyTensor(reusable_tensor, output);
     }
 
     // Store tensor for reuse if possible
     if (optimizer->config.enable_tensor_reuse &&
         optimizer->num_reusable_tensors < optimizer->max_reusable_tensors) {
         optimizer->reusable_tensors[optimizer->num_reusable_tensors++] = reusable_tensor;
-        optimizer->stats.memory_saved += tinyaiGetTensorSize(reusable_tensor);
+        optimizer->stats.memory_saved += hyperionGetTensorSize(reusable_tensor);
     }
     else {
-        tinyaiFreeTensor(reusable_tensor);
+        hyperionFreeTensor(reusable_tensor);
         optimizer->stats.deallocations++;
     }
 
     // Update memory usage
-    optimizer->current_memory_usage = tinyaiGetMemoryPoolUsage(optimizer->memory_pool);
+    optimizer->current_memory_usage = hyperionGetMemoryPoolUsage(optimizer->memory_pool);
     optimizer->peak_memory_usage =
         fmax(optimizer->peak_memory_usage, optimizer->current_memory_usage);
 
@@ -172,7 +172,7 @@ bool tinyaiExecuteWithTensorReuse(struct TinyAIMemoryOptimizer *optimizer,
 }
 
 // Optimize memory usage
-bool tinyaiOptimizeMemoryUsage(struct TinyAIMemoryOptimizer *optimizer, size_t current_allocation,
+bool hyperionOptimizeMemoryUsage(struct HyperionMemoryOptimizer *optimizer, size_t current_allocation,
                                size_t memory_budget)
 {
     if (!optimizer)
@@ -189,8 +189,8 @@ bool tinyaiOptimizeMemoryUsage(struct TinyAIMemoryOptimizer *optimizer, size_t c
     while (memory_to_free > 0 && optimizer->num_reusable_tensors > 0) {
         int last_index = --optimizer->num_reusable_tensors;
         if (optimizer->reusable_tensors[last_index]) {
-            size_t tensor_size = tinyaiGetTensorSize(optimizer->reusable_tensors[last_index]);
-            tinyaiFreeTensor(optimizer->reusable_tensors[last_index]);
+            size_t tensor_size = hyperionGetTensorSize(optimizer->reusable_tensors[last_index]);
+            hyperionFreeTensor(optimizer->reusable_tensors[last_index]);
             optimizer->reusable_tensors[last_index] = NULL;
             memory_to_free = memory_to_free > tensor_size ? memory_to_free - tensor_size : 0;
             optimizer->stats.deallocations++;

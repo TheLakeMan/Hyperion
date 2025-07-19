@@ -1,5 +1,5 @@
 @echo off
-echo TinyAI Cleanup Script - Preparing for GitHub Publishing
+echo Hyperion Cleanup Script - Preparing for GitHub Publishing
 echo ------------------------------------------------
 echo.
 

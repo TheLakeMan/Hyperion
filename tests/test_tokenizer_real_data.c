@@ -1,5 +1,5 @@
 /**
- * TinyAI Tokenizer Real Data Tests
+ * Hyperion Tokenizer Real Data Tests
  *
  * This file implements tests for the tokenizer with actual data and realistic usage scenarios
  */
@@ -79,12 +79,12 @@ void test_tokenize_real_data()
     }
 
     // Create tokenizer
-    TinyAITokenizer *tokenizer = tinyaiCreateTokenizer();
+    HyperionTokenizer *tokenizer = hyperionCreateTokenizer();
     ASSERT(tokenizer != NULL, "Failed to create tokenizer");
 
     // Create a minimal vocabulary from the text
     int vocabSize = 1000;
-    int result    = tinyaiCreateMinimalVocabulary(tokenizer, text, vocabSize);
+    int result    = hyperionCreateMinimalVocabulary(tokenizer, text, vocabSize);
 
     ASSERT(result == 0, "Failed to create vocabulary from text");
     ASSERT(tokenizer->tokenCount > 0, "Vocabulary should not be empty");
@@ -96,7 +96,7 @@ void test_tokenize_real_data()
     int *tokens = (int *)malloc(MAX_FILE_SIZE * sizeof(int));
     ASSERT(tokens != NULL, "Failed to allocate memory for tokens");
 
-    int tokenCount = tinyaiEncodeText(tokenizer, text, tokens, MAX_FILE_SIZE);
+    int tokenCount = hyperionEncodeText(tokenizer, text, tokens, MAX_FILE_SIZE);
     ASSERT(tokenCount > 0, "Failed to encode text");
 
     printf("    Encoded text into %d tokens\n", tokenCount);
@@ -109,7 +109,7 @@ void test_tokenize_real_data()
     char *decoded = (char *)malloc(MAX_FILE_SIZE);
     ASSERT(decoded != NULL, "Failed to allocate memory for decoded text");
 
-    int decodedLength = tinyaiDecodeTokens(tokenizer, tokens, tokenCount, decoded, MAX_FILE_SIZE);
+    int decodedLength = hyperionDecodeTokens(tokenizer, tokens, tokenCount, decoded, MAX_FILE_SIZE);
     ASSERT(decodedLength > 0, "Failed to decode tokens");
 
     // Compare decoded text with original
@@ -126,7 +126,7 @@ void test_tokenize_real_data()
     free(text);
     free(tokens);
     free(decoded);
-    tinyaiDestroyTokenizer(tokenizer);
+    hyperionDestroyTokenizer(tokenizer);
 
     printf("    PASS\n");
 }
@@ -137,14 +137,14 @@ void test_load_vocabulary()
     printf("  Testing loading pre-built vocabulary...\n");
 
     // Try to load a vocabulary file
-    TinyAITokenizer *tokenizer = tinyaiCreateTokenizer();
+    HyperionTokenizer *tokenizer = hyperionCreateTokenizer();
     ASSERT(tokenizer != NULL, "Failed to create tokenizer");
 
-    int result = tinyaiLoadVocabulary(tokenizer, "data/tiny_vocab.tok");
+    int result = hyperionLoadVocabulary(tokenizer, "data/tiny_vocab.tok");
 
     if (result != 0) {
         printf("    SKIP - Could not load tiny_vocab.tok\n");
-        tinyaiDestroyTokenizer(tokenizer);
+        hyperionDestroyTokenizer(tokenizer);
         return;
     }
 
@@ -155,7 +155,7 @@ void test_load_vocabulary()
     const char *testText = "The quick brown fox jumps over the lazy dog.";
 
     int tokens[100] = {0};
-    int tokenCount  = tinyaiEncodeText(tokenizer, testText, tokens, 100);
+    int tokenCount  = hyperionEncodeText(tokenizer, testText, tokens, 100);
 
     ASSERT(tokenCount > 0, "Failed to encode text with loaded vocabulary");
     printf("    Encoded test sentence into %d tokens\n", tokenCount);
@@ -168,12 +168,12 @@ void test_load_vocabulary()
     printf("...\n");
 
     char decoded[1000] = {0};
-    int decodedLength = tinyaiDecodeTokens(tokenizer, tokens, tokenCount, decoded, sizeof(decoded));
+    int decodedLength = hyperionDecodeTokens(tokenizer, tokens, tokenCount, decoded, sizeof(decoded));
 
     ASSERT(decodedLength > 0, "Failed to decode tokens with loaded vocabulary");
     printf("    Decoded: '%s'\n", decoded);
 
-    tinyaiDestroyTokenizer(tokenizer);
+    hyperionDestroyTokenizer(tokenizer);
     printf("    PASS\n");
 }
 
@@ -190,19 +190,19 @@ void test_token_frequency()
     }
 
     // Create tokenizer with a vocabulary
-    TinyAITokenizer *tokenizer = tinyaiCreateTokenizer();
+    HyperionTokenizer *tokenizer = hyperionCreateTokenizer();
     ASSERT(tokenizer != NULL, "Failed to create tokenizer");
 
     // Create vocabulary
     int vocabSize = 500;
-    int result    = tinyaiCreateMinimalVocabulary(tokenizer, text, vocabSize);
+    int result    = hyperionCreateMinimalVocabulary(tokenizer, text, vocabSize);
     ASSERT(result == 0, "Failed to create vocabulary");
 
     // Encode the text
     int *tokens = (int *)malloc(MAX_FILE_SIZE * sizeof(int));
     ASSERT(tokens != NULL, "Failed to allocate memory for tokens");
 
-    int tokenCount = tinyaiEncodeText(tokenizer, text, tokens, MAX_FILE_SIZE);
+    int tokenCount = hyperionEncodeText(tokenizer, text, tokens, MAX_FILE_SIZE);
     ASSERT(tokenCount > 0, "Failed to encode text");
 
     // Count token frequencies
@@ -232,7 +232,7 @@ void test_token_frequency()
         }
 
         if (maxIdx >= 0) {
-            const char *tokenStr = tinyaiGetTokenString(tokenizer, maxIdx);
+            const char *tokenStr = hyperionGetTokenString(tokenizer, maxIdx);
             printf("    %d. Token %d (\"%s\") - %d occurrences\n", n + 1, maxIdx,
                    tokenStr ? tokenStr : "<unknown>", maxFreq);
 
@@ -245,7 +245,7 @@ void test_token_frequency()
     free(text);
     free(tokens);
     free(frequencies);
-    tinyaiDestroyTokenizer(tokenizer);
+    hyperionDestroyTokenizer(tokenizer);
 
     printf("    PASS\n");
 }
@@ -255,19 +255,19 @@ void test_special_sequences()
 {
     printf("  Testing tokenizer on special sequences...\n");
 
-    TinyAITokenizer *tokenizer = tinyaiCreateTokenizer();
+    HyperionTokenizer *tokenizer = hyperionCreateTokenizer();
     ASSERT(tokenizer != NULL, "Failed to create tokenizer");
 
     // Add some basic tokens
-    tinyaiAddToken(tokenizer, "a", 100);
-    tinyaiAddToken(tokenizer, "b", 90);
-    tinyaiAddToken(tokenizer, "c", 80);
-    tinyaiAddToken(tokenizer, " ", 70);
-    tinyaiAddToken(tokenizer, "\n", 60);
-    tinyaiAddToken(tokenizer, ".", 50);
-    tinyaiAddToken(tokenizer, ",", 40);
-    tinyaiAddToken(tokenizer, "!", 30);
-    tinyaiAddToken(tokenizer, "?", 20);
+    hyperionAddToken(tokenizer, "a", 100);
+    hyperionAddToken(tokenizer, "b", 90);
+    hyperionAddToken(tokenizer, "c", 80);
+    hyperionAddToken(tokenizer, " ", 70);
+    hyperionAddToken(tokenizer, "\n", 60);
+    hyperionAddToken(tokenizer, ".", 50);
+    hyperionAddToken(tokenizer, ",", 40);
+    hyperionAddToken(tokenizer, "!", 30);
+    hyperionAddToken(tokenizer, "?", 20);
 
     // Test cases
     const char *testCases[] = {
@@ -290,7 +290,7 @@ void test_special_sequences()
 
         // Encode
         int tokens[100] = {0};
-        int tokenCount  = tinyaiEncodeText(tokenizer, testCase, tokens, 100);
+        int tokenCount  = hyperionEncodeText(tokenizer, testCase, tokens, 100);
 
         ASSERT(tokenCount >= 0, "Encoding should not fail");
         printf("      Encoded into %d tokens: ", tokenCount);
@@ -304,7 +304,7 @@ void test_special_sequences()
             // Decode
             char decoded[100] = {0};
             int  decodedLength =
-                tinyaiDecodeTokens(tokenizer, tokens, tokenCount, decoded, sizeof(decoded));
+                hyperionDecodeTokens(tokenizer, tokens, tokenCount, decoded, sizeof(decoded));
 
             ASSERT(decodedLength >= 0, "Decoding should not fail");
             printf("      Decoded: \"%s\"\n", decoded);
@@ -318,7 +318,7 @@ void test_special_sequences()
         }
     }
 
-    tinyaiDestroyTokenizer(tokenizer);
+    hyperionDestroyTokenizer(tokenizer);
     printf("    PASS\n");
 }
 
@@ -338,12 +338,12 @@ void test_tokenizer_performance()
     printf("    Loaded text with %zu characters\n", textLength);
 
     // Create tokenizer
-    TinyAITokenizer *tokenizer = tinyaiCreateTokenizer();
+    HyperionTokenizer *tokenizer = hyperionCreateTokenizer();
     ASSERT(tokenizer != NULL, "Failed to create tokenizer");
 
     // Create vocabulary
     int vocabSize = 1000;
-    int result    = tinyaiCreateMinimalVocabulary(tokenizer, text, vocabSize);
+    int result    = hyperionCreateMinimalVocabulary(tokenizer, text, vocabSize);
     ASSERT(result == 0, "Failed to create vocabulary");
 
     int *tokens = (int *)malloc(MAX_FILE_SIZE * sizeof(int));
@@ -351,7 +351,7 @@ void test_tokenizer_performance()
 
     // Benchmark encoding
     clock_t startTime  = clock();
-    int     tokenCount = tinyaiEncodeText(tokenizer, text, tokens, MAX_FILE_SIZE);
+    int     tokenCount = hyperionEncodeText(tokenizer, text, tokens, MAX_FILE_SIZE);
     clock_t endTime    = clock();
 
     ASSERT(tokenCount > 0, "Failed to encode text");
@@ -366,7 +366,7 @@ void test_tokenizer_performance()
     ASSERT(decoded != NULL, "Failed to allocate memory for decoded text");
 
     startTime         = clock();
-    int decodedLength = tinyaiDecodeTokens(tokenizer, tokens, tokenCount, decoded, MAX_FILE_SIZE);
+    int decodedLength = hyperionDecodeTokens(tokenizer, tokens, tokenCount, decoded, MAX_FILE_SIZE);
     endTime           = clock();
 
     ASSERT(decodedLength > 0, "Failed to decode tokens");
@@ -380,7 +380,7 @@ void test_tokenizer_performance()
     free(text);
     free(tokens);
     free(decoded);
-    tinyaiDestroyTokenizer(tokenizer);
+    hyperionDestroyTokenizer(tokenizer);
 
     printf("    PASS\n");
 }

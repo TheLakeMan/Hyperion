@@ -2,7 +2,7 @@
  * @file main.c
  * @brief Main program for image captioning example
  *
- * This example demonstrates how to use TinyAI's multimodal capabilities
+ * This example demonstrates how to use Hyperion's multimodal capabilities
  * to generate natural language captions for images.
  */
 
@@ -33,7 +33,7 @@ void print_usage(const char *progname)
 }
 
 /* Process a single image */
-bool process_image(TinyAIImageCaptioner *captioner, const char *imagePath, const char *outputPath,
+bool process_image(HyperionImageCaptioner *captioner, const char *imagePath, const char *outputPath,
                    bool append)
 {
     char caption[MAX_CAPTION_LENGTH];
@@ -44,7 +44,7 @@ bool process_image(TinyAIImageCaptioner *captioner, const char *imagePath, const
     clock_t start_time = clock();
 
     bool success =
-        tinyaiImageCaptionerCaptionFile(captioner, imagePath, caption, MAX_CAPTION_LENGTH);
+        hyperionImageCaptionerCaptionFile(captioner, imagePath, caption, MAX_CAPTION_LENGTH);
 
     clock_t end_time   = clock();
     double  time_taken = ((double)(end_time - start_time)) / CLOCKS_PER_SEC;
@@ -75,10 +75,10 @@ bool process_image(TinyAIImageCaptioner *captioner, const char *imagePath, const
 }
 
 /* Compare different caption styles for a single image */
-bool compare_styles(TinyAIImageCaptioner *captioner, const char *imagePath, const char *outputPath)
+bool compare_styles(HyperionImageCaptioner *captioner, const char *imagePath, const char *outputPath)
 {
-    TinyAICaptionStyle styles[] = {TINYAI_CAPTION_STYLE_DESCRIPTIVE, TINYAI_CAPTION_STYLE_CONCISE,
-                                   TINYAI_CAPTION_STYLE_CREATIVE, TINYAI_CAPTION_STYLE_TECHNICAL};
+    HyperionCaptionStyle styles[] = {HYPERION_CAPTION_STYLE_DESCRIPTIVE, HYPERION_CAPTION_STYLE_CONCISE,
+                                   HYPERION_CAPTION_STYLE_CREATIVE, HYPERION_CAPTION_STYLE_TECHNICAL};
 
     const char *style_names[] = {"Descriptive", "Concise", "Creative", "Technical"};
 
@@ -101,7 +101,7 @@ bool compare_styles(TinyAIImageCaptioner *captioner, const char *imagePath, cons
     /* Generate captions with different styles */
     for (int i = 0; i < 4; i++) {
         /* Set caption style */
-        if (!tinyaiImageCaptionerSetStyle(captioner, styles[i], NULL)) {
+        if (!hyperionImageCaptionerSetStyle(captioner, styles[i], NULL)) {
             fprintf(stderr, "Error: Failed to set caption style\n");
             continue;
         }
@@ -109,7 +109,7 @@ bool compare_styles(TinyAIImageCaptioner *captioner, const char *imagePath, cons
         /* Generate caption */
         clock_t start_time = clock();
         bool    success =
-            tinyaiImageCaptionerCaptionFile(captioner, imagePath, caption, MAX_CAPTION_LENGTH);
+            hyperionImageCaptionerCaptionFile(captioner, imagePath, caption, MAX_CAPTION_LENGTH);
         clock_t end_time   = clock();
         double  time_taken = ((double)(end_time - start_time)) / CLOCKS_PER_SEC;
 
@@ -145,7 +145,7 @@ int main(int argc, char *argv[])
     const char        *tokenizer_path   = NULL;
     const char        *output_path      = NULL;
     const char        *custom_prompt    = NULL;
-    TinyAICaptionStyle style            = TINYAI_CAPTION_STYLE_DESCRIPTIVE;
+    HyperionCaptionStyle style            = HYPERION_CAPTION_STYLE_DESCRIPTIVE;
     int                max_tokens       = 100;
     bool               use_quantization = false;
     bool               use_simd         = false;
@@ -169,16 +169,16 @@ int main(int argc, char *argv[])
         else if (strcmp(argv[i], "--style") == 0 && i + 1 < argc) {
             i++;
             if (strcmp(argv[i], "descriptive") == 0) {
-                style = TINYAI_CAPTION_STYLE_DESCRIPTIVE;
+                style = HYPERION_CAPTION_STYLE_DESCRIPTIVE;
             }
             else if (strcmp(argv[i], "concise") == 0) {
-                style = TINYAI_CAPTION_STYLE_CONCISE;
+                style = HYPERION_CAPTION_STYLE_CONCISE;
             }
             else if (strcmp(argv[i], "creative") == 0) {
-                style = TINYAI_CAPTION_STYLE_CREATIVE;
+                style = HYPERION_CAPTION_STYLE_CREATIVE;
             }
             else if (strcmp(argv[i], "technical") == 0) {
-                style = TINYAI_CAPTION_STYLE_TECHNICAL;
+                style = HYPERION_CAPTION_STYLE_TECHNICAL;
             }
             else {
                 fprintf(stderr, "Error: Unknown caption style: %s\n", argv[i]);
@@ -187,7 +187,7 @@ int main(int argc, char *argv[])
         }
         else if (strcmp(argv[i], "--custom-prompt") == 0 && i + 1 < argc) {
             custom_prompt = argv[++i];
-            style         = TINYAI_CAPTION_STYLE_CUSTOM;
+            style         = HYPERION_CAPTION_STYLE_CUSTOM;
         }
         else if (strcmp(argv[i], "--max-tokens") == 0 && i + 1 < argc) {
             max_tokens = atoi(argv[++i]);
@@ -237,8 +237,8 @@ int main(int argc, char *argv[])
     }
 
     /* Create captioner configuration */
-    TinyAIImageCaptionerConfig config;
-    memset(&config, 0, sizeof(TinyAIImageCaptionerConfig));
+    HyperionImageCaptionerConfig config;
+    memset(&config, 0, sizeof(HyperionImageCaptionerConfig));
     config.modelPath       = model_path;
     config.weightsPath     = weights_path;
     config.tokenizerPath   = tokenizer_path;
@@ -252,7 +252,7 @@ int main(int argc, char *argv[])
     printf("Initializing image captioner...\n");
     clock_t start_time = clock();
 
-    TinyAIImageCaptioner *captioner = tinyaiImageCaptionerCreate(&config);
+    HyperionImageCaptioner *captioner = hyperionImageCaptionerCreate(&config);
     if (!captioner) {
         fprintf(stderr, "Error: Failed to create image captioner\n");
         return 1;
@@ -264,7 +264,7 @@ int main(int argc, char *argv[])
 
     /* Get memory usage statistics */
     size_t weightMemory, activationMemory;
-    if (tinyaiImageCaptionerGetMemoryUsage(captioner, &weightMemory, &activationMemory)) {
+    if (hyperionImageCaptionerGetMemoryUsage(captioner, &weightMemory, &activationMemory)) {
         printf("Memory usage:\n");
         printf("  Weights: %.2f MB\n", weightMemory / (1024.0 * 1024.0));
         printf("  Activations: %.2f MB\n", activationMemory / (1024.0 * 1024.0));
@@ -301,7 +301,7 @@ int main(int argc, char *argv[])
            (double)(end_time - start_time) / CLOCKS_PER_SEC);
 
     /* Clean up */
-    tinyaiImageCaptionerFree(captioner);
+    hyperionImageCaptionerFree(captioner);
 
     return 0;
 }

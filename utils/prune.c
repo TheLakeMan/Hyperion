@@ -1,6 +1,6 @@
 /**
  * @file prune.c
- * @brief Implementation of model pruning utilities for TinyAI
+ * @brief Implementation of model pruning utilities for Hyperion
  */
 
 #include "prune.h"
@@ -48,8 +48,8 @@ static void applyPruningMask(float *weights, const bool *mask, int size)
 
 /* Implementation of public API */
 
-bool tinyaiPruneModel(const char *srcModelPath, const char *dstModelPath,
-                      const TinyAIPruneConfig *config)
+bool hyperionPruneModel(const char *srcModelPath, const char *dstModelPath,
+                      const HyperionPruneConfig *config)
 {
     /* This would be a complex implementation that:
      * 1. Loads the model from srcModelPath
@@ -72,7 +72,7 @@ bool tinyaiPruneModel(const char *srcModelPath, const char *dstModelPath,
     return true;
 }
 
-bool tinyaiPruneMatrixByMagnitude(float *weights, int rows, int cols, float pruneRate)
+bool hyperionPruneMatrixByMagnitude(float *weights, int rows, int cols, float pruneRate)
 {
     if (!weights || rows <= 0 || cols <= 0 || pruneRate < 0.0f || pruneRate > 1.0f) {
         return false;
@@ -125,7 +125,7 @@ bool tinyaiPruneMatrixByMagnitude(float *weights, int rows, int cols, float prun
     return true;
 }
 
-bool tinyaiPruneMatrixByThreshold(float *weights, int rows, int cols, float threshold)
+bool hyperionPruneMatrixByThreshold(float *weights, int rows, int cols, float threshold)
 {
     if (!weights || rows <= 0 || cols <= 0 || threshold < 0.0f) {
         return false;
@@ -143,7 +143,7 @@ bool tinyaiPruneMatrixByThreshold(float *weights, int rows, int cols, float thre
     return true;
 }
 
-bool tinyaiPruneMatrixStructured(float *weights, int rows, int cols, float pruneRate,
+bool hyperionPruneMatrixStructured(float *weights, int rows, int cols, float pruneRate,
                                  bool isConvFilter, const int *filterShape)
 {
     if (!weights || rows <= 0 || cols <= 0 || pruneRate < 0.0f || pruneRate > 1.0f) {
@@ -310,7 +310,7 @@ bool tinyaiPruneMatrixStructured(float *weights, int rows, int cols, float prune
     return true;
 }
 
-bool tinyaiPruneMatrixRandom(float *weights, int rows, int cols, float pruneRate)
+bool hyperionPruneMatrixRandom(float *weights, int rows, int cols, float pruneRate)
 {
     if (!weights || rows <= 0 || cols <= 0 || pruneRate < 0.0f || pruneRate > 1.0f) {
         return false;
@@ -368,7 +368,7 @@ bool tinyaiPruneMatrixRandom(float *weights, int rows, int cols, float pruneRate
     return true;
 }
 
-float tinyaiCalculateSparsity(const float *weights, int rows, int cols, float threshold)
+float hyperionCalculateSparsity(const float *weights, int rows, int cols, float threshold)
 {
     if (!weights || rows <= 0 || cols <= 0) {
         return 0.0f;
@@ -389,15 +389,15 @@ float tinyaiCalculateSparsity(const float *weights, int rows, int cols, float th
     return (float)zeroCount / size;
 }
 
-TinyAIPruneConfig *tinyaiCreateDefaultPruneConfig(void)
+HyperionPruneConfig *hyperionCreateDefaultPruneConfig(void)
 {
-    TinyAIPruneConfig *config = (TinyAIPruneConfig *)malloc(sizeof(TinyAIPruneConfig));
+    HyperionPruneConfig *config = (HyperionPruneConfig *)malloc(sizeof(HyperionPruneConfig));
     if (!config) {
         return NULL;
     }
 
     /* Initialize with default values */
-    config->method              = TINYAI_PRUNE_MAGNITUDE;
+    config->method              = HYPERION_PRUNE_MAGNITUDE;
     config->pruneRate           = 0.5f;  /* 50% sparsity by default */
     config->threshold           = 1e-4f; /* Small threshold for zeroing out weights */
     config->layerWisePruning    = true;  /* Prune each layer separately */
@@ -408,7 +408,7 @@ TinyAIPruneConfig *tinyaiCreateDefaultPruneConfig(void)
     return config;
 }
 
-bool tinyaiEstimatePrunedSize(const char *modelPath, float pruneRate, bool useCSR,
+bool hyperionEstimatePrunedSize(const char *modelPath, float pruneRate, bool useCSR,
                               size_t *originalSize, size_t *prunedSize)
 {
     /* This would analyze the model file and estimate the size savings from pruning */
@@ -469,8 +469,8 @@ bool tinyaiEstimatePrunedSize(const char *modelPath, float pruneRate, bool useCS
     return true;
 }
 
-bool tinyaiRetrainPrunedModel(const char *modelPath, const char *dataPath,
-                              const TinyAIPruneConfig *config)
+bool hyperionRetrainPrunedModel(const char *modelPath, const char *dataPath,
+                              const HyperionPruneConfig *config)
 {
     /* This would implement fine-tuning of a pruned model to recover accuracy */
     /* A real implementation would:

@@ -1,10 +1,10 @@
 /**
  * @file model_loader.h
- * @brief Header for model weight loading utilities for TinyAI
+ * @brief Header for model weight loading utilities for Hyperion
  */
 
-#ifndef TINYAI_MODEL_LOADER_H
-#define TINYAI_MODEL_LOADER_H
+#ifndef HYPERION_MODEL_LOADER_H
+#define HYPERION_MODEL_LOADER_H
 
 #include "../models/image/image_model.h"
 #include <stdbool.h>
@@ -20,7 +20,7 @@ extern "C" {
  * @param convertPrecision Whether to convert between precisions if needed
  * @return true on success, false on failure
  */
-bool tinyaiLoadModelWeights(TinyAIImageModel *model, const char *filepath, bool convertPrecision);
+bool hyperionLoadModelWeights(HyperionImageModel *model, const char *filepath, bool convertPrecision);
 
 /**
  * Save model weights to a file
@@ -28,21 +28,21 @@ bool tinyaiLoadModelWeights(TinyAIImageModel *model, const char *filepath, bool 
  * @param filepath Path to save the weights to
  * @return true on success, false on failure
  */
-bool tinyaiSaveModelWeights(TinyAIImageModel *model, const char *filepath);
+bool hyperionSaveModelWeights(HyperionImageModel *model, const char *filepath);
 
 /**
- * Generate a TinyAI model weight file from a standard format model (e.g., ONNX, TFLite)
+ * Generate a Hyperion model weight file from a standard format model (e.g., ONNX, TFLite)
  * @param srcFilepath Source model file path
- * @param destFilepath Destination TinyAI weight file path
+ * @param destFilepath Destination Hyperion weight file path
  * @param modelType Target model type
  * @param quantize Whether to quantize weights to 4-bit
  * @return true on success, false on failure
  */
-bool tinyaiConvertModelWeights(const char *srcFilepath, const char *destFilepath,
-                               TinyAIImageModelType modelType, bool quantize);
+bool hyperionConvertModelWeights(const char *srcFilepath, const char *destFilepath,
+                               HyperionImageModelType modelType, bool quantize);
 
 #ifdef __cplusplus
-}
+} /* extern "C" */
 #endif
 
-#endif /* TINYAI_MODEL_LOADER_H */
+#endif /* HYPERION_MODEL_LOADER_H */

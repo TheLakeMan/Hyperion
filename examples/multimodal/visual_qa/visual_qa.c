@@ -1,6 +1,6 @@
 /**
  * @file visual_qa.c
- * @brief Implementation of visual question answering in TinyAI
+ * @brief Implementation of visual question answering in Hyperion
  */
 
 #include "visual_qa.h"
@@ -16,10 +16,10 @@
 /**
  * Visual QA structure
  */
-struct TinyAIVisualQA {
-    TinyAIMultimodalModel *model;           /* Multimodal model */
-    TinyAITokenizer       *tokenizer;       /* Tokenizer */
-    TinyAIAnswerStyle      answerStyle;     /* Answer style */
+struct HyperionVisualQA {
+    HyperionMultimodalModel *model;           /* Multimodal model */
+    HyperionTokenizer       *tokenizer;       /* Tokenizer */
+    HyperionAnswerStyle      answerStyle;     /* Answer style */
     char                  *customTemplate;  /* Custom prompt template */
     int                    maxTokens;       /* Maximum tokens in answer */
     bool                   useQuantization; /* Whether to use quantization */
@@ -40,7 +40,7 @@ static const char *TEMPLATE_CASUAL =
 /**
  * Create a visual QA system
  */
-TinyAIVisualQA *tinyaiVisualQACreate(const TinyAIVisualQAConfig *config)
+HyperionVisualQA *hyperionVisualQACreate(const HyperionVisualQAConfig *config)
 {
     if (!config || !config->modelPath || !config->weightsPath || !config->tokenizerPath) {
         fprintf(stderr, "Invalid visual QA configuration\n");
@@ -48,14 +48,14 @@ TinyAIVisualQA *tinyaiVisualQACreate(const TinyAIVisualQAConfig *config)
     }
 
     /* Allocate visual QA structure */
-    TinyAIVisualQA *vqa = (TinyAIVisualQA *)malloc(sizeof(TinyAIVisualQA));
+    HyperionVisualQA *vqa = (HyperionVisualQA *)malloc(sizeof(HyperionVisualQA));
     if (!vqa) {
         fprintf(stderr, "Failed to allocate visual QA system\n");
         return NULL;
     }
 
     /* Initialize with defaults */
-    memset(vqa, 0, sizeof(TinyAIVisualQA));
+    memset(vqa, 0, sizeof(HyperionVisualQA));
     vqa->answerStyle     = config->answerStyle;
     vqa->maxTokens       = config->maxTokens > 0 ? config->maxTokens : 100;
     vqa->useQuantization = config->useQuantization;
@@ -69,15 +69,15 @@ TinyAIVisualQA *tinyaiVisualQACreate(const TinyAIVisualQAConfig *config)
     }
 
     /* Load tokenizer */
-    vqa->tokenizer = tinyaiTokenizerCreate(config->tokenizerPath);
+    vqa->tokenizer = hyperionTokenizerCreate(config->tokenizerPath);
     if (!vqa->tokenizer) {
         fprintf(stderr, "Failed to create tokenizer from %s\n", config->tokenizerPath);
-        tinyaiVisualQAFree(vqa);
+        hyperionVisualQAFree(vqa);
         return NULL;
     }
 
     /* Create and initialize multimodal model */
-    TinyAIMultimodalModelConfig modelConfig = {.modelPath       = config->modelPath,
+    HyperionMultimodalModelConfig modelConfig = {.modelPath       = config->modelPath,
                                                .weightsPath     = config->weightsPath,
                                                .tokenizerPath   = config->tokenizerPath,
                                                .imageWidth      = vqa->imageWidth,
@@ -85,10 +85,10 @@ TinyAIVisualQA *tinyaiVisualQACreate(const TinyAIVisualQAConfig *config)
                                                .useQuantization = vqa->useQuantization,
                                                .useSIMD         = vqa->useSIMD};
 
-    vqa->model = tinyaiMultimodalModelCreate(&modelConfig);
+    vqa->model = hyperionMultimodalModelCreate(&modelConfig);
     if (!vqa->model) {
         fprintf(stderr, "Failed to create multimodal model\n");
-        tinyaiVisualQAFree(vqa);
+        hyperionVisualQAFree(vqa);
         return NULL;
     }
 
@@ -98,7 +98,7 @@ TinyAIVisualQA *tinyaiVisualQACreate(const TinyAIVisualQAConfig *config)
 /**
  * Free a visual QA system
  */
-void tinyaiVisualQAFree(TinyAIVisualQA *vqa)
+void hyperionVisualQAFree(HyperionVisualQA *vqa)
 {
     if (!vqa) {
         return;
@@ -106,12 +106,12 @@ void tinyaiVisualQAFree(TinyAIVisualQA *vqa)
 
     /* Free the model */
     if (vqa->model) {
-        tinyaiMultimodalModelFree(vqa->model);
+        hyperionMultimodalModelFree(vqa->model);
     }
 
     /* Free the tokenizer */
     if (vqa->tokenizer) {
-        tinyaiTokenizerFree(vqa->tokenizer);
+        hyperionTokenizerFree(vqa->tokenizer);
     }
 
     /* Free custom template */
@@ -126,18 +126,18 @@ void tinyaiVisualQAFree(TinyAIVisualQA *vqa)
 /**
  * Get prompt template based on answer style
  */
-static const char *getPromptTemplate(TinyAIVisualQA *vqa)
+static const char *getPromptTemplate(HyperionVisualQA *vqa)
 {
     switch (vqa->answerStyle) {
-    case TINYAI_ANSWER_STYLE_CONCISE:
+    case HYPERION_ANSWER_STYLE_CONCISE:
         return TEMPLATE_CONCISE;
-    case TINYAI_ANSWER_STYLE_DETAILED:
+    case HYPERION_ANSWER_STYLE_DETAILED:
         return TEMPLATE_DETAILED;
-    case TINYAI_ANSWER_STYLE_FACTUAL:
+    case HYPERION_ANSWER_STYLE_FACTUAL:
         return TEMPLATE_FACTUAL;
-    case TINYAI_ANSWER_STYLE_CASUAL:
+    case HYPERION_ANSWER_STYLE_CASUAL:
         return TEMPLATE_CASUAL;
-    case TINYAI_ANSWER_STYLE_CUSTOM:
+    case HYPERION_ANSWER_STYLE_CUSTOM:
         return vqa->customTemplate ? vqa->customTemplate : TEMPLATE_CONCISE;
     default:
         return TEMPLATE_CONCISE;
@@ -166,7 +166,7 @@ static char *createFullPrompt(const char *template, const char *question)
 /**
  * Answer a question about an image file
  */
-bool tinyaiVisualQAAnswerQuestion(TinyAIVisualQA *vqa, const char *imagePath, const char *question,
+bool hyperionVisualQAAnswerQuestion(HyperionVisualQA *vqa, const char *imagePath, const char *question,
                                   char *answer, int maxLength)
 {
     if (!vqa || !imagePath || !question || !answer || maxLength <= 0) {
@@ -174,17 +174,17 @@ bool tinyaiVisualQAAnswerQuestion(TinyAIVisualQA *vqa, const char *imagePath, co
     }
 
     /* Load the image */
-    TinyAIImage *image = tinyaiImageLoadFromFile(imagePath);
+    HyperionImage *image = hyperionImageLoadFromFile(imagePath);
     if (!image) {
         fprintf(stderr, "Failed to load image from %s\n", imagePath);
         return false;
     }
 
     /* Generate answer */
-    bool result = tinyaiVisualQAAnswerQuestionForImage(vqa, image, question, answer, maxLength);
+    bool result = hyperionVisualQAAnswerQuestionForImage(vqa, image, question, answer, maxLength);
 
     /* Clean up */
-    tinyaiImageFree(image);
+    hyperionImageFree(image);
 
     return result;
 }
@@ -192,7 +192,7 @@ bool tinyaiVisualQAAnswerQuestion(TinyAIVisualQA *vqa, const char *imagePath, co
 /**
  * Answer a question about an image
  */
-bool tinyaiVisualQAAnswerQuestionForImage(TinyAIVisualQA *vqa, const TinyAIImage *image,
+bool hyperionVisualQAAnswerQuestionForImage(HyperionVisualQA *vqa, const HyperionImage *image,
                                           const char *question, char *answer, int maxLength)
 {
     if (!vqa || !image || !question || !answer || maxLength <= 0 || !vqa->model ||
@@ -211,8 +211,8 @@ bool tinyaiVisualQAAnswerQuestionForImage(TinyAIVisualQA *vqa, const TinyAIImage
     }
 
     /* Generate the answer using the multimodal model */
-    TinyAIMultimodalInferenceParams params;
-    memset(&params, 0, sizeof(TinyAIMultimodalInferenceParams));
+    HyperionMultimodalInferenceParams params;
+    memset(&params, 0, sizeof(HyperionMultimodalInferenceParams));
     params.image       = image;
     params.textPrompt  = fullPrompt;
     params.maxTokens   = vqa->maxTokens;
@@ -220,7 +220,7 @@ bool tinyaiVisualQAAnswerQuestionForImage(TinyAIVisualQA *vqa, const TinyAIImage
     params.topP        = 0.9f;
 
     /* Perform inference */
-    char *generatedText = tinyaiMultimodalModelGenerateText(vqa->model, &params);
+    char *generatedText = hyperionMultimodalModelGenerateText(vqa->model, &params);
 
     /* Clean up prompt */
     free(fullPrompt);
@@ -243,7 +243,7 @@ bool tinyaiVisualQAAnswerQuestionForImage(TinyAIVisualQA *vqa, const TinyAIImage
 /**
  * Set the answer style
  */
-bool tinyaiVisualQASetStyle(TinyAIVisualQA *vqa, TinyAIAnswerStyle style,
+bool hyperionVisualQASetStyle(HyperionVisualQA *vqa, HyperionAnswerStyle style,
                             const char *customTemplate)
 {
     if (!vqa) {
@@ -253,7 +253,7 @@ bool tinyaiVisualQASetStyle(TinyAIVisualQA *vqa, TinyAIAnswerStyle style,
     vqa->answerStyle = style;
 
     /* Update custom template if provided */
-    if (style == TINYAI_ANSWER_STYLE_CUSTOM) {
+    if (style == HYPERION_ANSWER_STYLE_CUSTOM) {
         /* Free existing custom template if any */
         if (vqa->customTemplate) {
             free(vqa->customTemplate);
@@ -270,7 +270,7 @@ bool tinyaiVisualQASetStyle(TinyAIVisualQA *vqa, TinyAIAnswerStyle style,
         }
         else {
             /* Fall back to concise if no custom template is provided */
-            vqa->answerStyle = TINYAI_ANSWER_STYLE_CONCISE;
+            vqa->answerStyle = HYPERION_ANSWER_STYLE_CONCISE;
         }
     }
 
@@ -280,7 +280,7 @@ bool tinyaiVisualQASetStyle(TinyAIVisualQA *vqa, TinyAIAnswerStyle style,
 /**
  * Get memory usage statistics
  */
-bool tinyaiVisualQAGetMemoryUsage(const TinyAIVisualQA *vqa, size_t *weightMemory,
+bool hyperionVisualQAGetMemoryUsage(const HyperionVisualQA *vqa, size_t *weightMemory,
                                   size_t *activationMemory)
 {
     if (!vqa || !weightMemory || !activationMemory) {
@@ -289,7 +289,7 @@ bool tinyaiVisualQAGetMemoryUsage(const TinyAIVisualQA *vqa, size_t *weightMemor
 
     /* Get memory usage from the multimodal model */
     if (vqa->model) {
-        return tinyaiMultimodalModelGetMemoryUsage(vqa->model, weightMemory, activationMemory);
+        return hyperionMultimodalModelGetMemoryUsage(vqa->model, weightMemory, activationMemory);
     }
 
     /* Fall back to zero if no model is available */
@@ -301,7 +301,7 @@ bool tinyaiVisualQAGetMemoryUsage(const TinyAIVisualQA *vqa, size_t *weightMemor
 /**
  * Enable or disable SIMD acceleration
  */
-bool tinyaiVisualQAEnableSIMD(TinyAIVisualQA *vqa, bool enable)
+bool hyperionVisualQAEnableSIMD(HyperionVisualQA *vqa, bool enable)
 {
     if (!vqa) {
         return false;
@@ -311,7 +311,7 @@ bool tinyaiVisualQAEnableSIMD(TinyAIVisualQA *vqa, bool enable)
 
     /* Apply to the model if available */
     if (vqa->model) {
-        return tinyaiMultimodalModelEnableSIMD(vqa->model, enable);
+        return hyperionMultimodalModelEnableSIMD(vqa->model, enable);
     }
 
     return true;

@@ -1,6 +1,6 @@
 /**
  * @file media_tagger.c
- * @brief Implementation of media tagging system in TinyAI
+ * @brief Implementation of media tagging system in Hyperion
  */
 
 #include "media_tagger.h"
@@ -26,19 +26,19 @@ static const char *TEXT_EXTENSIONS[]  = {".txt", ".md",  ".html", ".xml", ".json
 /**
  * Internal structure for media tagger
  */
-struct TinyAIMediaTagger {
+struct HyperionMediaTagger {
     /* Models */
-    TinyAIImageModel      *imageModel;      /* Image classification model */
-    TinyAIModel           *textModel;       /* Text generation model */
-    TinyAITokenizer       *tokenizer;       /* Tokenizer */
-    TinyAIMultimodalModel *multimodalModel; /* Multimodal model (optional) */
+    HyperionImageModel      *imageModel;      /* Image classification model */
+    HyperionModel           *textModel;       /* Text generation model */
+    HyperionTokenizer       *tokenizer;       /* Tokenizer */
+    HyperionMultimodalModel *multimodalModel; /* Multimodal model (optional) */
 
     /* Configuration */
     int               maxTags;             /* Maximum number of tags to generate */
     float             confidenceThreshold; /* Minimum confidence threshold */
-    TinyAITagCategory categories;          /* Tag categories to include */
+    HyperionTagCategory categories;          /* Tag categories to include */
     bool              useQuantization;     /* Whether to use quantization */
-    bool              useSIMD;             /* Whether to use SIMD */
+    bool              useSIMD;             /* Whether to use SIMD acceleration */
     int               imageWidth;          /* Image width */
     int               imageHeight;         /* Image height */
     int               maxTextLength;       /* Maximum text length */
@@ -77,9 +77,9 @@ static bool endsWith(const char *str, const char *suffix)
 /**
  * Create a new tag with the given text, confidence, and category
  */
-static TinyAITag createTag(const char *text, float confidence, TinyAITagCategory category)
+static HyperionTag createTag(const char *text, float confidence, HyperionTagCategory category)
 {
-    TinyAITag tag;
+    HyperionTag tag;
     tag.text       = _strdup(text);
     tag.confidence = confidence;
     tag.category   = category;
@@ -89,7 +89,7 @@ static TinyAITag createTag(const char *text, float confidence, TinyAITagCategory
 /**
  * Create a media tagger
  */
-TinyAIMediaTagger *tinyaiMediaTaggerCreate(const TinyAIMediaTaggerConfig *config)
+HyperionMediaTagger *hyperionMediaTaggerCreate(const HyperionMediaTaggerConfig *config)
 {
     if (!config) {
         fprintf(stderr, "Error: Invalid configuration for media tagger\n");
@@ -104,18 +104,18 @@ TinyAIMediaTagger *tinyaiMediaTaggerCreate(const TinyAIMediaTaggerConfig *config
     }
 
     /* Allocate tagger structure */
-    TinyAIMediaTagger *tagger = (TinyAIMediaTagger *)malloc(sizeof(TinyAIMediaTagger));
+    HyperionMediaTagger *tagger = (HyperionMediaTagger *)malloc(sizeof(HyperionMediaTagger));
     if (!tagger) {
         fprintf(stderr, "Error: Failed to allocate media tagger\n");
         return NULL;
     }
 
     /* Initialize with defaults */
-    memset(tagger, 0, sizeof(TinyAIMediaTagger));
+    memset(tagger, 0, sizeof(HyperionMediaTagger));
     tagger->maxTags = config->maxTags > 0 ? config->maxTags : 20;
     tagger->confidenceThreshold =
         config->confidenceThreshold >= 0.0f ? config->confidenceThreshold : 0.5f;
-    tagger->categories      = config->categories ? config->categories : TINYAI_TAG_CATEGORY_ALL;
+    tagger->categories      = config->categories ? config->categories : HYPERION_TAG_CATEGORY_ALL;
     tagger->useQuantization = config->useQuantization;
     tagger->useSIMD         = config->useSIMD;
     tagger->imageWidth      = config->imageWidth > 0 ? config->imageWidth : 224;
@@ -124,7 +124,7 @@ TinyAIMediaTagger *tinyaiMediaTaggerCreate(const TinyAIMediaTaggerConfig *config
 
     /* Initialize tokenizer if available */
     if (config->tokenizerPath) {
-        tagger->tokenizer = tinyaiTokenizerCreate(config->tokenizerPath);
+        tagger->tokenizer = hyperionTokenizerCreate(config->tokenizerPath);
         if (!tagger->tokenizer) {
             fprintf(stderr, "Warning: Failed to create tokenizer from %s\n", config->tokenizerPath);
         }
@@ -133,9 +133,9 @@ TinyAIMediaTagger *tinyaiMediaTaggerCreate(const TinyAIMediaTaggerConfig *config
     /* Initialize image model if available */
     if (config->imageModelPath && config->imageWeightsPath) {
         /* Configure image model parameters */
-        TinyAIImageModelParams imageParams;
-        memset(&imageParams, 0, sizeof(TinyAIImageModelParams));
-        imageParams.modelType       = TINYAI_IMAGE_MODEL_MOBILENET; /* Default model type */
+        HyperionImageModelParams imageParams;
+        memset(&imageParams, 0, sizeof(HyperionImageModelParams));
+        imageParams.modelType       = HYPERION_IMAGE_MODEL_MOBILENET; /* Default model type */
         imageParams.inputWidth      = tagger->imageWidth;
         imageParams.inputHeight     = tagger->imageHeight;
         imageParams.inputChannels   = 3;    /* RGB */
@@ -145,7 +145,7 @@ TinyAIMediaTagger *tinyaiMediaTaggerCreate(const TinyAIMediaTaggerConfig *config
         imageParams.useSIMD         = tagger->useSIMD;
 
         /* Create image model */
-        tagger->imageModel = tinyaiImageModelCreate(&imageParams);
+        tagger->imageModel = hyperionImageModelCreate(&imageParams);
         if (!tagger->imageModel) {
             fprintf(stderr, "Warning: Failed to create image model\n");
         }
@@ -155,14 +155,14 @@ TinyAIMediaTagger *tinyaiMediaTaggerCreate(const TinyAIMediaTaggerConfig *config
     if (config->textModelPath && config->textWeightsPath && tagger->tokenizer) {
         /* Load text model */
         tagger->textModel =
-            tinyaiLoadModel(config->textModelPath, config->textWeightsPath, config->tokenizerPath);
+            hyperionLoadModel(config->textModelPath, config->textWeightsPath, config->tokenizerPath);
         if (!tagger->textModel) {
             fprintf(stderr, "Warning: Failed to create text model\n");
         }
 
         /* Apply quantization if requested */
         if (tagger->useQuantization && tagger->textModel) {
-            if (tinyaiQuantizeModel(tagger->textModel) != 0) {
+            if (hyperionQuantizeModel(tagger->textModel) != 0) {
                 fprintf(stderr, "Warning: Failed to quantize text model\n");
             }
         }
@@ -174,7 +174,7 @@ TinyAIMediaTagger *tinyaiMediaTaggerCreate(const TinyAIMediaTaggerConfig *config
     /* Check if at least one model was loaded successfully */
     if (!tagger->imageModel && !tagger->textModel) {
         fprintf(stderr, "Error: Failed to create any models for media tagger\n");
-        tinyaiMediaTaggerFree(tagger);
+        hyperionMediaTaggerFree(tagger);
         return NULL;
     }
 
@@ -184,7 +184,7 @@ TinyAIMediaTagger *tinyaiMediaTaggerCreate(const TinyAIMediaTaggerConfig *config
 /**
  * Free a media tagger
  */
-void tinyaiMediaTaggerFree(TinyAIMediaTagger *tagger)
+void hyperionMediaTaggerFree(HyperionMediaTagger *tagger)
 {
     if (!tagger) {
         return;
@@ -192,22 +192,22 @@ void tinyaiMediaTaggerFree(TinyAIMediaTagger *tagger)
 
     /* Free image model */
     if (tagger->imageModel) {
-        tinyaiImageModelFree(tagger->imageModel);
+        hyperionImageModelFree(tagger->imageModel);
     }
 
     /* Free text model */
     if (tagger->textModel) {
-        tinyaiDestroyModel(tagger->textModel);
+        hyperionDestroyModel(tagger->textModel);
     }
 
     /* Free tokenizer */
     if (tagger->tokenizer) {
-        tinyaiTokenizerFree(tagger->tokenizer);
+        hyperionTokenizerFree(tagger->tokenizer);
     }
 
     /* Free multimodal model */
     if (tagger->multimodalModel) {
-        tinyaiMultimodalModelFree(tagger->multimodalModel);
+        hyperionMultimodalModelFree(tagger->multimodalModel);
     }
 
     /* Free tagger structure */
@@ -217,40 +217,40 @@ void tinyaiMediaTaggerFree(TinyAIMediaTagger *tagger)
 /**
  * Detect media type from file extension
  */
-TinyAIMediaType tinyaiMediaTaggerDetectType(const char *filepath)
+HyperionMediaType hyperionMediaTaggerDetectType(const char *filepath)
 {
     if (!filepath) {
-        return TINYAI_MEDIA_TYPE_UNKNOWN;
+        return HYPERION_MEDIA_TYPE_UNKNOWN;
     }
 
     /* Check for image extensions */
     for (int i = 0; IMAGE_EXTENSIONS[i] != NULL; i++) {
         if (endsWith(filepath, IMAGE_EXTENSIONS[i])) {
-            return TINYAI_MEDIA_TYPE_IMAGE;
+            return HYPERION_MEDIA_TYPE_IMAGE;
         }
     }
 
     /* Check for audio extensions */
     for (int i = 0; AUDIO_EXTENSIONS[i] != NULL; i++) {
         if (endsWith(filepath, AUDIO_EXTENSIONS[i])) {
-            return TINYAI_MEDIA_TYPE_AUDIO;
+            return HYPERION_MEDIA_TYPE_AUDIO;
         }
     }
 
     /* Check for text extensions */
     for (int i = 0; TEXT_EXTENSIONS[i] != NULL; i++) {
         if (endsWith(filepath, TEXT_EXTENSIONS[i])) {
-            return TINYAI_MEDIA_TYPE_TEXT;
+            return HYPERION_MEDIA_TYPE_TEXT;
         }
     }
 
-    return TINYAI_MEDIA_TYPE_UNKNOWN;
+    return HYPERION_MEDIA_TYPE_UNKNOWN;
 }
 
 /**
  * Set categories to include in tagging
  */
-bool tinyaiMediaTaggerSetCategories(TinyAIMediaTagger *tagger, TinyAITagCategory categories)
+bool hyperionMediaTaggerSetCategories(HyperionMediaTagger *tagger, HyperionTagCategory categories)
 {
     if (!tagger) {
         return false;
@@ -263,7 +263,7 @@ bool tinyaiMediaTaggerSetCategories(TinyAIMediaTagger *tagger, TinyAITagCategory
 /**
  * Set confidence threshold for tags
  */
-bool tinyaiMediaTaggerSetThreshold(TinyAIMediaTagger *tagger, float threshold)
+bool hyperionMediaTaggerSetThreshold(HyperionMediaTagger *tagger, float threshold)
 {
     if (!tagger || threshold < 0.0f || threshold > 1.0f) {
         return false;
@@ -308,40 +308,40 @@ static char *readTextFromFile(const char *filepath)
 /**
  * Tag a media file
  */
-int tinyaiMediaTaggerTagFile(TinyAIMediaTagger *tagger, const char *filepath, TinyAITag *tags,
-                             int maxTags, TinyAIMediaType *mediaType)
+int hyperionMediaTaggerTagFile(HyperionMediaTagger *tagger, const char *filepath, HyperionTag *tags,
+                             int maxTags, HyperionMediaType *mediaType)
 {
     if (!tagger || !filepath || !tags || maxTags <= 0) {
         return -1;
     }
 
     /* Detect media type */
-    TinyAIMediaType type = tinyaiMediaTaggerDetectType(filepath);
+    HyperionMediaType type = hyperionMediaTaggerDetectType(filepath);
     if (mediaType) {
         *mediaType = type;
     }
 
     /* Process based on media type */
     switch (type) {
-    case TINYAI_MEDIA_TYPE_IMAGE:
+    case HYPERION_MEDIA_TYPE_IMAGE:
         if (tagger->imageModel) {
             /* Load image */
-            TinyAIImage *image = tinyaiImageLoadFromFile(filepath);
+            HyperionImage *image = hyperionImageLoadFromFile(filepath);
             if (!image) {
                 fprintf(stderr, "Error: Failed to load image from %s\n", filepath);
                 return -1;
             }
 
             /* Tag image */
-            int numTags = tinyaiMediaTaggerTagImage(tagger, image, tags, maxTags);
+            int numTags = hyperionMediaTaggerTagImage(tagger, image, tags, maxTags);
 
             /* Clean up */
-            tinyaiImageFree(image);
+            hyperionImageFree(image);
             return numTags;
         }
         break;
 
-    case TINYAI_MEDIA_TYPE_TEXT:
+    case HYPERION_MEDIA_TYPE_TEXT:
         if (tagger->textModel && tagger->tokenizer) {
             /* Load text */
             char *text = readTextFromFile(filepath);
@@ -350,7 +350,7 @@ int tinyaiMediaTaggerTagFile(TinyAIMediaTagger *tagger, const char *filepath, Ti
             }
 
             /* Tag text */
-            int numTags = tinyaiMediaTaggerTagText(tagger, text, tags, maxTags);
+            int numTags = hyperionMediaTaggerTagText(tagger, text, tags, maxTags);
 
             /* Clean up */
             free(text);
@@ -358,7 +358,7 @@ int tinyaiMediaTaggerTagFile(TinyAIMediaTagger *tagger, const char *filepath, Ti
         }
         break;
 
-    case TINYAI_MEDIA_TYPE_AUDIO:
+    case HYPERION_MEDIA_TYPE_AUDIO:
         /* Audio tagging not fully implemented yet */
         fprintf(stderr, "Warning: Audio tagging not fully implemented\n");
         break;
@@ -374,7 +374,7 @@ int tinyaiMediaTaggerTagFile(TinyAIMediaTagger *tagger, const char *filepath, Ti
 /**
  * Tag an image
  */
-int tinyaiMediaTaggerTagImage(TinyAIMediaTagger *tagger, const TinyAIImage *image, TinyAITag *tags,
+int hyperionMediaTaggerTagImage(HyperionMediaTagger *tagger, const HyperionImage *image, HyperionTag *tags,
                               int maxTags)
 {
     if (!tagger || !image || !tags || maxTags <= 0 || !tagger->imageModel) {
@@ -382,16 +382,16 @@ int tinyaiMediaTaggerTagImage(TinyAIMediaTagger *tagger, const TinyAIImage *imag
     }
 
     /* Preprocess image if needed */
-    TinyAIImage *processedImage = NULL;
+    HyperionImage *processedImage = NULL;
     if (image->width != tagger->imageWidth || image->height != tagger->imageHeight) {
-        processedImage = tinyaiImageResize(image, tagger->imageWidth, tagger->imageHeight);
+        processedImage = hyperionImageResize(image, tagger->imageWidth, tagger->imageHeight);
         if (!processedImage) {
             fprintf(stderr, "Error: Failed to resize image\n");
             return -1;
         }
     }
     else {
-        processedImage = tinyaiImageCopy(image);
+        processedImage = hyperionImageCopy(image);
         if (!processedImage) {
             fprintf(stderr, "Error: Failed to copy image\n");
             return -1;
@@ -400,17 +400,17 @@ int tinyaiMediaTaggerTagImage(TinyAIMediaTagger *tagger, const TinyAIImage *imag
 
     /* Allocate results array */
     int numClasses = maxTags < 20 ? maxTags : 20; /* Limit to reasonable number */
-    TinyAIImageClassResult *results =
-        (TinyAIImageClassResult *)malloc(numClasses * sizeof(TinyAIImageClassResult));
+    HyperionImageClassResult *results =
+        (HyperionImageClassResult *)malloc(numClasses * sizeof(HyperionImageClassResult));
     if (!results) {
         fprintf(stderr, "Error: Failed to allocate classification results\n");
-        tinyaiImageFree(processedImage);
+        hyperionImageFree(processedImage);
         return -1;
     }
 
     /* Classify image */
     int numResults =
-        tinyaiImageModelClassify(tagger->imageModel, processedImage, numClasses, results);
+        hyperionImageModelClassify(tagger->imageModel, processedImage, numClasses, results);
 
     /* Convert classification results to tags */
     int numTags = 0;
@@ -422,14 +422,14 @@ int tinyaiMediaTaggerTagImage(TinyAIMediaTagger *tagger, const TinyAIImage *imag
 
         /* Create tag based on result */
         tags[numTags] = createTag(results[i].label ? results[i].label : "unknown",
-                                  results[i].confidence, TINYAI_TAG_CATEGORY_OBJECT);
+                                  results[i].confidence, HYPERION_TAG_CATEGORY_OBJECT);
 
         numTags++;
     }
 
     /* Clean up */
     free(results);
-    tinyaiImageFree(processedImage);
+    hyperionImageFree(processedImage);
 
     return numTags;
 }
@@ -437,7 +437,7 @@ int tinyaiMediaTaggerTagImage(TinyAIMediaTagger *tagger, const TinyAIImage *imag
 /**
  * Extract keywords from text using text model
  */
-static char **extractKeywords(TinyAIMediaTagger *tagger, const char *text, int *numKeywords)
+static char **extractKeywords(HyperionMediaTagger *tagger, const char *text, int *numKeywords)
 {
     if (!tagger || !text || !numKeywords || !tagger->textModel || !tagger->tokenizer) {
         return NULL;
@@ -462,7 +462,7 @@ static char **extractKeywords(TinyAIMediaTagger *tagger, const char *text, int *
 
     /* Tokenize prompt */
     int  promptLength = 0;
-    int *promptTokens = tinyaiTokenizerEncodeText(tagger->tokenizer, fullPrompt, &promptLength);
+    int *promptTokens = hyperionTokenizerEncodeText(tagger->tokenizer, fullPrompt, &promptLength);
     free(fullPrompt);
 
     if (!promptTokens || promptLength == 0) {
@@ -476,10 +476,10 @@ static char **extractKeywords(TinyAIMediaTagger *tagger, const char *text, int *
     }
 
     /* Set up generation parameters */
-    TinyAIGenerationParams genParams;
-    memset(&genParams, 0, sizeof(TinyAIGenerationParams));
+    HyperionGenerationParams genParams;
+    memset(&genParams, 0, sizeof(HyperionGenerationParams));
     genParams.maxTokens      = 100; /* Limit output tokens */
-    genParams.samplingMethod = TINYAI_SAMPLING_GREEDY;
+    genParams.samplingMethod = HYPERION_SAMPLING_GREEDY;
     genParams.promptTokens   = promptTokens;
     genParams.promptLength   = promptLength;
 
@@ -493,7 +493,7 @@ static char **extractKeywords(TinyAIMediaTagger *tagger, const char *text, int *
 
     /* Generate keywords */
     int numTokens =
-        tinyaiGenerateText(tagger->textModel, &genParams, outputTokens, genParams.maxTokens);
+        hyperionGenerateText(tagger->textModel, &genParams, outputTokens, genParams.maxTokens);
 
     free(promptTokens);
 
@@ -504,7 +504,7 @@ static char **extractKeywords(TinyAIMediaTagger *tagger, const char *text, int *
     }
 
     /* Decode output tokens */
-    char *keywordText = tinyaiTokenizerDecode(tagger->tokenizer, outputTokens, numTokens);
+    char *keywordText = hyperionTokenizerDecode(tagger->tokenizer, outputTokens, numTokens);
     free(outputTokens);
 
     if (!keywordText) {
@@ -543,7 +543,7 @@ static char **extractKeywords(TinyAIMediaTagger *tagger, const char *text, int *
 /**
  * Tag text content
  */
-int tinyaiMediaTaggerTagText(TinyAIMediaTagger *tagger, const char *text, TinyAITag *tags,
+int hyperionMediaTaggerTagText(HyperionMediaTagger *tagger, const char *text, HyperionTag *tags,
                              int maxTags)
 {
     if (!tagger || !text || !tags || maxTags <= 0 || !tagger->textModel || !tagger->tokenizer) {
@@ -562,7 +562,7 @@ int tinyaiMediaTaggerTagText(TinyAIMediaTagger *tagger, const char *text, TinyAI
     for (int i = 0; i < numKeywords && numTags < maxTags; i++) {
         /* Create tag from keyword */
         tags[numTags] = createTag(keywords[i], 1.0f, /* Default confidence for keywords */
-                                  TINYAI_TAG_CATEGORY_TOPIC);
+                                  HYPERION_TAG_CATEGORY_TOPIC);
 
         numTags++;
         free(keywords[i]);
@@ -575,9 +575,9 @@ int tinyaiMediaTaggerTagText(TinyAIMediaTagger *tagger, const char *text, TinyAI
 /**
  * Generate description for a tagged media file
  */
-bool tinyaiMediaTaggerGenerateDescription(TinyAIMediaTagger *tagger, const TinyAITag *tags,
+bool hyperionMediaTaggerGenerateDescription(HyperionMediaTagger *tagger, const HyperionTag *tags,
                                           int numTags, char *description, int maxLength,
-                                          TinyAIMediaType mediaType)
+                                          HyperionMediaType mediaType)
 {
     if (!tagger || !tags || numTags <= 0 || !description || maxLength <= 0 || !tagger->textModel ||
         !tagger->tokenizer) {
@@ -587,13 +587,13 @@ bool tinyaiMediaTaggerGenerateDescription(TinyAIMediaTagger *tagger, const TinyA
     /* Build a prompt from tags */
     const char *mediaTypeStr;
     switch (mediaType) {
-    case TINYAI_MEDIA_TYPE_IMAGE:
+    case HYPERION_MEDIA_TYPE_IMAGE:
         mediaTypeStr = "image";
         break;
-    case TINYAI_MEDIA_TYPE_AUDIO:
+    case HYPERION_MEDIA_TYPE_AUDIO:
         mediaTypeStr = "audio file";
         break;
-    case TINYAI_MEDIA_TYPE_TEXT:
+    case HYPERION_MEDIA_TYPE_TEXT:
         mediaTypeStr = "document";
         break;
     default:
@@ -618,7 +618,7 @@ bool tinyaiMediaTaggerGenerateDescription(TinyAIMediaTagger *tagger, const TinyA
 
     /* Tokenize prompt */
     int  promptLength = 0;
-    int *promptTokens = tinyaiTokenizerEncodeText(tagger->tokenizer, prompt, &promptLength);
+    int *promptTokens = hyperionTokenizerEncodeText(tagger->tokenizer, prompt, &promptLength);
 
     if (!promptTokens || promptLength == 0) {
         fprintf(stderr, "Error: Failed to tokenize prompt for description generation\n");
@@ -626,10 +626,10 @@ bool tinyaiMediaTaggerGenerateDescription(TinyAIMediaTagger *tagger, const TinyA
     }
 
     /* Set up generation parameters */
-    TinyAIGenerationParams genParams;
-    memset(&genParams, 0, sizeof(TinyAIGenerationParams));
+    HyperionGenerationParams genParams;
+    memset(&genParams, 0, sizeof(HyperionGenerationParams));
     genParams.maxTokens      = 100; /* Limit description length */
-    genParams.samplingMethod = TINYAI_SAMPLING_TOP_P;
+    genParams.samplingMethod = HYPERION_SAMPLING_TOP_P;
     genParams.temperature    = 0.7f;
     genParams.topP           = 0.9f;
     genParams.promptTokens   = promptTokens;
@@ -645,7 +645,7 @@ bool tinyaiMediaTaggerGenerateDescription(TinyAIMediaTagger *tagger, const TinyA
 
     /* Generate description */
     int numTokens =
-        tinyaiGenerateText(tagger->textModel, &genParams, outputTokens, genParams.maxTokens);
+        hyperionGenerateText(tagger->textModel, &genParams, outputTokens, genParams.maxTokens);
 
     free(promptTokens);
 
@@ -656,7 +656,7 @@ bool tinyaiMediaTaggerGenerateDescription(TinyAIMediaTagger *tagger, const TinyA
     }
 
     /* Decode output tokens */
-    char *descriptionText = tinyaiTokenizerDecode(tagger->tokenizer, outputTokens, numTokens);
+    char *descriptionText = hyperionTokenizerDecode(tagger->tokenizer, outputTokens, numTokens);
     free(outputTokens);
 
     if (!descriptionText) {
@@ -675,7 +675,7 @@ bool tinyaiMediaTaggerGenerateDescription(TinyAIMediaTagger *tagger, const TinyA
 /**
  * Save tags to a text file
  */
-static bool saveTagsToText(const TinyAITag *tags, int numTags, const char *filepath)
+static bool saveTagsToText(const HyperionTag *tags, int numTags, const char *filepath)
 {
     FILE *file = fopen(filepath, "w");
     if (!file) {
@@ -695,7 +695,7 @@ static bool saveTagsToText(const TinyAITag *tags, int numTags, const char *filep
 /**
  * Save tags to a JSON file
  */
-static bool saveTagsToJson(const TinyAITag *tags, int numTags, const char *filepath)
+static bool saveTagsToJson(const HyperionTag *tags, int numTags, const char *filepath)
 {
     FILE *file = fopen(filepath, "w");
     if (!file) {
@@ -725,7 +725,7 @@ static bool saveTagsToJson(const TinyAITag *tags, int numTags, const char *filep
 /**
  * Save tags to an XML file
  */
-static bool saveTagsToXml(const TinyAITag *tags, int numTags, const char *filepath)
+static bool saveTagsToXml(const HyperionTag *tags, int numTags, const char *filepath)
 {
     FILE *file = fopen(filepath, "w");
     if (!file) {
@@ -756,7 +756,7 @@ static bool saveTagsToXml(const TinyAITag *tags, int numTags, const char *filepa
 /**
  * Save tags to a file
  */
-bool tinyaiMediaTaggerSaveTags(const TinyAITag *tags, int numTags, const char *filepath,
+bool hyperionMediaTaggerSaveTags(const HyperionTag *tags, int numTags, const char *filepath,
                                const char *format)
 {
     if (!tags || numTags <= 0 || !filepath || !format) {
@@ -782,7 +782,7 @@ bool tinyaiMediaTaggerSaveTags(const TinyAITag *tags, int numTags, const char *f
 /**
  * Free tag resources
  */
-void tinyaiMediaTaggerFreeTags(TinyAITag *tags, int numTags)
+void hyperionMediaTaggerFreeTags(HyperionTag *tags, int numTags)
 {
     if (!tags) {
         return;
@@ -796,7 +796,7 @@ void tinyaiMediaTaggerFreeTags(TinyAITag *tags, int numTags)
 /**
  * Get memory usage statistics
  */
-bool tinyaiMediaTaggerGetMemoryUsage(const TinyAIMediaTagger *tagger, size_t *weightMemory,
+bool hyperionMediaTaggerGetMemoryUsage(const HyperionMediaTagger *tagger, size_t *weightMemory,
                                      size_t *activationMemory)
 {
     if (!tagger || !weightMemory || !activationMemory) {
@@ -810,7 +810,7 @@ bool tinyaiMediaTaggerGetMemoryUsage(const TinyAIMediaTagger *tagger, size_t *we
     /* Add image model memory */
     if (tagger->imageModel) {
         size_t imageWeights, imageActivations;
-        if (tinyaiImageModelGetMemoryUsage(tagger->imageModel, &imageWeights, &imageActivations)) {
+        if (hyperionImageModelGetMemoryUsage(tagger->imageModel, &imageWeights, &imageActivations)) {
             *weightMemory += imageWeights;
             *activationMemory += imageActivations;
         }
@@ -826,7 +826,7 @@ bool tinyaiMediaTaggerGetMemoryUsage(const TinyAIMediaTagger *tagger, size_t *we
     /* Add multimodal model memory (if applicable) */
     if (tagger->multimodalModel) {
         size_t multimodalWeights, multimodalActivations;
-        if (tinyaiMultimodalModelGetMemoryUsage(tagger->multimodalModel, &multimodalWeights,
+        if (hyperionMultimodalModelGetMemoryUsage(tagger->multimodalModel, &multimodalWeights,
                                                 &multimodalActivations)) {
             *weightMemory += multimodalWeights;
             *activationMemory += multimodalActivations;
@@ -839,7 +839,7 @@ bool tinyaiMediaTaggerGetMemoryUsage(const TinyAIMediaTagger *tagger, size_t *we
 /**
  * Enable or disable SIMD acceleration
  */
-bool tinyaiMediaTaggerEnableSIMD(TinyAIMediaTagger *tagger, bool enable)
+bool hyperionMediaTaggerEnableSIMD(HyperionMediaTagger *tagger, bool enable)
 {
     if (!tagger) {
         return false;
@@ -849,12 +849,12 @@ bool tinyaiMediaTaggerEnableSIMD(TinyAIMediaTagger *tagger, bool enable)
 
     /* Apply SIMD settings to image model if available */
     if (tagger->imageModel) {
-        tinyaiImageModelEnableSIMD(tagger->imageModel, enable);
+        hyperionImageModelEnableSIMD(tagger->imageModel, enable);
     }
 
     /* Apply SIMD settings to multimodal model if available */
     if (tagger->multimodalModel) {
-        tinyaiMultimodalModelEnableSIMD(tagger->multimodalModel, enable);
+        hyperionMultimodalModelEnableSIMD(tagger->multimodalModel, enable);
     }
 
     /* For text model, there's no direct SIMD control function,

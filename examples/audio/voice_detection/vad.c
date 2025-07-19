@@ -1,6 +1,6 @@
 /**
  * @file vad.c
- * @brief Voice Activity Detection implementation for TinyAI
+ * @brief Voice Activity Detection implementation for Hyperion
  */
 
 #include "vad.h"
@@ -32,7 +32,7 @@
  * Initialize VAD configuration with default values
  * @param config Configuration structure to initialize
  */
-void tinyaiVADInitConfig(TinyAIVADConfig *config)
+void hyperionVADInitConfig(HyperionVADConfig *config)
 {
     if (!config) {
         return;
@@ -55,20 +55,20 @@ void tinyaiVADInitConfig(TinyAIVADConfig *config)
  * @param sampleRate Sample rate of audio in Hz
  * @return New VAD state, or NULL on failure
  */
-TinyAIVADState *tinyaiVADCreate(const TinyAIVADConfig *config, int sampleRate)
+HyperionVADState *hyperionVADCreate(const HyperionVADConfig *config, int sampleRate)
 {
     if (!config || sampleRate <= 0) {
         return NULL;
     }
 
     /* Allocate state */
-    TinyAIVADState *state = (TinyAIVADState *)malloc(sizeof(TinyAIVADState));
+    HyperionVADState *state = (HyperionVADState *)malloc(sizeof(HyperionVADState));
     if (!state) {
         return NULL;
     }
 
     /* Initialize state */
-    memset(state, 0, sizeof(TinyAIVADState));
+    memset(state, 0, sizeof(HyperionVADState));
     state->config     = *config;
     state->sampleRate = sampleRate;
 
@@ -115,7 +115,7 @@ TinyAIVADState *tinyaiVADCreate(const TinyAIVADConfig *config, int sampleRate)
  * Free VAD state
  * @param state VAD state to free
  */
-void tinyaiVADFree(TinyAIVADState *state)
+void hyperionVADFree(HyperionVADState *state)
 {
     if (!state) {
         return;
@@ -141,7 +141,7 @@ void tinyaiVADFree(TinyAIVADState *state)
  * @param state VAD state to reset
  * @return true on success, false on failure
  */
-bool tinyaiVADReset(TinyAIVADState *state)
+bool hyperionVADReset(HyperionVADState *state)
 {
     if (!state) {
         return false;
@@ -215,7 +215,7 @@ static float calculateZCR(const float *samples, int numSamples)
  * @param activity Output voice activity (true = voice, false = silence)
  * @return true on success, false on failure
  */
-bool tinyaiVADProcessFrame(TinyAIVADState *state, const float *samples, int numSamples,
+bool hyperionVADProcessFrame(HyperionVADState *state, const float *samples, int numSamples,
                            bool *activity)
 {
     if (!state || !samples || !activity || numSamples <= 0) {
@@ -302,7 +302,7 @@ bool tinyaiVADProcessFrame(TinyAIVADState *state, const float *samples, int numS
  * @param activitySize Output size of activity array
  * @return true on success, false on failure
  */
-bool tinyaiVADProcessAudio(TinyAIVADState *state, const TinyAIAudioData *audio, bool **activity,
+bool hyperionVADProcessAudio(HyperionVADState *state, const HyperionAudioData *audio, bool **activity,
                            int *activitySize)
 {
     if (!state || !audio || !activity || !activitySize || !audio->data) {
@@ -310,7 +310,7 @@ bool tinyaiVADProcessAudio(TinyAIVADState *state, const TinyAIAudioData *audio, 
     }
 
     /* Reset state */
-    tinyaiVADReset(state);
+    hyperionVADReset(state);
 
     /* Calculate number of frames */
     int numSamples = audio->dataSize / sizeof(float);
@@ -333,7 +333,7 @@ bool tinyaiVADProcessAudio(TinyAIVADState *state, const TinyAIAudioData *audio, 
         bool frameActivity = false;
 
         /* Process frame */
-        if (!tinyaiVADProcessFrame(state, samples + offset, state->samplesPerFrame,
+        if (!hyperionVADProcessFrame(state, samples + offset, state->samplesPerFrame,
                                    &frameActivity)) {
             free(*activity);
             *activity     = NULL;
@@ -354,7 +354,7 @@ bool tinyaiVADProcessAudio(TinyAIVADState *state, const TinyAIAudioData *audio, 
  * @param activitySize Size of activity array
  * @param width Width of visualization in characters
  */
-void tinyaiVADVisualize(const bool *activity, int activitySize, int width)
+void hyperionVADVisualize(const bool *activity, int activitySize, int width)
 {
     if (!activity || activitySize <= 0 || width <= 0) {
         return;

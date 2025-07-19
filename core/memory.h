@@ -1,12 +1,12 @@
 /**
- * TinyAI Memory Management Header
+ * Hyperion Memory Management Header
  * 
- * This header defines memory management functions for TinyAI, including
+ * This header defines memory management functions for Hyperion, including
  * memory tracking and optimized allocation for small embedded systems.
  */
 
-#ifndef TINYAI_MEMORY_H
-#define TINYAI_MEMORY_H
+#ifndef HYPERION_MEMORY_H
+#define HYPERION_MEMORY_H
 
 #include <stddef.h>
 
@@ -18,7 +18,7 @@
  * @param size Size in bytes to allocate
  * @return Pointer to allocated memory or NULL on failure
  */
-void* tinyaiAlloc(size_t size);
+void* hyperionAlloc(size_t size);
 
 /**
  * Reallocate memory
@@ -27,14 +27,14 @@ void* tinyaiAlloc(size_t size);
  * @param size New size in bytes
  * @return Pointer to reallocated memory or NULL on failure
  */
-void* tinyaiRealloc(void *ptr, size_t size);
+void* hyperionRealloc(void *ptr, size_t size);
 
 /**
  * Free memory
  * 
  * @param ptr Pointer to memory to free
  */
-void tinyaiFree(void *ptr);
+void hyperionFree(void *ptr);
 
 /**
  * Allocate zero-initialized memory
@@ -42,7 +42,7 @@ void tinyaiFree(void *ptr);
  * @param size Size in bytes to allocate
  * @return Pointer to allocated memory or NULL on failure
  */
-void* tinyaiCalloc(size_t count, size_t size);
+void* hyperionCalloc(size_t count, size_t size);
 
 /* ----------------- Memory Pool ----------------- */
 
@@ -52,12 +52,12 @@ void* tinyaiCalloc(size_t count, size_t size);
  * @param size Size of memory pool in bytes
  * @return 0 on success, non-zero on error
  */
-int tinyaiMemPoolInit(size_t size);
+int hyperionMemPoolInit(size_t size);
 
 /**
  * Clean up memory pool
  */
-void tinyaiMemPoolCleanup();
+void hyperionMemPoolCleanup();
 
 /**
  * Allocate memory from pool
@@ -65,19 +65,19 @@ void tinyaiMemPoolCleanup();
  * @param size Size in bytes to allocate
  * @return Pointer to allocated memory or NULL on failure
  */
-void* tinyaiMemPoolAlloc(size_t size);
+void* hyperionMemPoolAlloc(size_t size);
 
 /**
  * Free memory from pool
  * 
  * @param ptr Pointer to memory to free
  */
-void tinyaiMemPoolFree(void *ptr);
+void hyperionMemPoolFree(void *ptr);
 
 /**
  * Reset memory pool (free all allocations)
  */
-void tinyaiMemPoolReset();
+void hyperionMemPoolReset();
 
 /**
  * Get memory pool statistics
@@ -87,7 +87,7 @@ void tinyaiMemPoolReset();
  * @param peakSize Pointer to store peak used pool size
  * @param allocCount Pointer to store allocation count
  */
-void tinyaiMemPoolStats(size_t *totalSize, size_t *usedSize, 
+void hyperionMemPoolStats(size_t *totalSize, size_t *usedSize, 
                        size_t *peakSize, size_t *allocCount);
 
 /* ----------------- Memory Tracking ----------------- */
@@ -97,12 +97,12 @@ void tinyaiMemPoolStats(size_t *totalSize, size_t *usedSize,
  * 
  * @return 0 on success, non-zero on error
  */
-int tinyaiMemTrackInit();
+int hyperionMemTrackInit();
 
 /**
  * Clean up memory tracking
  */
-void tinyaiMemTrackCleanup();
+void hyperionMemTrackCleanup();
 
 /**
  * Track memory allocation
@@ -112,21 +112,21 @@ void tinyaiMemTrackCleanup();
  * @param file Source file name
  * @param line Source line number
  */
-void tinyaiMemTrackAlloc(void *ptr, size_t size, const char *file, int line);
+void hyperionMemTrackAlloc(void *ptr, size_t size, const char *file, int line);
 
 /**
  * Track memory free
  * 
  * @param ptr Pointer to freed memory
  */
-void tinyaiMemTrackFree(void *ptr);
+void hyperionMemTrackFree(void *ptr);
 
 /**
  * Dump memory leaks
  * 
  * @return Number of leaks found
  */
-int tinyaiMemTrackDumpLeaks();
+int hyperionMemTrackDumpLeaks();
 
 /**
  * Get memory tracking statistics
@@ -136,30 +136,30 @@ int tinyaiMemTrackDumpLeaks();
  * @param freeCount Pointer to store free count
  * @param freeSize Pointer to store total free size
  */
-void tinyaiMemTrackStats(size_t *allocCount, size_t *allocSize, 
+void hyperionMemTrackStats(size_t *allocCount, size_t *allocSize, 
                         size_t *freeCount, size_t *freeSize);
 
 /* ----------------- Macros ----------------- */
 
 /* Memory tracking macros */
-#ifdef TINYAI_MEMORY_TRACKING
-#define TINYAI_MALLOC(size) \
-    (tinyaiMemTrackAlloc(tinyaiAlloc(size), (size), __FILE__, __LINE__), \
-     tinyaiAlloc(size))
-#define TINYAI_REALLOC(ptr, size) \
-    (tinyaiMemTrackFree(ptr), \
-     tinyaiMemTrackAlloc(tinyaiRealloc(ptr, size), (size), __FILE__, __LINE__), \
-     tinyaiRealloc(ptr, size))
-#define TINYAI_FREE(ptr) \
-    (tinyaiMemTrackFree(ptr), tinyaiFree(ptr))
-#define TINYAI_CALLOC(count, size) \
-    (tinyaiMemTrackAlloc(tinyaiCalloc(count, size), (count) * (size), __FILE__, __LINE__), \
-     tinyaiCalloc(count, size))
+#ifdef HYPERION_MEMORY_TRACKING
+#define HYPERION_MALLOC(size) \
+    (hyperionMemTrackAlloc(hyperionAlloc(size), (size), __FILE__, __LINE__), \
+     hyperionAlloc(size))
+#define HYPERION_REALLOC(ptr, size) \
+    (hyperionMemTrackFree(ptr), \
+     hyperionMemTrackAlloc(hyperionRealloc(ptr, size), (size), __FILE__, __LINE__), \
+     hyperionRealloc(ptr, size))
+#define HYPERION_FREE(ptr) \
+    (hyperionMemTrackFree(ptr), hyperionFree(ptr))
+#define HYPERION_CALLOC(count, size) \
+    (hyperionMemTrackAlloc(hyperionCalloc(count, size), (count) * (size), __FILE__, __LINE__), \
+     hyperionCalloc(count, size))
 #else
-#define TINYAI_MALLOC(size) tinyaiAlloc(size)
-#define TINYAI_REALLOC(ptr, size) tinyaiRealloc(ptr, size)
-#define TINYAI_FREE(ptr) tinyaiFree(ptr)
-#define TINYAI_CALLOC(count, size) tinyaiCalloc(count, size)
+#define HYPERION_MALLOC(size) hyperionAlloc(size)
+#define HYPERION_REALLOC(ptr, size) hyperionRealloc(ptr, size)
+#define HYPERION_FREE(ptr) hyperionFree(ptr)
+#define HYPERION_CALLOC(count, size) hyperionCalloc(count, size)
 #endif
 
-#endif /* TINYAI_MEMORY_H */
+#endif /* HYPERION_MEMORY_H */

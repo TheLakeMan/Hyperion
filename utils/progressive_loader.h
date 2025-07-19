@@ -1,14 +1,14 @@
 /**
  * @file progressive_loader.h
- * @brief Progressive model loading utilities for TinyAI
+ * @brief Progressive model loading utilities for Hyperion
  *
  * This header provides utilities for progressively loading model weights,
  * allowing large models to be utilized with a minimal memory footprint by
  * loading and unloading layers on demand.
  */
 
-#ifndef TINYAI_PROGRESSIVE_LOADER_H
-#define TINYAI_PROGRESSIVE_LOADER_H
+#ifndef HYPERION_PROGRESSIVE_LOADER_H
+#define HYPERION_PROGRESSIVE_LOADER_H
 
 #include "mmap_loader.h"
 #include <stdbool.h>
@@ -23,21 +23,21 @@ extern "C" {
  * @brief Layer priority levels
  */
 typedef enum {
-    TINYAI_LAYER_PRIORITY_LOW      = 0,
-    TINYAI_LAYER_PRIORITY_MEDIUM   = 1,
-    TINYAI_LAYER_PRIORITY_HIGH     = 2,
-    TINYAI_LAYER_PRIORITY_CRITICAL = 3
-} TinyAILayerPriority;
+    HYPERION_LAYER_PRIORITY_LOW      = 0,
+    HYPERION_LAYER_PRIORITY_MEDIUM   = 1,
+    HYPERION_LAYER_PRIORITY_HIGH     = 2,
+    HYPERION_LAYER_PRIORITY_CRITICAL = 3
+} HyperionLayerPriority;
 
 /**
  * @brief Layer state
  */
 typedef enum {
-    TINYAI_LAYER_STATE_UNLOADED  = 0,
-    TINYAI_LAYER_STATE_LOADING   = 1,
-    TINYAI_LAYER_STATE_LOADED    = 2,
-    TINYAI_LAYER_STATE_UNLOADING = 3
-} TinyAILayerState;
+    HYPERION_LAYER_STATE_UNLOADED  = 0,
+    HYPERION_LAYER_STATE_LOADING   = 1,
+    HYPERION_LAYER_STATE_LOADED    = 2,
+    HYPERION_LAYER_STATE_UNLOADING = 3
+} HyperionLayerState;
 
 /**
  * @brief Layer information
@@ -45,13 +45,13 @@ typedef enum {
 typedef struct {
     size_t              layer_id;         // Unique identifier for the layer
     size_t              memory_usage;     // Memory required by the layer
-    TinyAILayerPriority priority;         // Current priority level
-    TinyAILayerState    state;            // Current state
+    HyperionLayerPriority priority;         // Current priority level
+    HyperionLayerState    state;            // Current state
     size_t              access_count;     // Number of times accessed
     uint64_t            last_access_time; // Timestamp of last access
     size_t             *dependencies;     // Array of dependent layer IDs
     size_t              num_dependencies; // Number of dependencies
-} TinyAILayerInfo;
+} HyperionLayerInfo;
 
 /**
  * @brief Progressive loader configuration
@@ -64,20 +64,20 @@ typedef struct {
     size_t priority_window;   // Time window for priority calculation
     bool   enable_prefetch;   // Whether to enable prefetching
     size_t prefetch_distance; // Number of layers to prefetch
-} TinyAIProgressiveConfig;
+} HyperionProgressiveConfig;
 
 /**
  * @brief Progressive loader context
  */
 typedef struct {
-    TinyAIProgressiveConfig config;
-    TinyAILayerInfo        *layers;
+    HyperionProgressiveConfig config;
+    HyperionLayerInfo        *layers;
     size_t                  num_layers;
     size_t                  current_memory;
     size_t                  peak_memory;
     uint64_t                start_time;
     bool                    is_initialized;
-} TinyAIProgressiveLoader;
+} HyperionProgressiveLoader;
 
 /**
  * @brief Create a progressive loader for a model
@@ -86,8 +86,8 @@ typedef struct {
  * @param config Configuration settings
  * @return Pointer to the created loader or NULL on failure
  */
-TinyAIProgressiveLoader *tinyaiCreateProgressiveLoader(const char                    *model_path,
-                                                       const TinyAIProgressiveConfig *config);
+HyperionProgressiveLoader *hyperionCreateProgressiveLoader(const char                    *model_path,
+                                                       const HyperionProgressiveConfig *config);
 
 /**
  * @brief Create a progressive loader from an existing memory mapped model
@@ -96,16 +96,16 @@ TinyAIProgressiveLoader *tinyaiCreateProgressiveLoader(const char               
  * @param config Configuration settings
  * @return Pointer to the created loader or NULL on failure
  */
-TinyAIProgressiveLoader *
-tinyaiCreateProgressiveLoaderFromMapped(TinyAIMappedModel             *mapped_model,
-                                        const TinyAIProgressiveConfig *config);
+HyperionProgressiveLoader *
+hyperionCreateProgressiveLoaderFromMapped(HyperionMappedModel             *mapped_model,
+                                        const HyperionProgressiveConfig *config);
 
 /**
  * @brief Free a progressive loader and release all resources
  *
  * @param loader Pointer to the loader to free
  */
-void tinyaiFreeProgressiveLoader(TinyAIProgressiveLoader *loader);
+void hyperionFreeProgressiveLoader(HyperionProgressiveLoader *loader);
 
 /**
  * @brief Initialize layer information
@@ -118,8 +118,8 @@ void tinyaiFreeProgressiveLoader(TinyAIProgressiveLoader *loader);
  * @param num_dependencies Number of dependencies
  * @return true if successful, false on failure
  */
-bool tinyaiInitLayerInfo(TinyAIProgressiveLoader *loader, size_t layer_id, size_t memory_usage,
-                         TinyAILayerPriority priority, const size_t *dependencies,
+bool hyperionInitLayerInfo(HyperionProgressiveLoader *loader, size_t layer_id, size_t memory_usage,
+                         HyperionLayerPriority priority, const size_t *dependencies,
                          size_t num_dependencies);
 
 /**
@@ -129,7 +129,7 @@ bool tinyaiInitLayerInfo(TinyAIProgressiveLoader *loader, size_t layer_id, size_
  * @param layer_id Unique identifier for the layer
  * @return true if successful, false on failure
  */
-bool tinyaiRequestLayer(TinyAIProgressiveLoader *loader, size_t layer_id);
+bool hyperionRequestLayer(HyperionProgressiveLoader *loader, size_t layer_id);
 
 /**
  * @brief Unload layer
@@ -138,7 +138,7 @@ bool tinyaiRequestLayer(TinyAIProgressiveLoader *loader, size_t layer_id);
  * @param layer_id Unique identifier for the layer
  * @return true if successful, false on failure
  */
-bool tinyaiUnloadLayer(TinyAIProgressiveLoader *loader, size_t layer_id);
+bool hyperionUnloadLayer(HyperionProgressiveLoader *loader, size_t layer_id);
 
 /**
  * @brief Get layer state
@@ -147,7 +147,7 @@ bool tinyaiUnloadLayer(TinyAIProgressiveLoader *loader, size_t layer_id);
  * @param layer_id Unique identifier for the layer
  * @return Current state of the layer
  */
-TinyAILayerState tinyaiGetLayerState(const TinyAIProgressiveLoader *loader, size_t layer_id);
+HyperionLayerState hyperionGetLayerState(const HyperionProgressiveLoader *loader, size_t layer_id);
 
 /**
  * @brief Update layer priority
@@ -157,8 +157,8 @@ TinyAILayerState tinyaiGetLayerState(const TinyAIProgressiveLoader *loader, size
  * @param priority New priority level
  * @return true if successful, false on failure
  */
-bool tinyaiUpdateLayerPriority(TinyAIProgressiveLoader *loader, size_t layer_id,
-                               TinyAILayerPriority priority);
+bool hyperionUpdateLayerPriority(HyperionProgressiveLoader *loader, size_t layer_id,
+                               HyperionLayerPriority priority);
 
 /**
  * @brief Get memory usage
@@ -166,7 +166,7 @@ bool tinyaiUpdateLayerPriority(TinyAIProgressiveLoader *loader, size_t layer_id,
  * @param loader Pointer to the progressive loader
  * @return Current memory usage in bytes
  */
-size_t tinyaiGetMemoryUsage(const TinyAIProgressiveLoader *loader);
+size_t hyperionGetMemoryUsage(const HyperionProgressiveLoader *loader);
 
 /**
  * @brief Get peak memory usage
@@ -174,7 +174,7 @@ size_t tinyaiGetMemoryUsage(const TinyAIProgressiveLoader *loader);
  * @param loader Pointer to the progressive loader
  * @return Peak memory usage in bytes
  */
-size_t tinyaiGetPeakMemoryUsage(const TinyAIProgressiveLoader *loader);
+size_t hyperionGetPeakMemoryUsage(const HyperionProgressiveLoader *loader);
 
 /**
  * @brief Check if layer can be loaded
@@ -183,7 +183,7 @@ size_t tinyaiGetPeakMemoryUsage(const TinyAIProgressiveLoader *loader);
  * @param layer_id Unique identifier for the layer
  * @return true if the layer can be loaded, false otherwise
  */
-bool tinyaiCanLoadLayer(const TinyAIProgressiveLoader *loader, size_t layer_id);
+bool hyperionCanLoadLayer(const HyperionProgressiveLoader *loader, size_t layer_id);
 
 /**
  * @brief Get layer dependencies
@@ -193,7 +193,7 @@ bool tinyaiCanLoadLayer(const TinyAIProgressiveLoader *loader, size_t layer_id);
  * @param num_dependencies Pointer to store the number of dependencies
  * @return Array of dependent layer IDs
  */
-const size_t *tinyaiGetLayerDependencies(const TinyAIProgressiveLoader *loader, size_t layer_id,
+const size_t *hyperionGetLayerDependencies(const HyperionProgressiveLoader *loader, size_t layer_id,
                                          size_t *num_dependencies);
 
 /**
@@ -202,14 +202,14 @@ const size_t *tinyaiGetLayerDependencies(const TinyAIProgressiveLoader *loader, 
  * @param loader Pointer to the progressive loader
  * @param layer_id Unique identifier for the layer
  */
-void tinyaiUpdateLayerAccess(TinyAIProgressiveLoader *loader, size_t layer_id);
+void hyperionUpdateLayerAccess(HyperionProgressiveLoader *loader, size_t layer_id);
 
 /**
  * @brief Reset loader state
  *
  * @param loader Pointer to the progressive loader
  */
-void tinyaiResetProgressiveLoader(TinyAIProgressiveLoader *loader);
+void hyperionResetProgressiveLoader(HyperionProgressiveLoader *loader);
 
 /**
  * @brief Enable/disable prefetching
@@ -217,7 +217,7 @@ void tinyaiResetProgressiveLoader(TinyAIProgressiveLoader *loader);
  * @param loader Pointer to the progressive loader
  * @param enable true to enable prefetching, false to disable
  */
-void tinyaiEnablePrefetching(TinyAIProgressiveLoader *loader, bool enable);
+void hyperionEnablePrefetching(HyperionProgressiveLoader *loader, bool enable);
 
 /**
  * @brief Set prefetch distance
@@ -225,7 +225,7 @@ void tinyaiEnablePrefetching(TinyAIProgressiveLoader *loader, bool enable);
  * @param loader Pointer to the progressive loader
  * @param distance Number of layers to prefetch
  */
-void tinyaiSetPrefetchDistance(TinyAIProgressiveLoader *loader, size_t distance);
+void hyperionSetPrefetchDistance(HyperionProgressiveLoader *loader, size_t distance);
 
 /**
  * @brief Get loader configuration
@@ -233,7 +233,7 @@ void tinyaiSetPrefetchDistance(TinyAIProgressiveLoader *loader, size_t distance)
  * @param loader Pointer to the progressive loader
  * @return Configuration settings
  */
-const TinyAIProgressiveConfig *tinyaiGetLoaderConfig(const TinyAIProgressiveLoader *loader);
+const HyperionProgressiveConfig *hyperionGetLoaderConfig(const HyperionProgressiveLoader *loader);
 
 /**
  * @brief Set loader configuration
@@ -242,10 +242,10 @@ const TinyAIProgressiveConfig *tinyaiGetLoaderConfig(const TinyAIProgressiveLoad
  * @param config New configuration settings
  * @return true if successful, false on failure
  */
-bool tinyaiSetLoaderConfig(TinyAIProgressiveLoader *loader, const TinyAIProgressiveConfig *config);
+bool hyperionSetLoaderConfig(HyperionProgressiveLoader *loader, const HyperionProgressiveConfig *config);
 
 #ifdef __cplusplus
-}
+} /* extern "C" */
 #endif
 
-#endif /* TINYAI_PROGRESSIVE_LOADER_H */
+#endif /* HYPERION_PROGRESSIVE_LOADER_H */

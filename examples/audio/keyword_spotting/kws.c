@@ -1,6 +1,6 @@
 /**
  * @file kws.c
- * @brief Keyword Spotting implementation for TinyAI
+ * @brief Keyword Spotting implementation for Hyperion
  */
 
 #include "kws.h"
@@ -25,7 +25,7 @@
  * This is a simplified model for demonstration purposes
  * In a real implementation, this would be a neural network model
  */
-struct TinyAIKWSModel {
+struct HyperionKWSModel {
     int     inputSize;   /* Size of input features */
     int     numKeywords; /* Number of keywords supported */
     char  **keywords;    /* Array of keyword strings */
@@ -37,7 +37,7 @@ struct TinyAIKWSModel {
  * Initialize the default keyword spotting configuration
  * @param config Configuration structure to initialize
  */
-void tinyaiKWSInitConfig(TinyAIKWSConfig *config)
+void hyperionKWSInitConfig(HyperionKWSConfig *config)
 {
     if (!config) {
         return;
@@ -59,10 +59,10 @@ void tinyaiKWSInitConfig(TinyAIKWSConfig *config)
  * @param kwsConfig KWS configuration
  * @param featuresConfig Output features configuration
  */
-static void initFeatureConfig(const TinyAIKWSConfig     *kwsConfig,
-                              TinyAIAudioFeaturesConfig *featuresConfig)
+static void initFeatureConfig(const HyperionKWSConfig     *kwsConfig,
+                              HyperionAudioFeaturesConfig *featuresConfig)
 {
-    featuresConfig->type        = TINYAI_AUDIO_FEATURES_MFCC;
+    featuresConfig->type        = HYPERION_AUDIO_FEATURES_MFCC;
     featuresConfig->frameLength = (16000 * kwsConfig->frameSize) / 1000; /* Assuming 16kHz audio */
     featuresConfig->frameShift  = (16000 * kwsConfig->frameShift) / 1000;
     featuresConfig->numFilters  = 26; /* Standard value for speech */
@@ -79,9 +79,9 @@ static void initFeatureConfig(const TinyAIKWSConfig     *kwsConfig,
  * @param inputSize Size of input features
  * @return New model, or NULL on failure
  */
-static TinyAIKWSModel *createModel(int numKeywords, int inputSize)
+static HyperionKWSModel *createModel(int numKeywords, int inputSize)
 {
-    TinyAIKWSModel *model = (TinyAIKWSModel *)malloc(sizeof(TinyAIKWSModel));
+    HyperionKWSModel *model = (HyperionKWSModel *)malloc(sizeof(HyperionKWSModel));
     if (!model) {
         return NULL;
     }
@@ -136,7 +136,7 @@ static TinyAIKWSModel *createModel(int numKeywords, int inputSize)
  * Free keyword spotting model
  * @param model Model to free
  */
-static void freeModel(TinyAIKWSModel *model)
+static void freeModel(HyperionKWSModel *model)
 {
     if (!model) {
         return;
@@ -170,7 +170,7 @@ static void freeModel(TinyAIKWSModel *model)
  * @param keywordIndex Index to add at
  * @return true on success, false on failure
  */
-static bool addKeywordToModel(TinyAIKWSModel *model, const char *keyword, int keywordIndex)
+static bool addKeywordToModel(HyperionKWSModel *model, const char *keyword, int keywordIndex)
 {
     if (!model || !keyword || keywordIndex < 0 || keywordIndex >= model->numKeywords) {
         return false;
@@ -196,20 +196,20 @@ static bool addKeywordToModel(TinyAIKWSModel *model, const char *keyword, int ke
  * @param modelPath Path to model file
  * @return New keyword spotting state, or NULL on failure
  */
-TinyAIKWSState *tinyaiKWSCreate(const TinyAIKWSConfig *config, const char *modelPath)
+HyperionKWSState *hyperionKWSCreate(const HyperionKWSConfig *config, const char *modelPath)
 {
     if (!config) {
         return NULL;
     }
 
     /* Allocate state */
-    TinyAIKWSState *state = (TinyAIKWSState *)malloc(sizeof(TinyAIKWSState));
+    HyperionKWSState *state = (HyperionKWSState *)malloc(sizeof(HyperionKWSState));
     if (!state) {
         return NULL;
     }
 
     /* Initialize state */
-    memset(state, 0, sizeof(TinyAIKWSState));
+    memset(state, 0, sizeof(HyperionKWSState));
     state->config      = *config;
     state->numKeywords = 0;
 
@@ -224,7 +224,7 @@ TinyAIKWSState *tinyaiKWSCreate(const TinyAIKWSConfig *config, const char *model
     int contextFrames = 1 + 2 * state->config.numContextFrames; /* center frame + context */
     int inputSize     = numMfccFeatures * contextFrames;
 
-    state->model = createModel(TINYAI_KWS_MAX_KEYWORDS, inputSize);
+    state->model = createModel(HYPERION_KWS_MAX_KEYWORDS, inputSize);
     if (!state->model) {
         free(state);
         return NULL;
@@ -242,7 +242,7 @@ TinyAIKWSState *tinyaiKWSCreate(const TinyAIKWSConfig *config, const char *model
     state->featureBufferIndex = 0;
 
     /* Allocate detection state buffers */
-    state->scoresSize = TINYAI_KWS_MAX_KEYWORDS;
+    state->scoresSize = HYPERION_KWS_MAX_KEYWORDS;
     state->scores     = (float *)malloc(state->scoresSize * sizeof(float));
     if (!state->scores) {
         free(state->featureBuffer);
@@ -276,7 +276,7 @@ TinyAIKWSState *tinyaiKWSCreate(const TinyAIKWSConfig *config, const char *model
     /* Allocate detection results buffer */
     state->detectionsSize = 100; /* Initial size */
     state->detections =
-        (TinyAIKWSDetection *)malloc(state->detectionsSize * sizeof(TinyAIKWSDetection));
+        (HyperionKWSDetection *)malloc(state->detectionsSize * sizeof(HyperionKWSDetection));
     if (!state->detections) {
         free(state->activeDetections);
         free(state->smoothedScores);
@@ -286,7 +286,7 @@ TinyAIKWSState *tinyaiKWSCreate(const TinyAIKWSConfig *config, const char *model
         free(state);
         return NULL;
     }
-    memset(state->detections, 0, state->detectionsSize * sizeof(TinyAIKWSDetection));
+    memset(state->detections, 0, state->detectionsSize * sizeof(HyperionKWSDetection));
     state->numDetections = 0;
 
     /* Initialize noise level */
@@ -299,7 +299,7 @@ TinyAIKWSState *tinyaiKWSCreate(const TinyAIKWSConfig *config, const char *model
  * Free keyword spotting state
  * @param state State to free
  */
-void tinyaiKWSFree(TinyAIKWSState *state)
+void hyperionKWSFree(HyperionKWSState *state)
 {
     if (!state) {
         return;
@@ -317,7 +317,7 @@ void tinyaiKWSFree(TinyAIKWSState *state)
 
     /* Free features */
     if (state->features) {
-        tinyaiAudioFeaturesFree(state->features);
+        hyperionAudioFeaturesFree(state->features);
     }
 
     /* Free detection state */
@@ -345,7 +345,7 @@ void tinyaiKWSFree(TinyAIKWSState *state)
  * @param state State to reset
  * @return true on success, false on failure
  */
-bool tinyaiKWSReset(TinyAIKWSState *state)
+bool hyperionKWSReset(HyperionKWSState *state)
 {
     if (!state) {
         return false;
@@ -370,7 +370,7 @@ bool tinyaiKWSReset(TinyAIKWSState *state)
 
     /* Reset features */
     if (state->features) {
-        tinyaiAudioFeaturesFree(state->features);
+        hyperionAudioFeaturesFree(state->features);
         state->features = NULL;
     }
 
@@ -390,16 +390,16 @@ bool tinyaiKWSReset(TinyAIKWSState *state)
  * @param threshold Detection threshold (0.0-1.0), or negative to use default
  * @return true on success, false on failure
  */
-bool tinyaiKWSAddKeyword(TinyAIKWSState *state, const char *keyword, float threshold)
+bool hyperionKWSAddKeyword(HyperionKWSState *state, const char *keyword, float threshold)
 {
-    if (!state || !keyword || state->numKeywords >= TINYAI_KWS_MAX_KEYWORDS) {
+    if (!state || !keyword || state->numKeywords >= HYPERION_KWS_MAX_KEYWORDS) {
         return false;
     }
 
     /* Set threshold */
     float actualThreshold = threshold;
     if (actualThreshold < 0.0f) {
-        actualThreshold = TINYAI_KWS_DEFAULT_THRESHOLD;
+        actualThreshold = HYPERION_KWS_DEFAULT_THRESHOLD;
     }
     if (actualThreshold > 1.0f) {
         actualThreshold = 1.0f;
@@ -407,11 +407,11 @@ bool tinyaiKWSAddKeyword(TinyAIKWSState *state, const char *keyword, float thres
 
     /* Add keyword */
     int               index = state->numKeywords;
-    TinyAIKWSKeyword *kw    = &state->keywords[index];
+    HyperionKWSKeyword *kw    = &state->keywords[index];
 
     /* Copy keyword text */
-    strncpy(kw->word, keyword, TINYAI_KWS_MAX_KEYWORD_LENGTH - 1);
-    kw->word[TINYAI_KWS_MAX_KEYWORD_LENGTH - 1] = '\0';
+    strncpy(kw->word, keyword, HYPERION_KWS_MAX_KEYWORD_LENGTH - 1);
+    kw->word[HYPERION_KWS_MAX_KEYWORD_LENGTH - 1] = '\0';
 
     /* Set properties */
     kw->threshold  = actualThreshold;
@@ -435,7 +435,7 @@ bool tinyaiKWSAddKeyword(TinyAIKWSState *state, const char *keyword, float thres
  * @param numFeatures Number of features
  * @return true on success, false on failure
  */
-static bool detectKeywords(TinyAIKWSState *state, const float *features, int numFeatures)
+static bool detectKeywords(HyperionKWSState *state, const float *features, int numFeatures)
 {
     if (!state || !features || numFeatures <= 0) {
         return false;
@@ -478,7 +478,7 @@ static bool detectKeywords(TinyAIKWSState *state, const float *features, int num
                 /* Valid detection, add to results */
                 if (state->numDetections < state->detectionsSize) {
                     int                 idx = state->numDetections++;
-                    TinyAIKWSDetection *det = &state->detections[idx];
+                    HyperionKWSDetection *det = &state->detections[idx];
 
                     det->keywordIndex = i;
                     det->confidence   = state->smoothedScores[i];
@@ -504,7 +504,7 @@ static bool detectKeywords(TinyAIKWSState *state, const float *features, int num
  * @param frameSize Number of samples in frame
  * @return true on success, false on failure
  */
-bool tinyaiKWSProcessFrame(TinyAIKWSState *state, const float *frame, int frameSize)
+bool hyperionKWSProcessFrame(HyperionKWSState *state, const float *frame, int frameSize)
 {
     if (!state || !frame || frameSize <= 0) {
         return false;
@@ -561,15 +561,15 @@ bool tinyaiKWSProcessFrame(TinyAIKWSState *state, const float *frame, int frameS
  * @param numDetections Output number of detections
  * @return true on success, false on failure
  */
-bool tinyaiKWSProcessAudio(TinyAIKWSState *state, const TinyAIAudioData *audio,
-                           TinyAIKWSDetection **detections, int *numDetections)
+bool hyperionKWSProcessAudio(HyperionKWSState *state, const HyperionAudioData *audio,
+                           HyperionKWSDetection **detections, int *numDetections)
 {
     if (!state || !audio || !detections || !numDetections || !audio->data) {
         return false;
     }
 
     /* Reset state */
-    tinyaiKWSReset(state);
+    hyperionKWSReset(state);
 
     /* Process audio in frames */
     const float *samples    = (const float *)audio->data;
@@ -583,7 +583,7 @@ bool tinyaiKWSProcessAudio(TinyAIKWSState *state, const TinyAIAudioData *audio,
     }
 
     for (int i = 0; i + frameSizeSamples <= numSamples; i += frameShiftSamples) {
-        if (!tinyaiKWSProcessFrame(state, samples + i, frameSizeSamples)) {
+        if (!hyperionKWSProcessFrame(state, samples + i, frameSizeSamples)) {
             return false;
         }
     }
@@ -591,12 +591,12 @@ bool tinyaiKWSProcessAudio(TinyAIKWSState *state, const TinyAIAudioData *audio,
     /* Return detections */
     if (state->numDetections > 0) {
         *detections =
-            (TinyAIKWSDetection *)malloc(state->numDetections * sizeof(TinyAIKWSDetection));
+            (HyperionKWSDetection *)malloc(state->numDetections * sizeof(HyperionKWSDetection));
         if (!*detections) {
             return false;
         }
 
-        memcpy(*detections, state->detections, state->numDetections * sizeof(TinyAIKWSDetection));
+        memcpy(*detections, state->detections, state->numDetections * sizeof(HyperionKWSDetection));
         *numDetections = state->numDetections;
 
         /* Calculate times */
@@ -622,7 +622,7 @@ bool tinyaiKWSProcessAudio(TinyAIKWSState *state, const TinyAIAudioData *audio,
  * @param numDetections Output number of detections
  * @return true on success, false on failure
  */
-bool tinyaiKWSGetDetections(TinyAIKWSState *state, TinyAIKWSDetection *detections,
+bool hyperionKWSGetDetections(HyperionKWSState *state, HyperionKWSDetection *detections,
                             int maxDetections, int *numDetections)
 {
     if (!state || !detections || !numDetections || maxDetections <= 0) {
@@ -631,7 +631,7 @@ bool tinyaiKWSGetDetections(TinyAIKWSState *state, TinyAIKWSDetection *detection
 
     /* Copy detections */
     int count = state->numDetections < maxDetections ? state->numDetections : maxDetections;
-    memcpy(detections, state->detections, count * sizeof(TinyAIKWSDetection));
+    memcpy(detections, state->detections, count * sizeof(HyperionKWSDetection));
     *numDetections = count;
 
     return true;
@@ -645,7 +645,7 @@ bool tinyaiKWSGetDetections(TinyAIKWSState *state, TinyAIKWSDetection *detection
  * @param numKeywords Output number of keywords
  * @return true on success, false on failure
  */
-bool tinyaiKWSGetAvailableKeywords(TinyAIKWSState *state, char **keywords, int maxKeywords,
+bool hyperionKWSGetAvailableKeywords(HyperionKWSState *state, char **keywords, int maxKeywords,
                                    int *numKeywords)
 {
     if (!state || !keywords || !numKeywords || maxKeywords <= 0) {
@@ -670,8 +670,8 @@ bool tinyaiKWSGetAvailableKeywords(TinyAIKWSState *state, char **keywords, int m
  * @param numDetections Number of detections
  * @param width Width of visualization in characters
  */
-void tinyaiKWSVisualizeDetections(TinyAIKWSState *state, const TinyAIAudioData *audio,
-                                  const TinyAIKWSDetection *detections, int numDetections,
+void hyperionKWSVisualizeDetections(HyperionKWSState *state, const HyperionAudioData *audio,
+                                  const HyperionKWSDetection *detections, int numDetections,
                                   int width)
 {
     if (!state || !audio || !detections || numDetections <= 0 || width <= 0) {
@@ -730,7 +730,7 @@ void tinyaiKWSVisualizeDetections(TinyAIKWSState *state, const TinyAIAudioData *
         for (int j = 0; j < pos - (i > 1 ? ((i - 1) * width) / 10 + (i - 1) : 1); j++) {
             printf(" ");
         }
-        printf("%.1f", i * duration / 10.0f);
+    printf("%.1f", i * duration / 10.0f);
     }
     printf(" (sec)\n\n");
 

@@ -1,10 +1,10 @@
 /**
  * @file benchmark.h
- * @brief Header file for benchmarking utilities for TinyAI to compare model performance
+ * @brief Header file for benchmarking utilities for Hyperion to compare model performance
  */
 
-#ifndef TINYAI_BENCHMARK_H
-#define TINYAI_BENCHMARK_H
+#ifndef HYPERION_BENCHMARK_H
+#define HYPERION_BENCHMARK_H
 
 #include "../models/image/image_model.h"
 #include <stdbool.h>
@@ -37,7 +37,7 @@ typedef struct {
  * @param numIterations Number of iterations to run for each image (for averaging)
  * @return BenchmarkResult structure with benchmark results
  */
-BenchmarkResult benchmarkImageModel(TinyAIImageModel *model, TinyAIImage **images, int *labels,
+BenchmarkResult benchmarkImageModel(HyperionImageModel *model, HyperionImage **images, int *labels,
                                     int numImages, int numIterations);
 
 /**
@@ -55,8 +55,8 @@ void printBenchmarkResult(const BenchmarkResult *result);
  * @param numImages Number of images
  * @param numIterations Number of iterations for each model
  */
-void compareModels(TinyAIImageModel *quantizedModel, TinyAIImageModel *fullModel,
-                   TinyAIImage **images, int *labels, int numImages, int numIterations);
+void compareModels(HyperionImageModel *quantizedModel, HyperionImageModel *fullModel,
+                   HyperionImage **images, int *labels, int numImages, int numIterations);
 
 /**
  * Benchmark multiple models on the same dataset
@@ -69,8 +69,8 @@ void compareModels(TinyAIImageModel *quantizedModel, TinyAIImageModel *fullModel
  * @param numIterations Number of iterations for each model
  * @return Array of benchmark results
  */
-BenchmarkResult *benchmarkMultipleModels(TinyAIImageModel **models, const char **modelNames,
-                                         int numModels, TinyAIImage **images, int *labels,
+BenchmarkResult *benchmarkMultipleModels(HyperionImageModel **models, const char **modelNames,
+                                         int numModels, HyperionImage **images, int *labels,
                                          int numImages, int numIterations);
 
 /**
@@ -88,7 +88,7 @@ typedef struct {
     void (*operation)(void *); // Operation to benchmark
     void (*teardown)(void *);  // Teardown function
     void *context;             // Context for the operation
-} TinyAIBenchmarkOperation;
+} HyperionBenchmarkOperation;
 
 // Benchmark result structure
 typedef struct {
@@ -97,14 +97,14 @@ typedef struct {
     double max_time_ms;     // Maximum execution time in milliseconds
     double std_dev_ms;      // Standard deviation in milliseconds
     size_t iterations;      // Number of iterations performed
-} TinyAIBenchmarkResult;
+} HyperionBenchmarkResult;
 
 // Benchmark an operation
-TinyAIBenchmarkResult tinyaiBenchmarkOperation(const char *name, size_t iterations,
-                                               TinyAIBenchmarkOperation operation);
+HyperionBenchmarkResult hyperionBenchmarkOperation(const char *name, size_t iterations,
+                                               HyperionBenchmarkOperation operation);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* TINYAI_BENCHMARK_H */
+#endif /* HYPERION_BENCHMARK_H */

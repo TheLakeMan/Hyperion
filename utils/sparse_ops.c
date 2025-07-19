@@ -1,6 +1,6 @@
 /**
  * @file sparse_ops.c
- * @brief Implementation of sparse matrix operations for TinyAI
+ * @brief Implementation of sparse matrix operations for Hyperion
  */
 
 #include "sparse_ops.h"
@@ -14,18 +14,18 @@
 /* Check if SIMD is available */
 #if defined(__AVX__) || defined(__AVX2__)
 #include <immintrin.h>
-#define TINYAI_SIMD_AVX
+#define HYPERION_SIMD_AVX
 #elif defined(__SSE__) || defined(__SSE2__) || defined(__SSE3__) || defined(__SSSE3__) ||          \
     defined(__SSE4_1__) || defined(__SSE4_2__)
 #include <emmintrin.h>
 #include <xmmintrin.h>
-#define TINYAI_SIMD_SSE
+#define HYPERION_SIMD_SSE
 #endif
 
 /**
  * Create a CSR matrix from dense matrix data with a sparsity threshold
  */
-TinyAICSRMatrix *tinyaiCreateCSRMatrixFromDense(const float *dense, int32_t rows, int32_t cols,
+HyperionCSRMatrix *hyperionCreateCSRMatrixFromDense(const float *dense, int32_t rows, int32_t cols,
                                                 float threshold)
 {
     if (!dense || rows <= 0 || cols <= 0) {
@@ -43,7 +43,7 @@ TinyAICSRMatrix *tinyaiCreateCSRMatrixFromDense(const float *dense, int32_t rows
     }
 
     /* Allocate CSR matrix */
-    TinyAICSRMatrix *csr = (TinyAICSRMatrix *)malloc(sizeof(TinyAICSRMatrix));
+    HyperionCSRMatrix *csr = (HyperionCSRMatrix *)malloc(sizeof(HyperionCSRMatrix));
     if (!csr) {
         return NULL;
     }
@@ -58,7 +58,7 @@ TinyAICSRMatrix *tinyaiCreateCSRMatrixFromDense(const float *dense, int32_t rows
     csr->rowPtrs    = (int32_t *)malloc((rows + 1) * sizeof(int32_t));
 
     if (!csr->values || !csr->colIndices || !csr->rowPtrs) {
-        tinyaiCSRMatrixFree(csr);
+        hyperionCSRMatrixFree(csr);
         return NULL;
     }
 
@@ -84,7 +84,7 @@ TinyAICSRMatrix *tinyaiCreateCSRMatrixFromDense(const float *dense, int32_t rows
 /**
  * Create a 4-bit quantized CSR matrix from dense matrix data with sparsity threshold
  */
-TinyAICSRMatrix4Bit *tinyaiCreateCSRMatrix4BitFromDense(const float *dense, int32_t rows,
+HyperionCSRMatrix4Bit *hyperionCreateCSRMatrix4BitFromDense(const float *dense, int32_t rows,
                                                         int32_t cols, float threshold)
 {
     if (!dense || rows <= 0 || cols <= 0) {
@@ -110,7 +110,7 @@ TinyAICSRMatrix4Bit *tinyaiCreateCSRMatrix4BitFromDense(const float *dense, int3
     }
 
     /* Allocate CSR matrix */
-    TinyAICSRMatrix4Bit *csr = (TinyAICSRMatrix4Bit *)malloc(sizeof(TinyAICSRMatrix4Bit));
+    HyperionCSRMatrix4Bit *csr = (HyperionCSRMatrix4Bit *)malloc(sizeof(HyperionCSRMatrix4Bit));
     if (!csr) {
         return NULL;
     }
@@ -132,7 +132,7 @@ TinyAICSRMatrix4Bit *tinyaiCreateCSRMatrix4BitFromDense(const float *dense, int3
     csr->rowPtrs       = (int32_t *)malloc((rows + 1) * sizeof(int32_t));
 
     if (!csr->qvalues || !csr->colIndices || !csr->rowPtrs) {
-        tinyaiCSRMatrix4BitFree(csr);
+        hyperionCSRMatrix4BitFree(csr);
         return NULL;
     }
 
@@ -172,7 +172,7 @@ TinyAICSRMatrix4Bit *tinyaiCreateCSRMatrix4BitFromDense(const float *dense, int3
 /**
  * Convert a CSR matrix to dense format
  */
-bool tinyaiCSRMatrixToDense(const TinyAICSRMatrix *csr, float *dense)
+bool hyperionCSRMatrixToDense(const HyperionCSRMatrix *csr, float *dense)
 {
     if (!csr || !dense) {
         return false;
@@ -198,7 +198,7 @@ bool tinyaiCSRMatrixToDense(const TinyAICSRMatrix *csr, float *dense)
 /**
  * Convert a 4-bit quantized CSR matrix to dense format
  */
-bool tinyaiCSRMatrix4BitToDense(const TinyAICSRMatrix4Bit *csr, float *dense)
+bool hyperionCSRMatrix4BitToDense(const HyperionCSRMatrix4Bit *csr, float *dense)
 {
     if (!csr || !dense) {
         return false;
@@ -236,7 +236,7 @@ bool tinyaiCSRMatrix4BitToDense(const TinyAICSRMatrix4Bit *csr, float *dense)
 /**
  * Free memory used by a CSR matrix
  */
-void tinyaiCSRMatrixFree(TinyAICSRMatrix *csr)
+void hyperionCSRMatrixFree(HyperionCSRMatrix *csr)
 {
     if (!csr) {
         return;
@@ -260,7 +260,7 @@ void tinyaiCSRMatrixFree(TinyAICSRMatrix *csr)
 /**
  * Free memory used by a 4-bit quantized CSR matrix
  */
-void tinyaiCSRMatrix4BitFree(TinyAICSRMatrix4Bit *csr)
+void hyperionCSRMatrix4BitFree(HyperionCSRMatrix4Bit *csr)
 {
     if (!csr) {
         return;
@@ -284,7 +284,7 @@ void tinyaiCSRMatrix4BitFree(TinyAICSRMatrix4Bit *csr)
 /**
  * Perform sparse matrix-vector multiplication: y = A * x
  */
-bool tinyaiCSRMatrixVectorMul(const TinyAICSRMatrix *csr, const float *x, float *y)
+bool hyperionCSRMatrixVectorMul(const HyperionCSRMatrix *csr, const float *x, float *y)
 {
     if (!csr || !x || !y) {
         return false;
@@ -310,7 +310,7 @@ bool tinyaiCSRMatrixVectorMul(const TinyAICSRMatrix *csr, const float *x, float 
 /**
  * Perform 4-bit quantized sparse matrix-vector multiplication: y = A * x
  */
-bool tinyaiCSRMatrix4BitVectorMul(const TinyAICSRMatrix4Bit *csr, const float *x, float *y)
+bool hyperionCSRMatrix4BitVectorMul(const HyperionCSRMatrix4Bit *csr, const float *x, float *y)
 {
     if (!csr || !x || !y) {
         return false;
@@ -349,363 +349,42 @@ bool tinyaiCSRMatrix4BitVectorMul(const TinyAICSRMatrix4Bit *csr, const float *x
 /**
  * Perform SIMD-accelerated sparse matrix-vector multiplication: y = A * x (AVX version)
  */
-bool tinyaiCSRMatrixVectorMulSIMD(const TinyAICSRMatrix *csr, const float *x, float *y)
-{
-    if (!csr || !x || !y) {
-        return false;
-    }
-
-    /* Initialize output vector to zero */
-    memset(y, 0, csr->rows * sizeof(float));
-
-    /* Perform CSR matrix-vector multiplication with AVX */
-    for (int32_t i = 0; i < csr->rows; i++) {
-        int32_t rowStart = csr->rowPtrs[i];
-        int32_t rowEnd   = csr->rowPtrs[i + 1];
-
-        /* Process 8 elements at a time using AVX */
-        int32_t j   = rowStart;
-        __m256  sum = _mm256_setzero_ps();
-
-        /* Process 8 elements at a time */
-        for (; j + 7 < rowEnd; j += 8) {
-            /* Load values and indices */
-            __m256 values = _mm256_loadu_ps(&csr->values[j]);
-
-            /* Gather x values based on column indices */
-            int32_t col0 = csr->colIndices[j];
-            int32_t col1 = csr->colIndices[j + 1];
-            int32_t col2 = csr->colIndices[j + 2];
-            int32_t col3 = csr->colIndices[j + 3];
-            int32_t col4 = csr->colIndices[j + 4];
-            int32_t col5 = csr->colIndices[j + 5];
-            int32_t col6 = csr->colIndices[j + 6];
-            int32_t col7 = csr->colIndices[j + 7];
-
-            __m256 xvals = _mm256_set_ps(x[col7], x[col6], x[col5], x[col4], x[col3], x[col2],
-                                         x[col1], x[col0]);
-
-            /* Multiply and accumulate */
-            sum = _mm256_add_ps(sum, _mm256_mul_ps(values, xvals));
-        }
-
-        /* Reduce sum vector to single value */
-        float temp[8];
-        _mm256_storeu_ps(temp, sum);
-        float rowSum = 0.0f;
-        for (int k = 0; k < 8; k++) {
-            rowSum += temp[k];
-        }
-
-        /* Process remaining elements */
-        for (; j < rowEnd; j++) {
-            int32_t col = csr->colIndices[j];
-            rowSum += csr->values[j] * x[col];
-        }
-
-        y[i] = rowSum;
-    }
-
-    return true;
-}
+bool hyperionCSRMatrixVectorMulSIMD(const HyperionCSRMatrix *csr, const float *x, float *y)
 
 /**
  * Perform SIMD-accelerated 4-bit quantized sparse matrix-vector multiplication: y = A * x (AVX
  * version)
  */
-bool tinyaiCSRMatrix4BitVectorMulSIMD(const TinyAICSRMatrix4Bit *csr, const float *x, float *y)
-{
-    if (!csr || !x || !y) {
-        return false;
-    }
-
-    /* Initialize output vector to zero */
-    memset(y, 0, csr->rows * sizeof(float));
-
-    /* Create constants for dequantization */
-    __m256 vscale = _mm256_set1_ps(csr->scale);
-    __m256 vzero  = _mm256_set1_ps(csr->zeroPoint);
-
-    /* Perform CSR matrix-vector multiplication with AVX */
-    for (int32_t i = 0; i < csr->rows; i++) {
-        int32_t rowStart = csr->rowPtrs[i];
-        int32_t rowEnd   = csr->rowPtrs[i + 1];
-
-        /* Process in chunks of 8 (for AVX) */
-        int32_t j   = rowStart;
-        __m256  sum = _mm256_setzero_ps();
-
-        /* Ensure we process aligned chunks of 16 elements (8 bytes in 4-bit format) */
-        int32_t alignedEnd = rowStart + ((rowEnd - rowStart) / 16) * 16;
-
-        for (; j < alignedEnd; j += 16) {
-            /* Load 8 bytes (16 quantized values) */
-            uint8_t qvals[8];
-            for (int k = 0; k < 8; k++) {
-                qvals[k] = csr->qvalues[(j + k * 2) / 2];
-            }
-
-            /* First 8 values (lower 4 bits of each byte) */
-            int32_t cols1[8];
-            float   vals1[8];
-
-            for (int k = 0; k < 8; k++) {
-                /* Extract and dequantize values */
-                uint8_t qval = qvals[k] & 0x0F;
-                vals1[k]     = qval * csr->scale + csr->zeroPoint;
-
-                /* Get column indices */
-                cols1[k] = csr->colIndices[j + k * 2];
-            }
-
-            /* Load x values for first 8 */
-            __m256 xvals1 = _mm256_set_ps(x[cols1[7]], x[cols1[6]], x[cols1[5]], x[cols1[4]],
-                                          x[cols1[3]], x[cols1[2]], x[cols1[1]], x[cols1[0]]);
-
-            /* Load dequantized values for first 8 */
-            __m256 vvals1 = _mm256_loadu_ps(vals1);
-
-            /* Multiply and accumulate first 8 */
-            sum = _mm256_add_ps(sum, _mm256_mul_ps(vvals1, xvals1));
-
-            /* Second 8 values (upper 4 bits of each byte) */
-            int32_t cols2[8];
-            float   vals2[8];
-
-            for (int k = 0; k < 8; k++) {
-                /* Extract and dequantize values */
-                uint8_t qval = (qvals[k] >> 4) & 0x0F;
-                vals2[k]     = qval * csr->scale + csr->zeroPoint;
-
-                /* Get column indices */
-                cols2[k] = csr->colIndices[j + k * 2 + 1];
-            }
-
-            /* Load x values for second 8 */
-            __m256 xvals2 = _mm256_set_ps(x[cols2[7]], x[cols2[6]], x[cols2[5]], x[cols2[4]],
-                                          x[cols2[3]], x[cols2[2]], x[cols2[1]], x[cols2[0]]);
-
-            /* Load dequantized values for second 8 */
-            __m256 vvals2 = _mm256_loadu_ps(vals2);
-
-            /* Multiply and accumulate second 8 */
-            sum = _mm256_add_ps(sum, _mm256_mul_ps(vvals2, xvals2));
-        }
-
-        /* Reduce sum vector to single value */
-        float temp[8];
-        _mm256_storeu_ps(temp, sum);
-        float rowSum = 0.0f;
-        for (int k = 0; k < 8; k++) {
-            rowSum += temp[k];
-        }
-
-        /* Process remaining elements */
-        for (; j < rowEnd; j++) {
-            /* Extract 4-bit value */
-            uint8_t qval;
-            if (j % 2 == 0) {
-                qval = csr->qvalues[j / 2] & 0x0F;
-            }
-            else {
-                qval = (csr->qvalues[j / 2] >> 4) & 0x0F;
-            }
-
-            /* Dequantize */
-            float val = qval * csr->scale + csr->zeroPoint;
-
-            int32_t col = csr->colIndices[j];
-            rowSum += val * x[col];
-        }
-
-        y[i] = rowSum;
-    }
-
-    return true;
-}
+bool hyperionCSRMatrix4BitVectorMulSIMD(const HyperionCSRMatrix4Bit *csr, const float *x, float *y)
 
 #elif defined(TINYAI_SIMD_SSE)
 /**
  * Perform SIMD-accelerated sparse matrix-vector multiplication: y = A * x (SSE version)
  */
-bool tinyaiCSRMatrixVectorMulSIMD(const TinyAICSRMatrix *csr, const float *x, float *y)
-{
-    if (!csr || !x || !y) {
-        return false;
-    }
-
-    /* Initialize output vector to zero */
-    memset(y, 0, csr->rows * sizeof(float));
-
-    /* Perform CSR matrix-vector multiplication with SSE */
-    for (int32_t i = 0; i < csr->rows; i++) {
-        int32_t rowStart = csr->rowPtrs[i];
-        int32_t rowEnd   = csr->rowPtrs[i + 1];
-
-        /* Process 4 elements at a time using SSE */
-        int32_t j   = rowStart;
-        __m128  sum = _mm_setzero_ps();
-
-        /* Process 4 elements at a time */
-        for (; j + 3 < rowEnd; j += 4) {
-            /* Load values and indices */
-            __m128 values = _mm_loadu_ps(&csr->values[j]);
-
-            /* Gather x values based on column indices */
-            int32_t col0 = csr->colIndices[j];
-            int32_t col1 = csr->colIndices[j + 1];
-            int32_t col2 = csr->colIndices[j + 2];
-            int32_t col3 = csr->colIndices[j + 3];
-
-            __m128 xvals = _mm_set_ps(x[col3], x[col2], x[col1], x[col0]);
-
-            /* Multiply and accumulate */
-            sum = _mm_add_ps(sum, _mm_mul_ps(values, xvals));
-        }
-
-        /* Reduce sum vector to single value */
-        float temp[4];
-        _mm_storeu_ps(temp, sum);
-        float rowSum = temp[0] + temp[1] + temp[2] + temp[3];
-
-        /* Process remaining elements */
-        for (; j < rowEnd; j++) {
-            int32_t col = csr->colIndices[j];
-            rowSum += csr->values[j] * x[col];
-        }
-
-        y[i] = rowSum;
-    }
-
-    return true;
-}
+bool hyperionCSRMatrixVectorMulSIMD(const HyperionCSRMatrix *csr, const float *x, float *y)
 
 /**
  * Perform SIMD-accelerated 4-bit quantized sparse matrix-vector multiplication: y = A * x (SSE
  * version)
  */
-bool tinyaiCSRMatrix4BitVectorMulSIMD(const TinyAICSRMatrix4Bit *csr, const float *x, float *y)
-{
-    if (!csr || !x || !y) {
-        return false;
-    }
-
-    /* Initialize output vector to zero */
-    memset(y, 0, csr->rows * sizeof(float));
-
-    /* Create constants for dequantization */
-    __m128 vscale = _mm_set1_ps(csr->scale);
-    __m128 vzero  = _mm_set1_ps(csr->zeroPoint);
-
-    /* Perform CSR matrix-vector multiplication with SSE */
-    for (int32_t i = 0; i < csr->rows; i++) {
-        int32_t rowStart = csr->rowPtrs[i];
-        int32_t rowEnd   = csr->rowPtrs[i + 1];
-
-        /* Process in chunks of 4 (for SSE) */
-        int32_t j   = rowStart;
-        __m128  sum = _mm_setzero_ps();
-
-        /* Ensure we process aligned chunks of 8 elements (4 bytes in 4-bit format) */
-        int32_t alignedEnd = rowStart + ((rowEnd - rowStart) / 8) * 8;
-
-        for (; j < alignedEnd; j += 8) {
-            /* Load 4 bytes (8 quantized values) */
-            uint8_t qvals[4];
-            for (int k = 0; k < 4; k++) {
-                qvals[k] = csr->qvalues[(j + k * 2) / 2];
-            }
-
-            /* First 4 values (lower 4 bits of each byte) */
-            int32_t cols1[4];
-            float   vals1[4];
-
-            for (int k = 0; k < 4; k++) {
-                /* Extract and dequantize values */
-                uint8_t qval = qvals[k] & 0x0F;
-                vals1[k]     = qval * csr->scale + csr->zeroPoint;
-
-                /* Get column indices */
-                cols1[k] = csr->colIndices[j + k * 2];
-            }
-
-            /* Load x values for first 4 */
-            __m128 xvals1 = _mm_set_ps(x[cols1[3]], x[cols1[2]], x[cols1[1]], x[cols1[0]]);
-
-            /* Load dequantized values for first 4 */
-            __m128 vvals1 = _mm_loadu_ps(vals1);
-
-            /* Multiply and accumulate first 4 */
-            sum = _mm_add_ps(sum, _mm_mul_ps(vvals1, xvals1));
-
-            /* Second 4 values (upper 4 bits of each byte) */
-            int32_t cols2[4];
-            float   vals2[4];
-
-            for (int k = 0; k < 4; k++) {
-                /* Extract and dequantize values */
-                uint8_t qval = (qvals[k] >> 4) & 0x0F;
-                vals2[k]     = qval * csr->scale + csr->zeroPoint;
-
-                /* Get column indices */
-                cols2[k] = csr->colIndices[j + k * 2 + 1];
-            }
-
-            /* Load x values for second 4 */
-            __m128 xvals2 = _mm_set_ps(x[cols2[3]], x[cols2[2]], x[cols2[1]], x[cols2[0]]);
-
-            /* Load dequantized values for second 4 */
-            __m128 vvals2 = _mm_loadu_ps(vals2);
-
-            /* Multiply and accumulate second 4 */
-            sum = _mm_add_ps(sum, _mm_mul_ps(vvals2, xvals2));
-        }
-
-        /* Reduce sum vector to single value */
-        float temp[4];
-        _mm_storeu_ps(temp, sum);
-        float rowSum = temp[0] + temp[1] + temp[2] + temp[3];
-
-        /* Process remaining elements */
-        for (; j < rowEnd; j++) {
-            /* Extract 4-bit value */
-            uint8_t qval;
-            if (j % 2 == 0) {
-                qval = csr->qvalues[j / 2] & 0x0F;
-            }
-            else {
-                qval = (csr->qvalues[j / 2] >> 4) & 0x0F;
-            }
-
-            /* Dequantize */
-            float val = qval * csr->scale + csr->zeroPoint;
-
-            int32_t col = csr->colIndices[j];
-            rowSum += val * x[col];
-        }
-
-        y[i] = rowSum;
-    }
-
-    return true;
-}
+bool hyperionCSRMatrix4BitVectorMulSIMD(const HyperionCSRMatrix4Bit *csr, const float *x, float *y)
 #else
 /* Non-SIMD fallback implementations */
-bool tinyaiCSRMatrixVectorMulSIMD(const TinyAICSRMatrix *csr, const float *x, float *y)
+bool hyperionCSRMatrixVectorMulSIMD(const HyperionCSRMatrix *csr, const float *x, float *y)
 {
-    return tinyaiCSRMatrixVectorMul(csr, x, y);
+    return hyperionCSRMatrixVectorMul(csr, x, y);
 }
 
-bool tinyaiCSRMatrix4BitVectorMulSIMD(const TinyAICSRMatrix4Bit *csr, const float *x, float *y)
+bool hyperionCSRMatrix4BitVectorMulSIMD(const HyperionCSRMatrix4Bit *csr, const float *x, float *y)
 {
-    return tinyaiCSRMatrix4BitVectorMul(csr, x, y);
+    return hyperionCSRMatrix4BitVectorMul(csr, x, y);
 }
 #endif
 
 /**
  * Calculate memory usage of CSR matrix in bytes
  */
-size_t tinyaiCSRMatrixMemoryUsage(const TinyAICSRMatrix *csr)
+size_t hyperionCSRMatrixMemoryUsage(const HyperionCSRMatrix *csr)
 {
     if (!csr) {
         return 0;
@@ -714,7 +393,7 @@ size_t tinyaiCSRMatrixMemoryUsage(const TinyAICSRMatrix *csr)
     size_t memoryUsage = 0;
 
     /* Size of the struct itself */
-    memoryUsage += sizeof(TinyAICSRMatrix);
+    memoryUsage += sizeof(HyperionCSRMatrix);
 
     /* Size of arrays */
     memoryUsage += csr->nnz * sizeof(float);          /* values */
@@ -727,7 +406,7 @@ size_t tinyaiCSRMatrixMemoryUsage(const TinyAICSRMatrix *csr)
 /**
  * Calculate memory usage of 4-bit quantized CSR matrix in bytes
  */
-size_t tinyaiCSRMatrix4BitMemoryUsage(const TinyAICSRMatrix4Bit *csr)
+size_t hyperionCSRMatrix4BitMemoryUsage(const HyperionCSRMatrix4Bit *csr)
 {
     if (!csr) {
         return 0;
@@ -736,7 +415,7 @@ size_t tinyaiCSRMatrix4BitMemoryUsage(const TinyAICSRMatrix4Bit *csr)
     size_t memoryUsage = 0;
 
     /* Size of the struct itself */
-    memoryUsage += sizeof(TinyAICSRMatrix4Bit);
+    memoryUsage += sizeof(HyperionCSRMatrix4Bit);
 
     /* Size of arrays */
     memoryUsage += (csr->nnz + 1) / 2;                /* qvalues (4-bit packed) */
@@ -749,7 +428,7 @@ size_t tinyaiCSRMatrix4BitMemoryUsage(const TinyAICSRMatrix4Bit *csr)
 /**
  * Calculate compression ratio compared to dense matrix storage
  */
-float tinyaiCSRMatrixCompressionRatio(const TinyAICSRMatrix *csr)
+float hyperionCSRMatrixCompressionRatio(const HyperionCSRMatrix *csr)
 {
     if (!csr) {
         return 0.0f;
@@ -759,7 +438,7 @@ float tinyaiCSRMatrixCompressionRatio(const TinyAICSRMatrix *csr)
     size_t denseSize = csr->rows * csr->cols * sizeof(float);
 
     /* Size of CSR matrix in bytes */
-    size_t sparseSize = tinyaiCSRMatrixMemoryUsage(csr);
+    size_t sparseSize = hyperionCSRMatrixMemoryUsage(csr);
 
     return (float)denseSize / (float)sparseSize;
 }
@@ -767,7 +446,7 @@ float tinyaiCSRMatrixCompressionRatio(const TinyAICSRMatrix *csr)
 /**
  * Calculate compression ratio for 4-bit quantized CSR matrix compared to dense matrix storage
  */
-float tinyaiCSRMatrix4BitCompressionRatio(const TinyAICSRMatrix4Bit *csr)
+float hyperionCSRMatrix4BitCompressionRatio(const HyperionCSRMatrix4Bit *csr)
 {
     if (!csr) {
         return 0.0f;
@@ -777,7 +456,7 @@ float tinyaiCSRMatrix4BitCompressionRatio(const TinyAICSRMatrix4Bit *csr)
     size_t denseSize = csr->rows * csr->cols * sizeof(float);
 
     /* Size of 4-bit quantized CSR matrix in bytes */
-    size_t sparseSize = tinyaiCSRMatrix4BitMemoryUsage(csr);
+    size_t sparseSize = hyperionCSRMatrix4BitMemoryUsage(csr);
 
     return (float)denseSize / (float)sparseSize;
 }

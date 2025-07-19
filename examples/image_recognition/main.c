@@ -1,6 +1,6 @@
 /**
  * @file main.c
- * @brief Main program for the TinyAI image recognition example
+ * @brief Main program for the Hyperion image recognition example
  */
 
 #include "../../core/io.h"
@@ -47,7 +47,7 @@ static char **readBatchFile(const char *filePath, int *numImages)
     }
 
     /* Read file content */
-    char *fileContent = tinyaiReadTextFile(filePath);
+    char *fileContent = hyperionReadTextFile(filePath);
     if (!fileContent) {
         fprintf(stderr, "Failed to read batch file: %s\n", filePath);
         return NULL;
@@ -126,7 +126,7 @@ static void freeBatchImagePaths(char **imagePaths, int numImages)
 }
 
 /* Process a single image */
-static bool processImage(TinyAIImageClassifier *classifier, const char *imagePath, FILE *outputFile)
+static bool processImage(HyperionImageClassifier *classifier, const char *imagePath, FILE *outputFile)
 {
     if (!classifier || !imagePath) {
         return false;
@@ -136,11 +136,11 @@ static bool processImage(TinyAIImageClassifier *classifier, const char *imagePat
     clock_t start = clock();
 
     /* Run classification */
-    TinyAIPrediction predictions[MAX_PREDICTIONS];
+    HyperionPrediction predictions[MAX_PREDICTIONS];
     int              numPredictions = 0;
 
     bool success =
-        tinyaiClassifyImage(classifier, imagePath, predictions, MAX_PREDICTIONS, &numPredictions);
+        hyperionClassifyImage(classifier, imagePath, predictions, MAX_PREDICTIONS, &numPredictions);
 
     /* End timing */
     clock_t end      = clock();
@@ -154,13 +154,13 @@ static bool processImage(TinyAIImageClassifier *classifier, const char *imagePat
     /* Print processing information */
     if (!outputFile) {
         printf("\n%sProcessing image: %s%s\n", COLOR_BOLD, imagePath, COLOR_RESET);
-        printf("Inference time: %.2f ms\n", tinyaiClassifierGetInferenceTime(classifier));
+        printf("Inference time: %.2f ms\n", hyperionClassifierGetInferenceTime(classifier));
         printf("Total processing time: %.2f seconds\n", loadTime);
     }
     else {
         fprintf(outputFile, "Image: %s\n", imagePath);
         fprintf(outputFile, "Inference time: %.2f ms\n",
-                tinyaiClassifierGetInferenceTime(classifier));
+                hyperionClassifierGetInferenceTime(classifier));
     }
 
     /* Print predictions */
@@ -174,7 +174,7 @@ static bool processImage(TinyAIImageClassifier *classifier, const char *imagePat
     char buffer[PRED_BUFFER_SIZE];
 
     for (int i = 0; i < numPredictions; i++) {
-        if (tinyaiFormatPrediction(&predictions[i], buffer, PRED_BUFFER_SIZE)) {
+        if (hyperionFormatPrediction(&predictions[i], buffer, PRED_BUFFER_SIZE)) {
             if (!outputFile) {
                 printf("%d. %s\n", i + 1, buffer);
             }
@@ -197,7 +197,7 @@ static bool processImage(TinyAIImageClassifier *classifier, const char *imagePat
 /* Print usage instructions */
 static void printUsage(const char *progname)
 {
-    printf("TinyAI Image Recognition Example\n\n");
+    printf("Hyperion Image Recognition Example\n\n");
     printf("Usage: %s [options] <image_file>\n\n", progname);
     printf("Options:\n");
     printf("  --model <file>       Path to model structure file\n");
@@ -216,11 +216,11 @@ static void printUsage(const char *progname)
 }
 
 /* Print memory usage statistics */
-static void printMemoryUsage(TinyAIImageClassifier *classifier)
+static void printMemoryUsage(HyperionImageClassifier *classifier)
 {
     size_t modelMem, totalMem;
 
-    if (tinyaiClassifierGetMemoryUsage(classifier, &modelMem, &totalMem)) {
+    if (hyperionClassifierGetMemoryUsage(classifier, &modelMem, &totalMem)) {
         printf("\n%sMemory Usage:%s\n", COLOR_BOLD, COLOR_RESET);
         printf("  Model: %6.2f MB\n", modelMem / (1024.0 * 1024.0));
         printf("  Total: %6.2f MB\n", totalMem / (1024.0 * 1024.0));
@@ -335,8 +335,8 @@ int main(int argc, char *argv[])
     /* Initialize classifier */
     printf("Loading model from %s and %s...\n", model_path, weights_path);
 
-    TinyAIClassifierConfig config;
-    memset(&config, 0, sizeof(TinyAIClassifierConfig));
+    HyperionClassifierConfig config;
+    memset(&config, 0, sizeof(HyperionClassifierConfig));
     config.modelPath           = model_path;
     config.weightsPath         = weights_path;
     config.labelsPath          = labels_path;
@@ -348,7 +348,7 @@ int main(int argc, char *argv[])
 
     /* Create classifier */
     clock_t                start      = clock();
-    TinyAIImageClassifier *classifier = tinyaiClassifierCreate(&config);
+    HyperionImageClassifier *classifier = hyperionClassifierCreate(&config);
 
     if (!classifier) {
         fprintf(stderr, "Failed to create classifier\n");
@@ -373,7 +373,7 @@ int main(int argc, char *argv[])
 
         if (!imagePaths || numImages == 0) {
             fprintf(stderr, "Failed to read batch file or no valid images found\n");
-            tinyaiClassifierFree(classifier);
+            hyperionClassifierFree(classifier);
             if (output) {
                 fclose(output);
             }
@@ -406,7 +406,7 @@ int main(int argc, char *argv[])
     }
 
     /* Clean up */
-    tinyaiClassifierFree(classifier);
+    hyperionClassifierFree(classifier);
 
     return 0;
 }

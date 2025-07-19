@@ -1,6 +1,6 @@
 /**
  * @file asr.c
- * @brief Automatic Speech Recognition implementation for TinyAI
+ * @brief Automatic Speech Recognition implementation for Hyperion
  */
 
 #include "asr.h"
@@ -12,8 +12,8 @@
 #include <string.h>
 
 /* Default configuration values */
-#define DEFAULT_MODE TINYAI_ASR_MODE_BALANCED
-#define DEFAULT_LM_TYPE TINYAI_ASR_LM_BIGRAM
+#define DEFAULT_MODE HYPERION_ASR_MODE_BALANCED
+#define DEFAULT_LM_TYPE HYPERION_ASR_LM_BIGRAM
 #define DEFAULT_LM_WEIGHT 0.5f
 #define DEFAULT_BEAM_WIDTH 8
 #define DEFAULT_ENABLE_PUNCTUATION true
@@ -45,7 +45,7 @@ typedef struct {
  * Word information structure (for language model)
  */
 typedef struct {
-    char  word[TINYAI_ASR_MAX_TOKEN_LENGTH]; /* Word */
+    char  word[HYPERION_ASR_MAX_TOKEN_LENGTH]; /* Word */
     float unigram;                           /* Unigram probability */
 } WordInfo;
 
@@ -61,18 +61,18 @@ typedef struct {
 /**
  * Hypothesis node for beam search
  */
-struct TinyAIASRHypothesis {
+struct HyperionASRHypothesis {
     int                 *phonemeSequence; /* Sequence of phoneme indices */
     int                  phonemeCount;    /* Number of phonemes in sequence */
     float                score;           /* Score of this hypothesis */
     bool                 isFinalized;     /* Whether this hypothesis is finalized */
-    TinyAIASRHypothesis *parent;          /* Parent hypothesis (for backtracking) */
+    HyperionASRHypothesis *parent;          /* Parent hypothesis (for backtracking) */
 };
 
 /**
  * Acoustic model structure
  */
-struct TinyAIASRAcousticModel {
+struct HyperionASRAcousticModel {
     int          numPhonemes; /* Number of phonemes */
     PhonemeInfo *phonemeInfo; /* Information about phonemes */
     float       *weights;     /* "Weights" of model (for simulation) */
@@ -84,8 +84,8 @@ struct TinyAIASRAcousticModel {
 /**
  * Language model structure
  */
-struct TinyAIASRLanguageModel {
-    TinyAIASRLanguageModelType type;        /* Type of language model */
+struct HyperionASRLanguageModel {
+    HyperionASRLanguageModelType type;        /* Type of language model */
     int                        vocabSize;   /* Size of vocabulary */
     WordInfo                  *vocabulary;  /* Vocabulary words */
     int                        numBigrams;  /* Number of bigrams */
@@ -125,7 +125,7 @@ static const char *commonWords[] = {
  * Initialize default ASR configuration
  * @param config Configuration structure to initialize
  */
-void tinyaiASRInitConfig(TinyAIASRConfig *config)
+void hyperionASRInitConfig(HyperionASRConfig *config)
 {
     if (!config) {
         return;
@@ -148,10 +148,10 @@ void tinyaiASRInitConfig(TinyAIASRConfig *config)
  * @param numPhonemes Number of phonemes
  * @return New acoustic model, or NULL on failure
  */
-static TinyAIASRAcousticModel *createAcousticModel(int numPhonemes)
+static HyperionASRAcousticModel *createAcousticModel(int numPhonemes)
 {
-    TinyAIASRAcousticModel *model =
-        (TinyAIASRAcousticModel *)malloc(sizeof(TinyAIASRAcousticModel));
+    HyperionASRAcousticModel *model =
+        (HyperionASRAcousticModel *)malloc(sizeof(HyperionASRAcousticModel));
     if (!model) {
         return NULL;
     }
@@ -198,7 +198,7 @@ static TinyAIASRAcousticModel *createAcousticModel(int numPhonemes)
  * Free acoustic model
  * @param model Model to free
  */
-static void freeAcousticModel(TinyAIASRAcousticModel *model)
+static void freeAcousticModel(HyperionASRAcousticModel *model)
 {
     if (!model) {
         return;
@@ -220,10 +220,10 @@ static void freeAcousticModel(TinyAIASRAcousticModel *model)
  * @param type Type of language model
  * @return New language model, or NULL on failure
  */
-static TinyAIASRLanguageModel *createLanguageModel(TinyAIASRLanguageModelType type)
+static HyperionASRLanguageModel *createLanguageModel(HyperionASRLanguageModelType type)
 {
-    TinyAIASRLanguageModel *model =
-        (TinyAIASRLanguageModel *)malloc(sizeof(TinyAIASRLanguageModel));
+    HyperionASRLanguageModel *model =
+        (HyperionASRLanguageModel *)malloc(sizeof(HyperionASRLanguageModel));
     if (!model) {
         return NULL;
     }
@@ -234,7 +234,7 @@ static TinyAIASRLanguageModel *createLanguageModel(TinyAIASRLanguageModelType ty
     model->initialized = false;
 
     /* For no language model, return minimal structure */
-    if (type == TINYAI_ASR_LM_NONE) {
+    if (type == HYPERION_ASR_LM_NONE) {
         model->vocabSize   = 0;
         model->vocabulary  = NULL;
         model->numBigrams  = 0;
@@ -262,7 +262,7 @@ static TinyAIASRLanguageModel *createLanguageModel(TinyAIASRLanguageModelType ty
     }
 
     /* For unigram model, that's all we need */
-    if (type == TINYAI_ASR_LM_UNIGRAM) {
+    if (type == HYPERION_ASR_LM_UNIGRAM) {
         model->numBigrams  = 0;
         model->bigrams     = NULL;
         model->initialized = true;
@@ -294,7 +294,7 @@ static TinyAIASRLanguageModel *createLanguageModel(TinyAIASRLanguageModelType ty
  * Free language model
  * @param model Model to free
  */
-static void freeLanguageModel(TinyAIASRLanguageModel *model)
+static void freeLanguageModel(HyperionASRLanguageModel *model)
 {
     if (!model) {
         return;
@@ -316,13 +316,13 @@ static void freeLanguageModel(TinyAIASRLanguageModel *model)
  * @param asrConfig ASR configuration
  * @param featuresConfig Output features configuration
  */
-static void initFeatureConfig(const TinyAIASRConfig     *asrConfig,
-                              TinyAIAudioFeaturesConfig *featuresConfig)
+static void initFeatureConfig(const HyperionASRConfig     *asrConfig,
+                              HyperionAudioFeaturesConfig *featuresConfig)
 {
     /* Set feature extraction parameters based on recognition mode */
-    featuresConfig->type = TINYAI_AUDIO_FEATURES_MFCC;
+    featuresConfig->type = HYPERION_AUDIO_FEATURES_MFCC;
 
-    if (asrConfig->mode == TINYAI_ASR_MODE_FAST) {
+    if (asrConfig->mode == HYPERION_ASR_MODE_FAST) {
         featuresConfig->frameLength       = 320; /* 20ms at 16kHz */
         featuresConfig->frameShift        = 160; /* 10ms at 16kHz */
         featuresConfig->numFilters        = 26;
@@ -330,7 +330,7 @@ static void initFeatureConfig(const TinyAIASRConfig     *asrConfig,
         featuresConfig->includeDelta      = false;
         featuresConfig->includeDeltaDelta = false;
     }
-    else if (asrConfig->mode == TINYAI_ASR_MODE_ACCURATE) {
+    else if (asrConfig->mode == HYPERION_ASR_MODE_ACCURATE) {
         featuresConfig->frameLength       = 512; /* 32ms at 16kHz */
         featuresConfig->frameShift        = 160; /* 10ms at 16kHz */
         featuresConfig->numFilters        = 40;
@@ -358,7 +358,7 @@ static void initFeatureConfig(const TinyAIASRConfig     *asrConfig,
  * @param languageModelPath Path to language model file (can be NULL)
  * @return New ASR state, or NULL on failure
  */
-TinyAIASRState *tinyaiASRCreate(const TinyAIASRConfig *config, const char *acousticModelPath,
+HyperionASRState *hyperionASRCreate(const HyperionASRConfig *config, const char *acousticModelPath,
                                 const char *languageModelPath)
 {
     if (!config) {
@@ -366,13 +366,13 @@ TinyAIASRState *tinyaiASRCreate(const TinyAIASRConfig *config, const char *acous
     }
 
     /* Allocate state */
-    TinyAIASRState *state = (TinyAIASRState *)malloc(sizeof(TinyAIASRState));
+    HyperionASRState *state = (HyperionASRState *)malloc(sizeof(HyperionASRState));
     if (!state) {
         return NULL;
     }
 
     /* Initialize state */
-    memset(state, 0, sizeof(TinyAIASRState));
+    memset(state, 0, sizeof(HyperionASRState));
     state->config = *config;
 
     /* Initialize features configuration */
@@ -387,7 +387,7 @@ TinyAIASRState *tinyaiASRCreate(const TinyAIASRConfig *config, const char *acous
     }
 
     /* Create language model if needed */
-    if (state->config.lmType != TINYAI_ASR_LM_NONE && languageModelPath) {
+    if (state->config.lmType != HYPERION_ASR_LM_NONE && languageModelPath) {
         /* In a real implementation, this would load the model from languageModelPath */
         state->languageModel = createLanguageModel(state->config.lmType);
         if (!state->languageModel) {
@@ -397,7 +397,7 @@ TinyAIASRState *tinyaiASRCreate(const TinyAIASRConfig *config, const char *acous
         }
     }
     else {
-        state->languageModel = createLanguageModel(TINYAI_ASR_LM_NONE);
+        state->languageModel = createLanguageModel(HYPERION_ASR_LM_NONE);
     }
 
     /* Allocate features buffer */
@@ -433,7 +433,7 @@ TinyAIASRState *tinyaiASRCreate(const TinyAIASRConfig *config, const char *acous
     /* Set up beam search */
     state->maxHypotheses = state->config.beamWidth;
     state->hypotheses =
-        (TinyAIASRHypothesis *)malloc(state->maxHypotheses * sizeof(TinyAIASRHypothesis));
+        (HyperionASRHypothesis *)malloc(state->maxHypotheses * sizeof(HyperionASRHypothesis));
     if (!state->hypotheses) {
         free(state->phonemeProbs);
         free(state->features);
@@ -483,7 +483,7 @@ TinyAIASRState *tinyaiASRCreate(const TinyAIASRConfig *config, const char *acous
  * Free an ASR hypothesis
  * @param hypothesis Hypothesis to free
  */
-static void freeHypothesis(TinyAIASRHypothesis *hypothesis)
+static void freeHypothesis(HyperionASRHypothesis *hypothesis)
 {
     if (!hypothesis) {
         return;
@@ -504,7 +504,7 @@ static void freeHypothesis(TinyAIASRHypothesis *hypothesis)
  * Free ASR state
  * @param state ASR state to free
  */
-void tinyaiASRFree(TinyAIASRState *state)
+void hyperionASRFree(HyperionASRState *state)
 {
     if (!state) {
         return;
@@ -552,7 +552,7 @@ void tinyaiASRFree(TinyAIASRState *state)
  * @param state ASR state to reset
  * @return true on success, false on failure
  */
-bool tinyaiASRReset(TinyAIASRState *state)
+bool hyperionASRReset(HyperionASRState *state)
 {
     if (!state) {
         return false;
@@ -593,13 +593,13 @@ bool tinyaiASRReset(TinyAIASRState *state)
  * @param phonemeProbs Output phoneme probabilities
  * @return true on success, false on failure
  */
-static bool simulateAcousticModel(TinyAIASRState *state, const float *features, float *phonemeProbs)
+static bool simulateAcousticModel(HyperionASRState *state, const float *features, float *phonemeProbs)
 {
     if (!state || !features || !phonemeProbs || !state->acousticModel) {
         return false;
     }
 
-    TinyAIASRAcousticModel *model   = state->acousticModel;
+    HyperionASRAcousticModel *model   = state->acousticModel;
     int                     featDim = model->inputDim;
 
     /* Simple simulation of model inference */
@@ -662,7 +662,7 @@ static int getMostLikelyPhoneme(const float *probs, int numPhonemes)
  * @param word Word to check
  * @return Index of word in vocabulary, or -1 if not found
  */
-static int findWordInVocabulary(const TinyAIASRLanguageModel *model, const char *word)
+static int findWordInVocabulary(const HyperionASRLanguageModel *model, const char *word)
 {
     if (!model || !word || !model->vocabulary) {
         return -1;
@@ -683,9 +683,9 @@ static int findWordInVocabulary(const TinyAIASRLanguageModel *model, const char 
  * @param word Word to look up
  * @return Unigram probability of word
  */
-static float getUnigramProbability(const TinyAIASRLanguageModel *model, const char *word)
+static float getUnigramProbability(const HyperionASRLanguageModel *model, const char *word)
 {
-    if (!model || !word || model->type == TINYAI_ASR_LM_NONE) {
+    if (!model || !word || model->type == HYPERION_ASR_LM_NONE) {
         return 1.0f; /* No language model, return neutral prob */
     }
 
@@ -704,11 +704,11 @@ static float getUnigramProbability(const TinyAIASRLanguageModel *model, const ch
  * @param word2 Second word
  * @return Bigram probability
  */
-static float getBigramProbability(const TinyAIASRLanguageModel *model, const char *word1,
+static float getBigramProbability(const HyperionASRLanguageModel *model, const char *word1,
                                   const char *word2)
 {
-    if (!model || !word1 || !word2 || model->type == TINYAI_ASR_LM_NONE ||
-        model->type == TINYAI_ASR_LM_UNIGRAM) {
+    if (!model || !word1 || !word2 || model->type == HYPERION_ASR_LM_NONE ||
+        model->type == HYPERION_ASR_LM_UNIGRAM) {
         return 1.0f; /* No bigram model, return neutral prob */
     }
 
@@ -739,7 +739,7 @@ static float getBigramProbability(const TinyAIASRLanguageModel *model, const cha
  * @param maxWordLen Maximum word length
  * @return true on success, false on failure
  */
-static bool phonemesToWord(TinyAIASRState *state, const int *phonemes, int numPhonemes, char *word,
+static bool phonemesToWord(HyperionASRState *state, const int *phonemes, int numPhonemes, char *word,
                            int maxWordLen)
 {
     if (!state || !phonemes || !word || numPhonemes <= 0 || maxWordLen <= 0) {
@@ -765,7 +765,7 @@ static bool phonemesToWord(TinyAIASRState *state, const int *phonemes, int numPh
     }
     else {
         /* Try to construct something plausible from multiple phonemes */
-        char temp[TINYAI_ASR_MAX_TOKEN_LENGTH] = {0};
+        char temp[HYPERION_ASR_MAX_TOKEN_LENGTH] = {0};
         int  len                               = 0;
 
         /* Take the example word from the first non-silence phoneme */
@@ -786,7 +786,7 @@ static bool phonemesToWord(TinyAIASRState *state, const int *phonemes, int numPh
                 /* Add suffix */
                 const char *suffixes[] = {"ing", "ed", "s", "er", "est", "ly"};
                 const char *suffix     = suffixes[rand() % 6];
-                if (len + strlen(suffix) < TINYAI_ASR_MAX_TOKEN_LENGTH) {
+                if (len + strlen(suffix) < HYPERION_ASR_MAX_TOKEN_LENGTH) {
                     strcat(temp, suffix);
                 }
             }
@@ -824,14 +824,14 @@ static bool phonemesToWord(TinyAIASRState *state, const int *phonemes, int numPh
  * @param sampleRate Sample rate of input audio
  * @return true on success, false on failure
  */
-bool tinyaiASRBeginRecognition(TinyAIASRState *state, int sampleRate)
+bool hyperionASRBeginRecognition(HyperionASRState *state, int sampleRate)
 {
     if (!state) {
         return false;
     }
 
     /* Reset state */
-    tinyaiASRReset(state);
+    hyperionASRReset(state);
 
     /* Set sample rate */
     state->sampleRate = sampleRate;
@@ -844,7 +844,7 @@ bool tinyaiASRBeginRecognition(TinyAIASRState *state, int sampleRate)
  * @param state ASR state
  * @return true on success, false on failure
  */
-bool tinyaiASREndRecognition(TinyAIASRState *state)
+bool hyperionASREndRecognition(HyperionASRState *state)
 {
     if (!state) {
         return false;
@@ -866,7 +866,7 @@ bool tinyaiASREndRecognition(TinyAIASRState *state)
  * @param frameSize Number of samples in frame
  * @return true on success, false on failure
  */
-bool tinyaiASRProcessFrame(TinyAIASRState *state, const float *frame, int frameSize)
+bool hyperionASRProcessFrame(HyperionASRState *state, const float *frame, int frameSize)
 {
     if (!state || !frame || frameSize <= 0) {
         return false;
@@ -909,7 +909,7 @@ bool tinyaiASRProcessFrame(TinyAIASRState *state, const float *frame, int frameS
 
     /* In a real implementation, this would update the beam search hypotheses */
     /* For simplicity, we'll just accumulate phonemes in the first hypothesis */
-    TinyAIASRHypothesis *hyp = &state->hypotheses[0];
+    HyperionASRHypothesis *hyp = &state->hypotheses[0];
     if (hyp->phonemeCount < 1000) { /* Check arbitrary limit */
         hyp->phonemeSequence[hyp->phonemeCount++] = phoneme;
     }
@@ -917,17 +917,17 @@ bool tinyaiASRProcessFrame(TinyAIASRState *state, const float *frame, int frameS
     /* Every 10 frames, update the result */
     if (hyp->phonemeCount % 10 == 0) {
         /* Map phonemes to words */
-        char word[TINYAI_ASR_MAX_TOKEN_LENGTH];
+        char word[HYPERION_ASR_MAX_TOKEN_LENGTH];
 
         if (phonemesToWord(state, hyp->phonemeSequence, hyp->phonemeCount, word,
-                           TINYAI_ASR_MAX_TOKEN_LENGTH)) {
+                           HYPERION_ASR_MAX_TOKEN_LENGTH)) {
             /* Add to transcript if not already there */
             if (strlen(state->currentResult.transcript) == 0) {
                 strcpy(state->currentResult.transcript, word);
             }
             else {
                 /* Check if different from the last word */
-                char lastWord[TINYAI_ASR_MAX_TOKEN_LENGTH];
+                char lastWord[HYPERION_ASR_MAX_TOKEN_LENGTH];
                 int  currentLength = strlen(state->currentResult.transcript);
 
                 /* Get last word */
@@ -964,15 +964,15 @@ bool tinyaiASRProcessFrame(TinyAIASRState *state, const float *frame, int frameS
  * @param result Output recognition result
  * @return true on success, false on failure
  */
-bool tinyaiASRProcessAudio(TinyAIASRState *state, const TinyAIAudioData *audio,
-                           TinyAIASRResult *result)
+bool hyperionASRProcessAudio(HyperionASRState *state, const HyperionAudioData *audio,
+                           HyperionASRResult *result)
 {
     if (!state || !audio || !result || !audio->data) {
         return false;
     }
 
     /* Begin recognition */
-    tinyaiASRBeginRecognition(state, audio->format.sampleRate);
+    hyperionASRBeginRecognition(state, audio->format.sampleRate);
 
     /* Process audio in frames */
     const float *samples    = (const float *)audio->data;
@@ -988,13 +988,13 @@ bool tinyaiASRProcessAudio(TinyAIASRState *state, const TinyAIAudioData *audio,
 
     /* Process frames */
     for (int i = 0; i + frameSizeSamples <= numSamples; i += frameShiftSamples) {
-        if (!tinyaiASRProcessFrame(state, samples + i, frameSizeSamples)) {
+        if (!hyperionASRProcessFrame(state, samples + i, frameSizeSamples)) {
             return false;
         }
     }
 
     /* End recognition */
-    tinyaiASREndRecognition(state);
+    hyperionASREndRecognition(state);
 
     /* Copy result */
     *result = state->currentResult;
@@ -1008,7 +1008,7 @@ bool tinyaiASRProcessAudio(TinyAIASRState *state, const TinyAIAudioData *audio,
  * @param result Output recognition result
  * @return true on success, false on failure
  */
-bool tinyaiASRGetResult(TinyAIASRState *state, TinyAIASRResult *result)
+bool hyperionASRGetResult(HyperionASRState *state, HyperionASRResult *result)
 {
     if (!state || !result) {
         return false;
@@ -1026,7 +1026,7 @@ bool tinyaiASRGetResult(TinyAIASRState *state, TinyAIASRResult *result)
  * @param result Output recognition result
  * @return true on success, false on failure
  */
-bool tinyaiASRGetPartialResult(TinyAIASRState *state, TinyAIASRResult *result)
+bool hyperionASRGetPartialResult(HyperionASRState *state, HyperionASRResult *result)
 {
     if (!state || !result) {
         return false;
@@ -1044,7 +1044,7 @@ bool tinyaiASRGetPartialResult(TinyAIASRState *state, TinyAIASRResult *result)
  * @param calibrationAudio Audio data for calibration (ambient noise)
  * @return true on success, false on failure
  */
-bool tinyaiASRCalibrateAcousticModel(TinyAIASRState *state, const TinyAIAudioData *calibrationAudio)
+bool hyperionASRCalibrateAcousticModel(HyperionASRState *state, const HyperionAudioData *calibrationAudio)
 {
     if (!state || !calibrationAudio || !calibrationAudio->data) {
         return false;
@@ -1066,7 +1066,7 @@ bool tinyaiASRCalibrateAcousticModel(TinyAIASRState *state, const TinyAIAudioDat
  * @param weight Weight to assign to custom vocabulary (0.0-1.0)
  * @return true on success, false on failure
  */
-bool tinyaiASRAddCustomVocabulary(TinyAIASRState *state, const char **vocabulary, int numWords,
+bool hyperionASRAddCustomVocabulary(HyperionASRState *state, const char **vocabulary, int numWords,
                                   float weight)
 {
     if (!state || !vocabulary || numWords <= 0 || weight < 0.0f || weight > 1.0f) {
@@ -1086,7 +1086,7 @@ bool tinyaiASRAddCustomVocabulary(TinyAIASRState *state, const char **vocabulary
  * @param includeTimestamps Whether to include timestamps in output
  * @return true on success, false on failure
  */
-bool tinyaiASRSaveResult(const TinyAIASRResult *result, const char *filePath,
+bool hyperionASRSaveResult(const HyperionASRResult *result, const char *filePath,
                          bool includeTimestamps)
 {
     if (!result || !filePath) {
@@ -1124,7 +1124,7 @@ bool tinyaiASRSaveResult(const TinyAIASRResult *result, const char *filePath,
  * @param referenceText Reference text
  * @return Word error rate (0.0-1.0)
  */
-float tinyaiASRCalculateWER(const TinyAIASRResult *result, const char *referenceText)
+float hyperionASRCalculateWER(const HyperionASRResult *result, const char *referenceText)
 {
     if (!result || !referenceText) {
         return 1.0f; /* Maximum error */
@@ -1139,9 +1139,9 @@ float tinyaiASRCalculateWER(const TinyAIASRResult *result, const char *reference
 /**
  * Print information about available models
  */
-void tinyaiASRPrintModelInfo(void)
+void hyperionASRPrintModelInfo(void)
 {
-    printf("TinyAI Speech Recognition Models:\n");
+    printf("Hyperion Speech Recognition Models:\n");
     printf("----------------------------------\n");
     printf("Available acoustic models:\n");
     printf("  - tiny_en.am:    English, 2MB, suitable for command recognition\n");

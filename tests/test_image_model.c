@@ -1,5 +1,5 @@
 /**
- * TinyAI Image Model Tests
+ * Hyperion Image Model Tests
  */
 
 #include "../models/image/image_model.h"
@@ -24,7 +24,7 @@ void test_model_create_destroy()
     printf("  Testing image model creation/destruction...\n");
 
     // Create a TinyCNN model
-    TinyAIImageModelParams params = {.modelType       = TINYAI_IMAGE_MODEL_TINY_CNN,
+    HyperionImageModelParams params = {.modelType       = TINYAI_IMAGE_MODEL_TINY_CNN,
                                      .inputWidth      = 224,
                                      .inputHeight     = 224,
                                      .inputChannels   = 3,
@@ -35,17 +35,17 @@ void test_model_create_destroy()
                                      .useSIMD         = true,
                                      .customParams    = NULL};
 
-    TinyAIImageModel *model = tinyaiImageModelCreate(&params);
-    ASSERT(model != NULL, "tinyaiImageModelCreate() should return non-NULL");
+    HyperionImageModel *model = hyperionImageModelCreate(&params);
+    ASSERT(model != NULL, "hyperionImageModelCreate() should return non-NULL");
 
     // Get memory usage stats
     size_t weightMemory, activationMemory;
-    bool   result = tinyaiImageModelGetMemoryUsage(model, &weightMemory, &activationMemory);
-    ASSERT(result, "tinyaiImageModelGetMemoryUsage() should succeed");
+    bool   result = hyperionImageModelGetMemoryUsage(model, &weightMemory, &activationMemory);
+    ASSERT(result, "hyperionImageModelGetMemoryUsage() should succeed");
     ASSERT(weightMemory > 0, "Weight memory should be greater than 0");
     ASSERT(activationMemory > 0, "Activation memory should be greater than 0");
 
-    tinyaiImageModelFree(model);
+    hyperionImageModelFree(model);
     printf("    PASS\n");
 }
 
@@ -61,7 +61,7 @@ void test_different_architectures()
     const int numClasses    = 1000;
 
     // Test TinyCNN
-    TinyAIImageModelParams tinyCnnParams = {.modelType       = TINYAI_IMAGE_MODEL_TINY_CNN,
+    HyperionImageModelParams tinyCnnParams = {.modelType       = TINYAI_IMAGE_MODEL_TINY_CNN,
                                             .inputWidth      = inputWidth,
                                             .inputHeight     = inputHeight,
                                             .inputChannels   = inputChannels,
@@ -72,12 +72,12 @@ void test_different_architectures()
                                             .useSIMD         = true,
                                             .customParams    = NULL};
 
-    TinyAIImageModel *tinyCnnModel = tinyaiImageModelCreate(&tinyCnnParams);
+    HyperionImageModel *tinyCnnModel = hyperionImageModelCreate(&tinyCnnParams);
     ASSERT(tinyCnnModel != NULL, "TinyCNN model creation should succeed");
-    tinyaiImageModelFree(tinyCnnModel);
+    hyperionImageModelFree(tinyCnnModel);
 
     // Test MobileNet
-    TinyAIImageModelParams mobileNetParams = {.modelType       = TINYAI_IMAGE_MODEL_MOBILENET,
+    HyperionImageModelParams mobileNetParams = {.modelType       = TINYAI_IMAGE_MODEL_MOBILENET,
                                               .inputWidth      = inputWidth,
                                               .inputHeight     = inputHeight,
                                               .inputChannels   = inputChannels,
@@ -88,12 +88,12 @@ void test_different_architectures()
                                               .useSIMD         = true,
                                               .customParams    = NULL};
 
-    TinyAIImageModel *mobileNetModel = tinyaiImageModelCreate(&mobileNetParams);
+    HyperionImageModel *mobileNetModel = hyperionImageModelCreate(&mobileNetParams);
     ASSERT(mobileNetModel != NULL, "MobileNet model creation should succeed");
-    tinyaiImageModelFree(mobileNetModel);
+    hyperionImageModelFree(mobileNetModel);
 
     // Test EfficientNet
-    TinyAIImageModelParams efficientNetParams = {.modelType       = TINYAI_IMAGE_MODEL_EFFICIENTNET,
+    HyperionImageModelParams efficientNetParams = {.modelType       = TINYAI_IMAGE_MODEL_EFFICIENTNET,
                                                  .inputWidth      = inputWidth,
                                                  .inputHeight     = inputHeight,
                                                  .inputChannels   = inputChannels,
@@ -104,9 +104,9 @@ void test_different_architectures()
                                                  .useSIMD         = true,
                                                  .customParams    = NULL};
 
-    TinyAIImageModel *efficientNetModel = tinyaiImageModelCreate(&efficientNetParams);
+    HyperionImageModel *efficientNetModel = hyperionImageModelCreate(&efficientNetParams);
     ASSERT(efficientNetModel != NULL, "EfficientNet model creation should succeed");
-    tinyaiImageModelFree(efficientNetModel);
+    hyperionImageModelFree(efficientNetModel);
 
     printf("    PASS\n");
 }
@@ -117,7 +117,7 @@ void test_quantization_options()
     printf("  Testing model quantization options...\n");
 
     // Create models with and without quantization
-    TinyAIImageModelParams quantizedParams = {.modelType       = TINYAI_IMAGE_MODEL_TINY_CNN,
+    HyperionImageModelParams quantizedParams = {.modelType       = TINYAI_IMAGE_MODEL_TINY_CNN,
                                               .inputWidth      = 224,
                                               .inputHeight     = 224,
                                               .inputChannels   = 3,
@@ -128,7 +128,7 @@ void test_quantization_options()
                                               .useSIMD         = false,
                                               .customParams    = NULL};
 
-    TinyAIImageModelParams fullPrecisionParams = {.modelType       = TINYAI_IMAGE_MODEL_TINY_CNN,
+    HyperionImageModelParams fullPrecisionParams = {.modelType       = TINYAI_IMAGE_MODEL_TINY_CNN,
                                                   .inputWidth      = 224,
                                                   .inputHeight     = 224,
                                                   .inputChannels   = 3,
@@ -139,18 +139,18 @@ void test_quantization_options()
                                                   .useSIMD         = false,
                                                   .customParams    = NULL};
 
-    TinyAIImageModel *quantizedModel = tinyaiImageModelCreate(&quantizedParams);
+    HyperionImageModel *quantizedModel = hyperionImageModelCreate(&quantizedParams);
     ASSERT(quantizedModel != NULL, "Quantized model creation should succeed");
 
-    TinyAIImageModel *fullPrecisionModel = tinyaiImageModelCreate(&fullPrecisionParams);
+    HyperionImageModel *fullPrecisionModel = hyperionImageModelCreate(&fullPrecisionParams);
     ASSERT(fullPrecisionModel != NULL, "Full precision model creation should succeed");
 
     // Compare memory usage
     size_t quantizedWeightMem, quantizedActivationMem;
     size_t fullWeightMem, fullActivationMem;
 
-    tinyaiImageModelGetMemoryUsage(quantizedModel, &quantizedWeightMem, &quantizedActivationMem);
-    tinyaiImageModelGetMemoryUsage(fullPrecisionModel, &fullWeightMem, &fullActivationMem);
+    hyperionImageModelGetMemoryUsage(quantizedModel, &quantizedWeightMem, &quantizedActivationMem);
+    hyperionImageModelGetMemoryUsage(fullPrecisionModel, &fullWeightMem, &fullActivationMem);
 
     // Quantized model should use less memory for weights (about 1/8th for 4-bit vs 32-bit)
     // Allow some overhead, so check if it's at least half the size
@@ -159,15 +159,15 @@ void test_quantization_options()
     ASSERT(quantizedWeightMem * 2 < fullWeightMem,
            "Quantized model should use significantly less memory");
 
-    tinyaiImageModelFree(quantizedModel);
-    tinyaiImageModelFree(fullPrecisionModel);
+    hyperionImageModelFree(quantizedModel);
+    hyperionImageModelFree(fullPrecisionModel);
     printf("    PASS\n");
 }
 
 // Create a simple test image with a gradient pattern
-TinyAIImage *create_test_image(int width, int height, TinyAIImageFormat format)
+HyperionImage *create_test_image(int width, int height, HyperionImageFormat format)
 {
-    TinyAIImage *image = tinyaiImageCreate(width, height, format);
+    HyperionImage *image = hyperionImageCreate(width, height, format);
     if (!image)
         return NULL;
 
@@ -232,17 +232,17 @@ void test_image_creation()
     const int height = 224;
 
     // Test different formats
-    TinyAIImage *rgbImage = create_test_image(width, height, TINYAI_IMAGE_FORMAT_RGB);
+    HyperionImage *rgbImage = create_test_image(width, height, TINYAI_IMAGE_FORMAT_RGB);
     ASSERT(rgbImage != NULL, "RGB image creation should succeed");
     ASSERT(rgbImage->width == width, "Image width should match");
     ASSERT(rgbImage->height == height, "Image height should match");
     ASSERT(rgbImage->format == TINYAI_IMAGE_FORMAT_RGB, "Image format should match");
 
-    TinyAIImage *grayscaleImage = create_test_image(width, height, TINYAI_IMAGE_FORMAT_GRAYSCALE);
+    HyperionImage *grayscaleImage = create_test_image(width, height, TINYAI_IMAGE_FORMAT_GRAYSCALE);
     ASSERT(grayscaleImage != NULL, "Grayscale image creation should succeed");
 
     // Test conversion from RGB to grayscale
-    TinyAIImage *convertedGrayscale = tinyaiImageConvert(rgbImage, TINYAI_IMAGE_FORMAT_GRAYSCALE);
+    HyperionImage *convertedGrayscale = hyperionImageConvert(rgbImage, TINYAI_IMAGE_FORMAT_GRAYSCALE);
     ASSERT(convertedGrayscale != NULL, "Image format conversion should succeed");
     ASSERT(convertedGrayscale->format == TINYAI_IMAGE_FORMAT_GRAYSCALE,
            "Converted format should be grayscale");
@@ -250,16 +250,16 @@ void test_image_creation()
     ASSERT(convertedGrayscale->height == height, "Converted height should match");
 
     // Test image resizing
-    TinyAIImage *resizedImage = tinyaiImageResize(rgbImage, width / 2, height / 2);
+    HyperionImage *resizedImage = hyperionImageResize(rgbImage, width / 2, height / 2);
     ASSERT(resizedImage != NULL, "Image resizing should succeed");
     ASSERT(resizedImage->width == width / 2, "Resized width should match");
     ASSERT(resizedImage->height == height / 2, "Resized height should match");
 
     // Cleanup
-    tinyaiImageFree(rgbImage);
-    tinyaiImageFree(grayscaleImage);
-    tinyaiImageFree(convertedGrayscale);
-    tinyaiImageFree(resizedImage);
+    hyperionImageFree(rgbImage);
+    hyperionImageFree(grayscaleImage);
+    hyperionImageFree(convertedGrayscale);
+    hyperionImageFree(resizedImage);
 
     printf("    PASS\n");
 }
@@ -270,7 +270,7 @@ void test_model_inference()
     printf("  Testing model inference with synthetic image...\n");
 
     // Create a TinyCNN model
-    TinyAIImageModelParams params = {.modelType       = TINYAI_IMAGE_MODEL_TINY_CNN,
+    HyperionImageModelParams params = {.modelType       = TINYAI_IMAGE_MODEL_TINY_CNN,
                                      .inputWidth      = 224,
                                      .inputHeight     = 224,
                                      .inputChannels   = 3,
@@ -281,16 +281,16 @@ void test_model_inference()
                                      .useSIMD         = true,
                                      .customParams    = NULL};
 
-    TinyAIImageModel *model = tinyaiImageModelCreate(&params);
+    HyperionImageModel *model = hyperionImageModelCreate(&params);
     ASSERT(model != NULL, "Model creation should succeed");
 
     // Create a test image
-    TinyAIImage *image = create_test_image(224, 224, TINYAI_IMAGE_FORMAT_RGB);
+    HyperionImage *image = create_test_image(224, 224, TINYAI_IMAGE_FORMAT_RGB);
     ASSERT(image != NULL, "Test image creation should succeed");
 
     // Run inference
-    TinyAIImageClassResult classResults[5]; // Top 5 results
-    int                    numResults = tinyaiImageModelClassify(model, image, 5, classResults);
+    HyperionImageClassResult classResults[5]; // Top 5 results
+    int                    numResults = hyperionImageModelClassify(model, image, 5, classResults);
 
     ASSERT(numResults > 0, "Classification should return results");
     ASSERT(numResults <= 5, "Number of results should not exceed requested count");
@@ -311,8 +311,8 @@ void test_model_inference()
         }
     }
 
-    tinyaiImageModelFree(model);
-    tinyaiImageFree(image);
+    hyperionImageModelFree(model);
+    hyperionImageFree(image);
 
     printf("    PASS\n");
 }
@@ -325,7 +325,7 @@ void test_model_weight_save_load()
     const char *testWeightsPath = "test_weights.bin";
 
     // Create a TinyCNN model
-    TinyAIImageModelParams params = {.modelType   = TINYAI_IMAGE_MODEL_TINY_CNN,
+    HyperionImageModelParams params = {.modelType   = TINYAI_IMAGE_MODEL_TINY_CNN,
                                      .inputWidth  = 64, // Using smaller dimensions for faster test
                                      .inputHeight = 64,
                                      .inputChannels   = 3,
@@ -336,38 +336,38 @@ void test_model_weight_save_load()
                                      .useSIMD         = false,
                                      .customParams    = NULL};
 
-    TinyAIImageModel *model = tinyaiImageModelCreate(&params);
+    HyperionImageModel *model = hyperionImageModelCreate(&params);
     ASSERT(model != NULL, "Model creation should succeed");
 
     // Save weights
-    bool saveResult = tinyaiSaveModelWeights(model, testWeightsPath);
+    bool saveResult = hyperionSaveModelWeights(model, testWeightsPath);
     ASSERT(saveResult, "Saving model weights should succeed");
 
     // Create a new model to load weights into
-    TinyAIImageModel *newModel = tinyaiImageModelCreate(&params);
+    HyperionImageModel *newModel = hyperionImageModelCreate(&params);
     ASSERT(newModel != NULL, "Second model creation should succeed");
 
     // Load weights
-    bool loadResult = tinyaiLoadModelWeights(newModel, testWeightsPath, false);
+    bool loadResult = hyperionLoadModelWeights(newModel, testWeightsPath, false);
     ASSERT(loadResult, "Loading model weights should succeed");
 
     // Verify both models perform similarly
-    TinyAIImage *testImage = create_test_image(64, 64, TINYAI_IMAGE_FORMAT_RGB);
+    HyperionImage *testImage = create_test_image(64, 64, TINYAI_IMAGE_FORMAT_RGB);
 
-    TinyAIImageClassResult results1[3];
-    TinyAIImageClassResult results2[3];
+    HyperionImageClassResult results1[3];
+    HyperionImageClassResult results2[3];
 
-    tinyaiImageModelClassify(model, testImage, 3, results1);
-    tinyaiImageModelClassify(newModel, testImage, 3, results2);
+    hyperionImageModelClassify(model, testImage, 3, results1);
+    hyperionImageModelClassify(newModel, testImage, 3, results2);
 
     // Top prediction should be the same
     ASSERT(results1[0].classId == results2[0].classId,
            "Top prediction should be the same after loading weights");
 
     // Cleanup
-    tinyaiImageModelFree(model);
-    tinyaiImageModelFree(newModel);
-    tinyaiImageFree(testImage);
+    hyperionImageModelFree(model);
+    hyperionImageModelFree(newModel);
+    hyperionImageFree(testImage);
     remove(testWeightsPath); // Delete test file
 
     printf("    PASS\n");

@@ -1,14 +1,14 @@
 /**
  * @file sparse_ops.h
- * @brief Sparse matrix operations for TinyAI
+ * @brief Sparse matrix operations for Hyperion
  *
  * This header defines operations for efficient storage and computation
  * with sparse matrices, enabling significant memory savings for large
  * models with many near-zero weights.
  */
 
-#ifndef TINYAI_SPARSE_OPS_H
-#define TINYAI_SPARSE_OPS_H
+#ifndef HYPERION_SPARSE_OPS_H
+#define HYPERION_SPARSE_OPS_H
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -27,7 +27,7 @@ typedef struct {
     int32_t  rows;       /* Number of rows */
     int32_t  cols;       /* Number of columns */
     int32_t  nnz;        /* Number of non-zero elements */
-} TinyAICSRMatrix;
+} HyperionCSRMatrix;
 
 /**
  * Compressed Sparse Column (CSC) format for sparse matrices
@@ -39,7 +39,7 @@ typedef struct {
     int32_t  rows;       /* Number of rows */
     int32_t  cols;       /* Number of columns */
     int32_t  nnz;        /* Number of non-zero elements */
-} TinyAICSCMatrix;
+} HyperionCSCMatrix;
 
 /**
  * Coordinate (COO) format for sparse matrices
@@ -51,7 +51,7 @@ typedef struct {
     int32_t  rows;       /* Number of rows */
     int32_t  cols;       /* Number of columns */
     int32_t  nnz;        /* Number of non-zero elements */
-} TinyAICOOMatrix;
+} HyperionCOOMatrix;
 
 /**
  * 4-bit quantized CSR matrix format
@@ -65,7 +65,7 @@ typedef struct {
     int32_t  rows;       /* Number of rows */
     int32_t  cols;       /* Number of columns */
     int32_t  nnz;        /* Number of non-zero elements */
-} TinyAICSRMatrix4Bit;
+} HyperionCSRMatrix4Bit;
 
 /**
  * Create a CSR matrix from dense matrix data with a sparsity threshold
@@ -76,7 +76,7 @@ typedef struct {
  * @param threshold Values with absolute magnitude below this threshold are treated as zero
  * @return CSR matrix (must be freed with tinyaiCSRMatrixFree)
  */
-TinyAICSRMatrix *tinyaiCreateCSRMatrixFromDense(const float *dense, int32_t rows, int32_t cols,
+HyperionCSRMatrix *hyperionCreateCSRMatrixFromDense(const float *dense, int32_t rows, int32_t cols,
                                                 float threshold);
 
 /**
@@ -88,7 +88,7 @@ TinyAICSRMatrix *tinyaiCreateCSRMatrixFromDense(const float *dense, int32_t rows
  * @param threshold Values with absolute magnitude below this threshold are treated as zero
  * @return 4-bit quantized CSR matrix (must be freed with tinyaiCSRMatrix4BitFree)
  */
-TinyAICSRMatrix4Bit *tinyaiCreateCSRMatrix4BitFromDense(const float *dense, int32_t rows,
+HyperionCSRMatrix4Bit *hyperionCreateCSRMatrix4BitFromDense(const float *dense, int32_t rows,
                                                         int32_t cols, float threshold);
 
 /**
@@ -98,7 +98,7 @@ TinyAICSRMatrix4Bit *tinyaiCreateCSRMatrix4BitFromDense(const float *dense, int3
  * @param dense Output dense matrix (row-major, must be pre-allocated with rows*cols elements)
  * @return true on success, false on failure
  */
-bool tinyaiCSRMatrixToDense(const TinyAICSRMatrix *csr, float *dense);
+bool hyperionCSRMatrixToDense(const HyperionCSRMatrix *csr, float *dense);
 
 /**
  * Convert a 4-bit quantized CSR matrix to dense format
@@ -107,21 +107,21 @@ bool tinyaiCSRMatrixToDense(const TinyAICSRMatrix *csr, float *dense);
  * @param dense Output dense matrix (row-major, must be pre-allocated with rows*cols elements)
  * @return true on success, false on failure
  */
-bool tinyaiCSRMatrix4BitToDense(const TinyAICSRMatrix4Bit *csr, float *dense);
+bool hyperionCSRMatrix4BitToDense(const HyperionCSRMatrix4Bit *csr, float *dense);
 
 /**
  * Free memory used by a CSR matrix
  *
  * @param csr CSR matrix to free
  */
-void tinyaiCSRMatrixFree(TinyAICSRMatrix *csr);
+void hyperionCSRMatrixFree(HyperionCSRMatrix *csr);
 
 /**
  * Free memory used by a 4-bit quantized CSR matrix
  *
  * @param csr 4-bit quantized CSR matrix to free
  */
-void tinyaiCSRMatrix4BitFree(TinyAICSRMatrix4Bit *csr);
+void hyperionCSRMatrix4BitFree(HyperionCSRMatrix4Bit *csr);
 
 /**
  * Perform sparse matrix-vector multiplication: y = A * x
@@ -131,7 +131,7 @@ void tinyaiCSRMatrix4BitFree(TinyAICSRMatrix4Bit *csr);
  * @param y Output vector y (must be pre-allocated with csr->rows elements)
  * @return true on success, false on failure
  */
-bool tinyaiCSRMatrixVectorMul(const TinyAICSRMatrix *csr, const float *x, float *y);
+bool hyperionCSRMatrixVectorMul(const HyperionCSRMatrix *csr, const float *x, float *y);
 
 /**
  * Perform 4-bit quantized sparse matrix-vector multiplication: y = A * x
@@ -141,7 +141,7 @@ bool tinyaiCSRMatrixVectorMul(const TinyAICSRMatrix *csr, const float *x, float 
  * @param y Output vector y (must be pre-allocated with csr->rows elements)
  * @return true on success, false on failure
  */
-bool tinyaiCSRMatrix4BitVectorMul(const TinyAICSRMatrix4Bit *csr, const float *x, float *y);
+bool hyperionCSRMatrix4BitVectorMul(const HyperionCSRMatrix4Bit *csr, const float *x, float *y);
 
 /**
  * Perform SIMD-accelerated sparse matrix-vector multiplication: y = A * x
@@ -151,7 +151,7 @@ bool tinyaiCSRMatrix4BitVectorMul(const TinyAICSRMatrix4Bit *csr, const float *x
  * @param y Output vector y (must be pre-allocated with csr->rows elements)
  * @return true on success, false on failure
  */
-bool tinyaiCSRMatrixVectorMulSIMD(const TinyAICSRMatrix *csr, const float *x, float *y);
+bool hyperionCSRMatrixVectorMulSIMD(const HyperionCSRMatrix *csr, const float *x, float *y);
 
 /**
  * Perform SIMD-accelerated 4-bit quantized sparse matrix-vector multiplication: y = A * x
@@ -161,7 +161,7 @@ bool tinyaiCSRMatrixVectorMulSIMD(const TinyAICSRMatrix *csr, const float *x, fl
  * @param y Output vector y (must be pre-allocated with csr->rows elements)
  * @return true on success, false on failure
  */
-bool tinyaiCSRMatrix4BitVectorMulSIMD(const TinyAICSRMatrix4Bit *csr, const float *x, float *y);
+bool hyperionCSRMatrix4BitVectorMulSIMD(const HyperionCSRMatrix4Bit *csr, const float *x, float *y);
 
 /**
  * Calculate memory usage of CSR matrix in bytes
@@ -169,7 +169,7 @@ bool tinyaiCSRMatrix4BitVectorMulSIMD(const TinyAICSRMatrix4Bit *csr, const floa
  * @param csr CSR matrix
  * @return Memory usage in bytes
  */
-size_t tinyaiCSRMatrixMemoryUsage(const TinyAICSRMatrix *csr);
+size_t hyperionCSRMatrixMemoryUsage(const HyperionCSRMatrix *csr);
 
 /**
  * Calculate memory usage of 4-bit quantized CSR matrix in bytes
@@ -177,7 +177,7 @@ size_t tinyaiCSRMatrixMemoryUsage(const TinyAICSRMatrix *csr);
  * @param csr 4-bit quantized CSR matrix
  * @return Memory usage in bytes
  */
-size_t tinyaiCSRMatrix4BitMemoryUsage(const TinyAICSRMatrix4Bit *csr);
+size_t hyperionCSRMatrix4BitMemoryUsage(const HyperionCSRMatrix4Bit *csr);
 
 /**
  * Calculate compression ratio compared to dense matrix storage
@@ -185,7 +185,7 @@ size_t tinyaiCSRMatrix4BitMemoryUsage(const TinyAICSRMatrix4Bit *csr);
  * @param csr CSR matrix
  * @return Compression ratio (dense size / sparse size)
  */
-float tinyaiCSRMatrixCompressionRatio(const TinyAICSRMatrix *csr);
+float hyperionCSRMatrixCompressionRatio(const HyperionCSRMatrix *csr);
 
 /**
  * Calculate compression ratio for 4-bit quantized CSR matrix compared to dense matrix storage
@@ -193,10 +193,10 @@ float tinyaiCSRMatrixCompressionRatio(const TinyAICSRMatrix *csr);
  * @param csr 4-bit quantized CSR matrix
  * @return Compression ratio (dense size / sparse size)
  */
-float tinyaiCSRMatrix4BitCompressionRatio(const TinyAICSRMatrix4Bit *csr);
+float hyperionCSRMatrix4BitCompressionRatio(const HyperionCSRMatrix4Bit *csr);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* TINYAI_SPARSE_OPS_H */
+#endif /* HYPERION_SPARSE_OPS_H */

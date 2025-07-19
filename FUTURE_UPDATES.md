@@ -1,4 +1,4 @@
-# TinyAI Future Updates Roadmap  
+# Hyperion Future Updates Roadmap  
 *(Prioritized for usability-performance synergy)*  
 
 ---
@@ -25,7 +25,7 @@
 ## **User Experience**  
 ### High Priority  
 - **Python wrapper for model design**  
-  - *Rationale*: Let users prototype in Python and export to TinyAI (e.g., `tinyai-convert` CLI tool).  
+  - *Rationale*: Let users prototype in Python and export to Hyperion (e.g., `hyperion-convert` CLI tool).  
 - **Interactive browser-based tutorials**  
   - *Rationale*: WebAssembly demos for MNIST/CIFAR-10 training without hardware.  
 
@@ -101,4 +101,4 @@ Help wanted in:
 - Python-C++ binding (Pybind11)  
 - Hardware-in-the-loop testing  
 
-*To propose ideas or contribute, open a GitHub Issue tagged `[Roadmap]`.*  
+*To propose ideas or contribute, open a GitHub Issue tagged `[Roadmap]`.*

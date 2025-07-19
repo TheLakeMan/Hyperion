@@ -1,6 +1,6 @@
 @echo off
 echo **************************************
-echo * TinyAI Visual Studio Setup Tester *
+echo * Hyperion Visual Studio Setup Tester *
 echo **************************************
 echo.
 
@@ -37,7 +37,7 @@ if not exist "build" (
 )
 
 echo.
-echo To build TinyAI:
+echo To build Hyperion:
 echo 1. Press Ctrl+Shift+P
 echo 2. Type "Tasks: Run Task"
 echo 3. Select "Configure CMake"

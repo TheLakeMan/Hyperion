@@ -1,14 +1,14 @@
 /**
  * @file multimodal_model.h
- * @brief Public API for multimodal model functionality in TinyAI
+ * @brief Public API for multimodal model functionality in Hyperion
  *
- * This header defines the public API for multimodal models in TinyAI,
+ * This header defines the public API for multimodal models in Hyperion,
  * which can process inputs from multiple modalities (text, image, etc.)
  * and produce outputs that combine information from all modalities.
  */
 
-#ifndef TINYAI_MULTIMODAL_MODEL_H
-#define TINYAI_MULTIMODAL_MODEL_H
+#ifndef HYPERION_MULTIMODAL_MODEL_H
+#define HYPERION_MULTIMODAL_MODEL_H
 
 #include "../image/image_model.h"
 #include "../text/generate.h"
@@ -24,35 +24,35 @@ extern "C" {
  * Multimodal model type enumeration
  */
 typedef enum {
-    TINYAI_MULTIMODAL_FUSION,     /* Simple fusion of modalities */
-    TINYAI_MULTIMODAL_CROSS_ATTN, /* Cross-attention between modalities */
-    TINYAI_MULTIMODAL_CUSTOM      /* Custom multimodal architecture */
-} TinyAIMultimodalModelType;
+    HYPERION_MULTIMODAL_FUSION,     /* Simple fusion of modalities */
+    HYPERION_MULTIMODAL_CROSS_ATTN, /* Cross-attention between modalities */
+    HYPERION_MULTIMODAL_CUSTOM      /* Custom multimodal architecture */
+} HyperionMultimodalModelType;
 
 /**
  * Multimodal fusion method enumeration
  */
 typedef enum {
-    TINYAI_FUSION_CONCAT,   /* Concatenation of features */
-    TINYAI_FUSION_ADD,      /* Addition of features */
-    TINYAI_FUSION_MULTIPLY, /* Multiplication of features */
-    TINYAI_FUSION_ATTENTION /* Attention-based fusion */
-} TinyAIFusionMethod;
+    HYPERION_FUSION_CONCAT,   /* Concatenation of features */
+    HYPERION_FUSION_ADD,      /* Addition of features */
+    HYPERION_FUSION_MULTIPLY, /* Multiplication of features */
+    HYPERION_FUSION_ATTENTION /* Attention-based fusion */
+} HyperionFusionMethod;
 
 /**
  * Supported input modalities
  */
 typedef enum {
-    TINYAI_MODALITY_TEXT,  /* Text modality */
-    TINYAI_MODALITY_IMAGE, /* Image modality */
-    TINYAI_MODALITY_AUDIO  /* Audio modality (future support) */
-} TinyAIModality;
+    HYPERION_MODALITY_TEXT,  /* Text modality */
+    HYPERION_MODALITY_IMAGE, /* Image modality */
+    HYPERION_MODALITY_AUDIO  /* Audio modality (future support) */
+} HyperionModality;
 
 /**
  * Input modality configuration
  */
 typedef struct {
-    TinyAIModality modality; /* Type of modality */
+    HyperionModality modality; /* Type of modality */
     union {
         struct {
             int maxTokens; /* Maximum number of tokens for text */
@@ -68,12 +68,12 @@ typedef struct {
             int duration;   /* Audio duration in seconds */
         } audio;
     } config;
-} TinyAIModalityConfig;
+} HyperionModalityConfig;
 
 /**
  * Forward declaration of multimodal model struct
  */
-typedef struct TinyAIMultimodalModel TinyAIMultimodalModel;
+typedef struct HyperionMultimodalModel HyperionMultimodalModel;
 
 /**
  * Multimodal input container
@@ -82,11 +82,11 @@ typedef struct {
     void *textInput;  /* Text input (token IDs) */
     int   textLength; /* Number of tokens */
 
-    TinyAIImage *imageInput; /* Image input */
+    HyperionImage *imageInput; /* Image input */
 
     void *audioInput;  /* Audio input (for future use) */
     int   audioLength; /* Audio length */
-} TinyAIMultimodalInput;
+} HyperionMultimodalInput;
 
 /**
  * Multimodal output container
@@ -101,36 +101,36 @@ typedef struct {
 
     float *imageFeatures; /* Image features (if applicable) */
     int    numClasses;    /* Number of image classes (if applicable) */
-} TinyAIMultimodalOutput;
+} HyperionMultimodalOutput;
 
 /**
  * Multimodal model parameters for creation
  */
 typedef struct {
-    TinyAIMultimodalModelType modelType;       /* Type of multimodal model */
-    TinyAIModalityConfig     *modalityConfigs; /* Array of modality configurations */
+    HyperionMultimodalModelType modelType;       /* Type of multimodal model */
+    HyperionModalityConfig     *modalityConfigs; /* Array of modality configurations */
     int                       numModalities;   /* Number of modalities */
-    TinyAIFusionMethod        fusionMethod;    /* Method for fusing modalities */
+    HyperionFusionMethod        fusionMethod;    /* Method for fusing modalities */
     int                       fusionDim;       /* Dimension of fused representation */
     int                       numLayers;       /* Number of fusion layers */
     const char               *weightsFile;     /* Path to weights file (optional) */
     bool                      useQuantization; /* Whether to use 4-bit quantization */
     bool                      useSIMD;         /* Whether to use SIMD acceleration */
     void                     *customParams;    /* Custom parameters */
-} TinyAIMultimodalModelParams;
+} HyperionMultimodalModelParams;
 
 /**
  * Create a multimodal model
  * @param params Parameters for model creation
  * @return Newly allocated model, or NULL on failure
  */
-TinyAIMultimodalModel *tinyaiMultimodalModelCreate(const TinyAIMultimodalModelParams *params);
+HyperionMultimodalModel *hyperionMultimodalModelCreate(const HyperionMultimodalModelParams *params);
 
 /**
  * Free a multimodal model
  * @param model The model to free
  */
-void tinyaiMultimodalModelFree(TinyAIMultimodalModel *model);
+void hyperionMultimodalModelFree(HyperionMultimodalModel *model);
 
 /**
  * Process multimodal input
@@ -139,22 +139,22 @@ void tinyaiMultimodalModelFree(TinyAIMultimodalModel *model);
  * @param output Output structure to store results (must be pre-allocated)
  * @return true on success, false on failure
  */
-bool tinyaiMultimodalModelProcess(TinyAIMultimodalModel *model, const TinyAIMultimodalInput *input,
-                                  TinyAIMultimodalOutput *output);
+bool hyperionMultimodalModelProcess(HyperionMultimodalModel *model, const HyperionMultimodalInput *input,
+                                  HyperionMultimodalOutput *output);
 
 /**
  * Initialize multimodal input
  * @param input Multimodal input structure to initialize
  * @return true on success, false on failure
  */
-bool tinyaiMultimodalInputInit(TinyAIMultimodalInput *input);
+bool hyperionMultimodalInputInit(HyperionMultimodalInput *input);
 
 /**
  * Free multimodal input
  * @param input Multimodal input to free
  * @param freeContents Whether to free the contained inputs
  */
-void tinyaiMultimodalInputFree(TinyAIMultimodalInput *input, bool freeContents);
+void hyperionMultimodalInputFree(HyperionMultimodalInput *input, bool freeContents);
 
 /**
  * Initialize multimodal output
@@ -165,14 +165,14 @@ void tinyaiMultimodalInputFree(TinyAIMultimodalInput *input, bool freeContents);
  * @param numClasses Number of image classes (0 if not applicable)
  * @return true on success, false on failure
  */
-bool tinyaiMultimodalOutputInit(TinyAIMultimodalOutput *output, int embedDim, int length,
+bool hyperionMultimodalOutputInit(HyperionMultimodalOutput *output, int embedDim, int length,
                                 int vocabSize, int numClasses);
 
 /**
  * Free multimodal output
  * @param output Multimodal output to free
  */
-void tinyaiMultimodalOutputFree(TinyAIMultimodalOutput *output);
+void hyperionMultimodalOutputFree(HyperionMultimodalOutput *output);
 
 /**
  * Set custom memory pool for model
@@ -180,7 +180,7 @@ void tinyaiMultimodalOutputFree(TinyAIMultimodalOutput *output);
  * @param memoryPool Memory pool to use
  * @return true on success, false on failure
  */
-bool tinyaiMultimodalModelSetMemoryPool(TinyAIMultimodalModel *model, void *memoryPool);
+bool hyperionMultimodalModelSetMemoryPool(HyperionMultimodalModel *model, void *memoryPool);
 
 /**
  * Enable or disable SIMD acceleration
@@ -188,7 +188,7 @@ bool tinyaiMultimodalModelSetMemoryPool(TinyAIMultimodalModel *model, void *memo
  * @param enable Whether to enable SIMD
  * @return true on success, false on failure
  */
-bool tinyaiMultimodalModelEnableSIMD(TinyAIMultimodalModel *model, bool enable);
+bool hyperionMultimodalModelEnableSIMD(HyperionMultimodalModel *model, bool enable);
 
 /**
  * Get memory usage statistics
@@ -197,11 +197,11 @@ bool tinyaiMultimodalModelEnableSIMD(TinyAIMultimodalModel *model, bool enable);
  * @param activationMemory Output parameter for activation memory (in bytes)
  * @return true on success, false on failure
  */
-bool tinyaiMultimodalModelGetMemoryUsage(const TinyAIMultimodalModel *model, size_t *weightMemory,
+bool hyperionMultimodalModelGetMemoryUsage(const HyperionMultimodalModel *model, size_t *weightMemory,
                                          size_t *activationMemory);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* TINYAI_MULTIMODAL_MODEL_H */
+#endif /* HYPERION_MULTIMODAL_MODEL_H */

@@ -1,6 +1,6 @@
 /**
  * @file cache_opt.c
- * @brief Implementation of cache optimization utilities for TinyAI
+ * @brief Implementation of cache optimization utilities for Hyperion
  */
 
 #include "cache_opt.h"
@@ -35,9 +35,9 @@
  * Initialize default cache optimization configuration
  * @return Default configuration structure
  */
-TinyAICacheOptConfig tinyai_cache_opt_init_default(void)
+HyperionCacheOptConfig hyperion_cache_opt_init_default(void)
 {
-    TinyAICacheOptConfig config;
+    HyperionCacheOptConfig config;
 
     /* Initialize with reasonable defaults */
     config.blockSizeX       = DEFAULT_MATRIX_BLOCK_X;
@@ -47,7 +47,7 @@ TinyAICacheOptConfig tinyai_cache_opt_init_default(void)
     config.enableTiling     = true;
 
     /* Attempt to tune based on detected cache sizes */
-    TinyAICacheInfo cacheInfo = tinyai_get_cache_info();
+    HyperionCacheInfo cacheInfo = hyperion_get_cache_info();
 
     if (cacheInfo.l1dCacheSize > 0) {
         /* Adjust block sizes based on L1 cache size */
@@ -74,10 +74,10 @@ TinyAICacheOptConfig tinyai_cache_opt_init_default(void)
  * This function attempts to detect cache characteristics on various platforms
  * and falls back to reasonable defaults if detection fails
  */
-TinyAICacheInfo tinyai_get_cache_info(void)
+HyperionCacheInfo hyperion_get_cache_info(void)
 {
-    TinyAICacheInfo info;
-    memset(&info, 0, sizeof(TinyAICacheInfo));
+    HyperionCacheInfo info;
+    memset(&info, 0, sizeof(HyperionCacheInfo));
 
     /* Set default values in case detection fails */
     info.l1dCacheSize    = 32 * 1024;       /* 32 KB */
@@ -103,12 +103,12 @@ TinyAICacheInfo tinyai_get_cache_info(void)
     __cpuid(cpuInfo, 0x80000005);
     info.l1dCacheSize = ((cpuInfo[2] >> 24) & 0xFF) * 1024; /* L1 data cache size in KB */
 
-#elif defined(__APPLE__)
+#elif defined(__APPLE__) || defined(__linux__)
     /* macOS cache detection using sysctl */
     size_t size = sizeof(size_t);
     sysctlbyname("hw.l1dcachesize", &info.l1dCacheSize, &size, NULL, 0);
-    sysctlbyname("hw.l2cachesize", &info.l2CacheSize, &size, NULL, 0);
-    sysctlbyname("hw.l3cachesize", &info.l3CacheSize, &size, NULL, 0);
+    sysctlbyname("hw.l2cachesize", &info.l2cachesize, &size, NULL, 0);
+    sysctlbyname("hw.l3cachesize", &info.l3cachesize, &size, NULL, 0);
     sysctlbyname("hw.cachelinesize", &info.cacheLineSize, &size, NULL, 0);
 
 #elif defined(__linux__)
@@ -220,14 +220,14 @@ TinyAICacheInfo tinyai_get_cache_info(void)
  * @param inner Inner dimension (columns of first, rows of second)
  * @param config Pointer to configuration structure to optimize
  */
-void tinyai_cache_opt_matrix_multiply(size_t rows, size_t cols, size_t inner,
-                                      TinyAICacheOptConfig *config)
+void hyperion_cache_opt_matrix_multiply(size_t rows, size_t cols, size_t inner,
+                                      HyperionCacheOptConfig *config)
 {
     if (!config)
         return;
 
     /* Get cache information */
-    TinyAICacheInfo cacheInfo = tinyai_get_cache_info();
+    HyperionCacheInfo cacheInfo = hyperion_get_cache_info();
 
     /* Compute total data size */
     size_t totalSize = (rows * inner + inner * cols + rows * cols) * sizeof(float);
@@ -293,15 +293,15 @@ void tinyai_cache_opt_matrix_multiply(size_t rows, size_t cols, size_t inner,
  * @param outputChannels Number of output channels
  * @param config Pointer to configuration structure to optimize
  */
-void tinyai_cache_opt_convolution(size_t inputWidth, size_t inputHeight, size_t inputChannels,
+void hyperion_cache_opt_convolution(size_t inputWidth, size_t inputHeight, size_t inputChannels,
                                   size_t kernelSize, size_t outputChannels,
-                                  TinyAICacheOptConfig *config)
+                                  HyperionCacheOptConfig *config)
 {
     if (!config)
         return;
 
     /* Get cache information */
-    TinyAICacheInfo cacheInfo = tinyai_get_cache_info();
+    HyperionCacheInfo cacheInfo = hyperion_get_cache_info();
 
     /* Compute total data size */
     size_t inputSize    = inputWidth * inputHeight * inputChannels * sizeof(float);
@@ -356,7 +356,7 @@ void tinyai_cache_opt_convolution(size_t inputWidth, size_t inputHeight, size_t 
  * @param readWrite 0 for read, 1 for write
  * @param locality Temporal locality hint (0-3, where 3 is highest locality)
  */
-void tinyai_prefetch(const void *addr, int readWrite, int locality)
+void hyperion_prefetch(const void *addr, int readWrite, int locality)
 {
 #if defined(_MSC_VER) && (defined(_M_IX86) || defined(_M_X64))
     /* MSVC intrinsics for x86/x64 */
@@ -412,11 +412,11 @@ void tinyai_prefetch(const void *addr, int readWrite, int locality)
  * @param cols Number of columns
  * @param elemSize Size of each element in bytes
  */
-void tinyai_transpose_blocked(void *dest, const void *src, size_t rows, size_t cols,
+void hyperion_transpose_blocked(void *dest, const void *src, size_t rows, size_t cols,
                               size_t elemSize)
 {
     /* Get default cache configuration */
-    TinyAICacheOptConfig config = tinyai_cache_opt_init_default();
+    HyperionCacheOptConfig config = hyperion_cache_opt_init_default();
 
     /* Determine block size */
     size_t blockSize = config.blockSizeX;

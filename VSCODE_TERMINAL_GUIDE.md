@@ -1,6 +1,6 @@
-# TinyAI: Working with Visual Studio Tools in VS Code Terminal
+# Hyperion: Working with Visual Studio Tools in VS Code Terminal
 
-This guide explains how to build and develop TinyAI using Visual Studio 2022 compiler and tools directly from VS Code's terminal interface.
+This guide explains how to build and develop Hyperion using Visual Studio 2022 compiler and tools directly from VS Code's terminal interface.
 
 ## Overview
 
@@ -20,7 +20,7 @@ For the best experience, install these VS Code extensions:
 
 ## Building the Project
 
-You can build TinyAI directly from VS Code:
+You can build Hyperion directly from VS Code:
 
 ### Using VS Code Tasks (Easiest Method)
 
@@ -30,7 +30,7 @@ You can build TinyAI directly from VS Code:
    - **Configure CMake** - Run this first to create/update the build configuration
    - **Build Debug** - Build with debugging symbols
    - **Build Release** - Build optimized version
-   - **Run TinyAI** - Build and run the main executable
+   - **Run Hyperion** - Build and run the main executable
    - **Run Tests** - Build and run the test suite
    - **Open VS Developer Command Prompt** - Open a fully configured VS command prompt
 
@@ -49,10 +49,10 @@ cmake -G "Visual Studio 17 2022" -S . -B build
 cmake --build build --config Debug
 
 # Run the main executable
-build\Debug\tinyai.exe
+build\Debug\hyperion.exe
 
 # Run the tests
-build\Debug\tinyai_tests.exe
+build\Debug\hyperion_tests.exe
 ```
 
 ## Debugging
@@ -61,7 +61,7 @@ You can debug the project directly in VS Code:
 
 1. Set breakpoints by clicking in the margin next to line numbers
 2. Open the Run and Debug sidebar (`Ctrl+Shift+D`)
-3. Select either "Debug TinyAI" or "Debug Tests" from the dropdown
+3. Select either "Debug Hyperion" or "Debug Tests" from the dropdown
 4. Press the green Play button or F5
 
 The debugger provides:
@@ -80,13 +80,13 @@ Now that the core components are working, focus on testing:
 
 ```bash
 # Run all tests
-build\Debug\tinyai_tests.exe
+build\Debug\hyperion_tests.exe
 
 # Create test data for the tokenizer
 echo "This is a test sentence for tokenization." > test_data.txt
 
 # Run the main application with test data
-build\Debug\tinyai.exe tokenize test_data.txt --output tokens.txt
+build\Debug\hyperion.exe tokenize test_data.txt --output tokens.txt
 ```
 
 ### 2. Performance Testing
@@ -95,7 +95,7 @@ Test the performance of the 4-bit quantized operations:
 
 ```bash
 # Time the execution
-Measure-Command { build\Debug\tinyai.exe generate "Test prompt" --max-tokens 100 }
+Measure-Command { build\Debug\hyperion.exe generate "Test prompt" --max-tokens 100 }
 
 # Memory usage can be monitored with Windows Task Manager
 ```
@@ -112,9 +112,9 @@ All necessary components are installed. The project uses:
 
 Now that the project builds successfully, follow this workflow for further development:
 
-1. **Open TinyAI in VS Code**:
+1. **Open Hyperion in VS Code**:
    ```
-   code C:\Users\verme\OneDrive\Desktop\TinyAI
+   code C:\Users\verme\OneDrive\Desktop\Hyperion
    ```
 
 2. **Pull latest changes** if working in a team
@@ -148,7 +148,7 @@ The tokenizer implementation is complete but needs testing:
 
 ```bash
 # Example command to test tokenizer
-build\Debug\tinyai.exe tokenize input.txt --vocab vocab.txt --output tokens.txt
+build\Debug\hyperion.exe tokenize input.txt --vocab vocab.txt --output tokens.txt
 ```
 
 ### Testing and Enhancing Text Generation
@@ -162,7 +162,7 @@ The text generation implementation is complete but needs testing:
 
 ```bash
 # Example command to test generation
-build\Debug\tinyai.exe generate "Test prompt" --model model.bin --max-tokens 100 --temp 0.7
+build\Debug\hyperion.exe generate "Test prompt" --model model.bin --max-tokens 100 --temp 0.7
 ```
 
 ### Creating Example Models
@@ -171,7 +171,7 @@ To test the system end-to-end:
 
 1. Create small model files in the required format
 2. Add test vocabulary files
-3. Create script to convert from standard formats (e.g., ONNX) to TinyAI format
+3. Create script to convert from standard formats (e.g., ONNX) to Hyperion format
 
 ## Keyboard Shortcuts for Efficient Development
 

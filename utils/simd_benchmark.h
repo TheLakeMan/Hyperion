@@ -1,10 +1,10 @@
 /**
  * @file simd_benchmark.h
- * @brief Benchmarking utilities specifically for SIMD operations in TinyAI
+ * @brief Benchmarking utilities specifically for SIMD operations in Hyperion
  */
 
-#ifndef TINYAI_SIMD_BENCHMARK_H
-#define TINYAI_SIMD_BENCHMARK_H
+#ifndef HYPERION_SIMD_BENCHMARK_H
+#define HYPERION_SIMD_BENCHMARK_H
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -138,7 +138,7 @@ bool create_simd_benchmark_report(const SimdBenchmarkResult *results, int numRes
 char *analyze_memory_access_patterns(int operationType, int dataSize, const char *reportFile);
 
 #ifdef __cplusplus
-}
+} /* extern "C" */
 #endif
 
-#endif /* TINYAI_SIMD_BENCHMARK_H */
+#endif /* HYPERION_SIMD_BENCHMARK_H */

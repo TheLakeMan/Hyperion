@@ -1,10 +1,10 @@
-# TinyAI Multimodal Capabilities
+# Hyperion Multimodal Capabilities
 
-This document provides an overview of the multimodal capabilities in TinyAI, explaining how to use the API and providing examples of common use cases.
+This document provides an overview of the multimodal capabilities in Hyperion, explaining how to use the API and providing examples of common use cases.
 
 ## Overview
 
-TinyAI's multimodal system enables models to process and combine information from different modalities, such as text and images, to perform tasks that require understanding both types of data simultaneously. This is achieved through:
+Hyperion's multimodal system enables models to process and combine information from different modalities, such as text and images, to perform tasks that require understanding both types of data simultaneously. This is achieved through:
 
 1. **Modality Encoders** - Process each input modality separately
 2. **Fusion Methods** - Combine features from different modalities
@@ -13,7 +13,7 @@ TinyAI's multimodal system enables models to process and combine information fro
 
 ## Supported Modalities
 
-Currently, TinyAI supports the following modalities:
+Currently, Hyperion supports the following modalities:
 
 - **Text** - Text sequences processed as tokens
 - **Image** - Image data processed using convolutional networks
@@ -21,7 +21,7 @@ Currently, TinyAI supports the following modalities:
 
 ## Fusion Methods
 
-TinyAI provides several methods to combine features from different modalities:
+Hyperion provides several methods to combine features from different modalities:
 
 - **Concatenation** - Simple concatenation of feature vectors
 - **Addition** - Element-wise addition of feature vectors
@@ -35,28 +35,28 @@ The multimodal API consists of the following components:
 
 ### Core Structures
 
-- `TinyAIMultimodalModel` - The main model structure
-- `TinyAIMultimodalInput` - Container for multimodal inputs
-- `TinyAIMultimodalOutput` - Container for multimodal outputs
-- `TinyAIModalityConfig` - Configuration for each modality
-- `TinyAIMultimodalModelParams` - Parameters for model creation
+- `HyperionMultimodalModel` - The main model structure
+- `HyperionMultimodalInput` - Container for multimodal inputs
+- `HyperionMultimodalOutput` - Container for multimodal outputs
+- `HyperionModalityConfig` - Configuration for each modality
+- `HyperionMultimodalModelParams` - Parameters for model creation
 
 ### Main Functions
 
-- `tinyaiMultimodalModelCreate()` - Create a new multimodal model
-- `tinyaiMultimodalModelProcess()` - Process multimodal inputs
-- `tinyaiMultimodalModelFree()` - Free a multimodal model
-- `tinyaiMultimodalInputInit()` - Initialize multimodal input structure
-- `tinyaiMultimodalOutputInit()` - Initialize multimodal output structure
+- `hyperionMultimodalModelCreate()` - Create a new multimodal model
+- `hyperionMultimodalModelProcess()` - Process multimodal inputs
+- `hyperionMultimodalModelFree()` - Free a multimodal model
+- `hyperionMultimodalInputInit()` - Initialize multimodal input structure
+- `hyperionMultimodalOutputInit()` - Initialize multimodal output structure
 
 ### Fusion Operations
 
-- `tinyaiFusionConcat()` - Concatenation-based fusion
-- `tinyaiFusionAdd()` - Addition-based fusion
-- `tinyaiFusionMultiply()` - Multiplication-based fusion
-- `tinyaiFusionAttention()` - Attention-based fusion
-- `tinyaiFusionCrossAttention()` - Cross-attention between two modalities
-- `tinyaiFusionProject()` - Project features to a common dimension
+- `hyperionFusionConcat()` - Concatenation-based fusion
+- `hyperionFusionAdd()` - Addition-based fusion
+- `hyperionFusionMultiply()` - Multiplication-based fusion
+- `hyperionFusionAttention()` - Attention-based fusion
+- `hyperionFusionCrossAttention()` - Cross-attention between two modalities
+- `hyperionFusionProject()` - Project features to a common dimension
 
 ## Example Use Cases
 
@@ -74,7 +74,7 @@ Usage example:
 
 ```c
 // Configure image captioning model
-TinyAIImageCaptionConfig config;
+HyperionImageCaptionConfig config;
 memset(&config, 0, sizeof(config));
 config.imageWidth = 224;
 config.imageHeight = 224;
@@ -88,15 +88,15 @@ config.weightsFile = "path/to/weights.bin";
 config.vocabFile = "path/to/vocab.txt";
 
 // Create model
-TinyAIImageCaptionModel *model = tinyaiImageCaptionModelCreate(&config);
+HyperionImageCaptionModel *model = hyperionImageCaptionModelCreate(&config);
 
 // Generate caption
 char caption[512];
-bool success = tinyaiImageCaptionGenerate(model, "path/to/image.jpg", caption, 512);
+bool success = hyperionImageCaptionGenerate(model, "path/to/image.jpg", caption, 512);
 printf("Caption: %s\n", caption);
 
 // Free resources
-tinyaiImageCaptionModelFree(model);
+hyperionImageCaptionModelFree(model);
 ```
 
 ### Visual Question Answering (VQA)
@@ -113,7 +113,7 @@ Usage example:
 
 ```c
 // Configure visual QA model
-TinyAIVisualQAConfig config;
+HyperionVisualQAConfig config;
 memset(&config, 0, sizeof(config));
 config.imageWidth = 224;
 config.imageHeight = 224;
@@ -128,18 +128,18 @@ config.weightsFile = "path/to/weights.bin";
 config.vocabFile = "path/to/vocab.txt";
 
 // Create model
-TinyAIVisualQAModel *model = tinyaiVisualQAModelCreate(&config);
+HyperionVisualQAModel *model = hyperionVisualQAModelCreate(&config);
 
 // Generate answer to a question about an image
 char answer[512];
 const char *question = "What color is the car?";
-bool success = tinyaiVisualQAGenerateAnswer(
+bool success = hyperionVisualQAGenerateAnswer(
     model, "path/to/image.jpg", question, answer, 512
 );
 printf("Question: %s\nAnswer: %s\n", question, answer);
 
 // Free resources
-tinyaiVisualQAModelFree(model);
+hyperionVisualQAModelFree(model);
 ```
 
 ## Performance Considerations
@@ -160,11 +160,11 @@ You can reduce memory usage by:
 
 ### Acceleration
 
-TinyAI provides SIMD acceleration for multimodal operations:
+Hyperion provides SIMD acceleration for multimodal operations:
 
 - Set `useSIMD = true` when creating models
 - Ensure your platform supports SSE2/AVX/AVX2 instructions
-- Use `tinyaiMultimodalModelEnableSIMD()` to toggle SIMD at runtime
+- Use `hyperionMultimodalModelEnableSIMD()` to toggle SIMD at runtime
 - Check memory alignment for optimal performance
 
 ## Testing
@@ -172,7 +172,7 @@ TinyAI provides SIMD acceleration for multimodal operations:
 We provide a comprehensive test suite for multimodal capabilities:
 
 - `tests/test_multimodal.c` - Tests for model creation, fusion methods, etc.
-- Run with `tinyai_tests multimodal` or the standalone executable `multimodal_test`
+- Run with `hyperion_tests multimodal` or the standalone executable `multimodal_test`
 
 ## Future Directions
 

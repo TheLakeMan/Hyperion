@@ -1,6 +1,6 @@
 /**
  * @file test_oom_handling.c
- * @brief Tests for out-of-memory handling in TinyAI
+ * @brief Tests for out-of-memory handling in Hyperion
  *
  * This file implements MEM-007 from the test plan, testing how
  * the memory pool and memory-mapped model loader handle out-of-memory
@@ -34,22 +34,22 @@ static int testMemoryPoolOOM()
     printf("Running test: Memory Pool Out-of-Memory Handling\n");
 
     /* Create a memory pool with small capacity */
-    TinyAIMemoryPoolConfig config;
-    tinyaiMemoryPoolGetDefaultConfig(&config);
+    HyperionMemoryPoolConfig config;
+    hyperionMemoryPoolGetDefaultConfig(&config);
     config.initialCapacity = TEST_SMALL_CAPACITY;
     config.allowGrowth     = false; /* Disable growth to force OOM */
 
-    TinyAIMemoryPool *pool = tinyaiMemoryPoolCreate(&config);
+    HyperionMemoryPool *pool = hyperionMemoryPoolCreate(&config);
     if (!pool) {
         printf("ERROR: Failed to create memory pool\n");
         return 0;
     }
 
     /* Allocate until the pool is nearly full */
-    void *ptr1 = tinyaiMemoryPoolAlloc(pool, TEST_SMALL_CAPACITY / 2, 16);
+    void *ptr1 = hyperionMemoryPoolAlloc(pool, TEST_SMALL_CAPACITY / 2, 16);
     if (!ptr1) {
         printf("ERROR: Failed initial allocation which should succeed\n");
-        tinyaiMemoryPoolDestroy(pool);
+        hyperionMemoryPoolDestroy(pool);
         return 0;
     }
 
@@ -57,27 +57,27 @@ static int testMemoryPoolOOM()
     memset(ptr1, 0xAA, TEST_SMALL_CAPACITY / 2);
 
     /* Try to allocate more than remaining space */
-    void *ptr2 = tinyaiMemoryPoolAlloc(pool, TEST_SMALL_CAPACITY / 2 + 1024, 16);
+    void *ptr2 = hyperionMemoryPoolAlloc(pool, TEST_SMALL_CAPACITY / 2 + 1024, 16);
 
     /* This allocation should fail, returning NULL */
     if (ptr2 != NULL) {
         printf("ERROR: Allocation succeeded when it should have failed\n");
-        tinyaiMemoryPoolFree(pool, ptr1);
-        tinyaiMemoryPoolFree(pool, ptr2);
-        tinyaiMemoryPoolDestroy(pool);
+        hyperionMemoryPoolFree(pool, ptr1);
+        hyperionMemoryPoolFree(pool, ptr2);
+        hyperionMemoryPoolDestroy(pool);
         return 0;
     }
 
     printf("  Successfully handled OOM condition (returned NULL)\n");
 
     /* Free the first allocation to check pool is still functional */
-    tinyaiMemoryPoolFree(pool, ptr1);
+    hyperionMemoryPoolFree(pool, ptr1);
 
     /* Try another allocation that should now succeed */
-    void *ptr3 = tinyaiMemoryPoolAlloc(pool, TEST_SMALL_CAPACITY / 4, 16);
+    void *ptr3 = hyperionMemoryPoolAlloc(pool, TEST_SMALL_CAPACITY / 4, 16);
     if (!ptr3) {
         printf("ERROR: Pool unusable after OOM condition\n");
-        tinyaiMemoryPoolDestroy(pool);
+        hyperionMemoryPoolDestroy(pool);
         return 0;
     }
 
@@ -87,27 +87,27 @@ static int testMemoryPoolOOM()
     printf("  Pool is still usable after OOM condition\n");
 
     /* Free the allocation */
-    tinyaiMemoryPoolFree(pool, ptr3);
+    hyperionMemoryPoolFree(pool, ptr3);
 
     /* Try allocation larger than the entire pool */
-    void *ptr4 = tinyaiMemoryPoolAlloc(pool, TEST_LARGE_ALLOC, 16);
+    void *ptr4 = hyperionMemoryPoolAlloc(pool, TEST_LARGE_ALLOC, 16);
     if (ptr4 != NULL) {
         printf("ERROR: Allocation succeeded when it should have failed\n");
-        tinyaiMemoryPoolFree(pool, ptr4);
-        tinyaiMemoryPoolDestroy(pool);
+        hyperionMemoryPoolFree(pool, ptr4);
+        hyperionMemoryPoolDestroy(pool);
         return 0;
     }
 
     printf("  Successfully handled extreme OOM condition\n");
 
     /* Get and check statistics */
-    TinyAIMemoryPoolStats stats;
-    tinyaiMemoryPoolGetStats(pool, &stats);
+    HyperionMemoryPoolStats stats;
+    hyperionMemoryPoolGetStats(pool, &stats);
 
     printf("  Total pool size: %zu bytes\n", stats.totalAllocated);
     printf("  Free blocks: %zu\n", stats.freeBlocks);
 
-    tinyaiMemoryPoolDestroy(pool);
+    hyperionMemoryPoolDestroy(pool);
 
     return 1;
 }
@@ -120,29 +120,29 @@ static int testMmapModelOOM()
     printf("Running test: Memory-Mapped Model OOM Handling\n");
 
     /* Create a configuration with a tiny cache size */
-    TinyAIMmapConfig config = tinyaiCreateDefaultMmapConfig();
+    HyperionMmapConfig config = hyperionCreateDefaultMmapConfig();
     config.maxCacheSize     = 1024; /* 1 KB - way too small for layers */
 
     /* Try to open the model */
-    TinyAIMappedModel *model = tinyaiOpenMappedModel(TEST_MODEL_FILE, &config);
+    HyperionMappedModel *model = hyperionOpenMappedModel(TEST_MODEL_FILE, &config);
     if (!model) {
         printf("ERROR: Failed to open model file\n");
         return 0;
     }
 
     /* Get the layer count */
-    int layerCount = tinyaiGetMappedLayerCount(model);
+    int layerCount = hyperionGetMappedLayerCount(model);
     if (layerCount <= 0) {
         printf("ERROR: Invalid layer count: %d\n", layerCount);
-        tinyaiCloseMappedModel(model);
+        hyperionCloseMappedModel(model);
         return 0;
     }
 
     /* Load first layer - this should evict previous layers automatically */
-    void *layer0 = tinyaiGetLayerWeights(model, 0);
+    void *layer0 = hyperionGetLayerWeights(model, 0);
     if (!layer0) {
         printf("ERROR: Failed to load first layer\n");
-        tinyaiCloseMappedModel(model);
+        hyperionCloseMappedModel(model);
         return 0;
     }
 
@@ -150,17 +150,17 @@ static int testMmapModelOOM()
 
     /* Load several more layers in sequence to force cache evictions */
     for (int i = 1; i < layerCount && i < 5; i++) {
-        void *layer = tinyaiGetLayerWeights(model, i);
+        void *layer = hyperionGetLayerWeights(model, i);
         if (!layer) {
             printf("ERROR: Failed to load layer %d\n", i);
-            tinyaiCloseMappedModel(model);
+            hyperionCloseMappedModel(model);
             return 0;
         }
 
         printf("  Successfully loaded layer %d\n", i);
 
         /* Check if layer 0 was evicted as expected */
-        size_t memUsage = tinyaiGetMappedModelMemoryUsage(model);
+        size_t memUsage = hyperionGetMappedModelMemoryUsage(model);
         printf("  Current memory usage: %zu bytes\n", memUsage);
 
         /* Try to use layer data to ensure it's valid */
@@ -169,17 +169,17 @@ static int testMmapModelOOM()
     }
 
     /* Try loading layer 0 again to ensure it works after eviction */
-    void *layer0Again = tinyaiGetLayerWeights(model, 0);
+    void *layer0Again = hyperionGetLayerWeights(model, 0);
     if (!layer0Again) {
         printf("ERROR: Failed to reload layer 0\n");
-        tinyaiCloseMappedModel(model);
+        hyperionCloseMappedModel(model);
         return 0;
     }
 
     printf("  Successfully reloaded layer 0 after eviction\n");
 
     /* Clean up */
-    tinyaiCloseMappedModel(model);
+    hyperionCloseMappedModel(model);
     return 1;
 }
 
@@ -191,10 +191,10 @@ static int testForwardSchedulerMemConstraints()
     printf("Running test: Forward Scheduler Memory Constraint Handling\n");
 
     /* Create default memory-mapped model config */
-    TinyAIMmapConfig config = tinyaiCreateDefaultMmapConfig();
+    HyperionMmapConfig config = hyperionCreateDefaultMmapConfig();
 
     /* Open the model */
-    TinyAIMappedModel *model = tinyaiOpenMappedModel(TEST_MODEL_FILE, &config);
+    HyperionMappedModel *model = hyperionOpenMappedModel(TEST_MODEL_FILE, &config);
     if (!model) {
         printf("ERROR: Failed to open model\n");
         return 0;
@@ -202,26 +202,26 @@ static int testForwardSchedulerMemConstraints()
 
     /* Create a scheduler with extremely tight memory constraints */
     size_t                  tinyMemoryLimit = 512 * 1024; /* 512 KB */
-    TinyAIForwardScheduler *scheduler =
-        tinyaiCreateForwardScheduler(model, TINYAI_EXEC_MEMORY_OPT, tinyMemoryLimit);
+    HyperionForwardScheduler *scheduler =
+        hyperionCreateForwardScheduler(model, TINYAI_EXEC_MEMORY_OPT, tinyMemoryLimit);
 
     if (!scheduler) {
         printf("ERROR: Failed to create forward scheduler\n");
-        tinyaiCloseMappedModel(model);
+        hyperionCloseMappedModel(model);
         return 0;
     }
 
     /* Add layers to the schedule */
-    int layerCount = tinyaiGetMappedLayerCount(model);
+    int layerCount = hyperionGetMappedLayerCount(model);
     for (int i = 0; i < layerCount && i < 5; i++) {
         int                  dependsOn = (i > 0) ? i - 1 : -1;
-        TinyAIDependencyType depType   = (i > 0) ? TINYAI_DEP_SEQUENTIAL : TINYAI_DEP_NONE;
+        HyperionDependencyType depType   = (i > 0) ? TINYAI_DEP_SEQUENTIAL : TINYAI_DEP_NONE;
 
         /* Each layer produces output activations */
         size_t outputSize =
             256 * 1024; /* 256 KB - chosen to be large enough to challenge memory constraint */
 
-        if (!tinyaiAddLayerToSchedule(scheduler, i, dependsOn, depType, outputSize)) {
+        if (!hyperionAddLayerToSchedule(scheduler, i, dependsOn, depType, outputSize)) {
             /* Failure is expected at some point due to memory constraints */
             printf("  Layer %d addition failed due to memory constraints (expected)\n", i);
             break;
@@ -231,7 +231,7 @@ static int testForwardSchedulerMemConstraints()
     }
 
     /* Prepare for execution */
-    if (!tinyaiPrepareForwardPass(scheduler)) {
+    if (!hyperionPrepareForwardPass(scheduler)) {
         printf("  Forward pass preparation failed due to memory constraints (expected)\n");
     }
     else {
@@ -240,29 +240,29 @@ static int testForwardSchedulerMemConstraints()
 
         /* Execute layers */
         int layerIndex;
-        while (tinyaiExecuteNextLayer(scheduler, NULL, NULL, &layerIndex)) {
+        while (hyperionExecuteNextLayer(scheduler, NULL, NULL, &layerIndex)) {
             printf("  Executed layer %d\n", layerIndex);
 
             /* Check if memory limit is respected */
-            size_t memUsage = tinyaiGetSchedulerMemoryUsage(scheduler);
+            size_t memUsage = hyperionGetSchedulerMemoryUsage(scheduler);
             printf("  Current memory usage: %zu bytes (limit: %zu)\n", memUsage, tinyMemoryLimit);
 
             if (memUsage > tinyMemoryLimit) {
                 printf("ERROR: Memory usage exceeds limit\n");
-                tinyaiDestroyForwardScheduler(scheduler);
-                tinyaiCloseMappedModel(model);
+                hyperionDestroyForwardScheduler(scheduler);
+                hyperionCloseMappedModel(model);
                 return 0;
             }
         }
     }
 
     /* Calculate optimal batch size under constraints */
-    int batchSize = tinyaiCalculateOptimalBatchSize(scheduler, tinyMemoryLimit / 2, 1024, 32);
+    int batchSize = hyperionCalculateOptimalBatchSize(scheduler, tinyMemoryLimit / 2, 1024, 32);
     printf("  Calculated optimal batch size: %d\n", batchSize);
 
     /* Clean up */
-    tinyaiDestroyForwardScheduler(scheduler);
-    tinyaiCloseMappedModel(model);
+    hyperionDestroyForwardScheduler(scheduler);
+    hyperionCloseMappedModel(model);
     return 1;
 }
 
@@ -271,7 +271,7 @@ static int testForwardSchedulerMemConstraints()
  */
 int main()
 {
-    printf("=== TinyAI Out-of-Memory Handling Tests ===\n\n");
+    printf("=== Hyperion Out-of-Memory Handling Tests ===\n\n");
 
     /* Initialize random seed */
     srand((unsigned int)time(NULL));

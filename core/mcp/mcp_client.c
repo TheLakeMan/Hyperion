@@ -1,6 +1,6 @@
 /**
  * @file mcp_client.c
- * @brief Implementation of the Model Context Protocol (MCP) client for TinyAI
+ * @brief Implementation of the Model Context Protocol (MCP) client for Hyperion
  */
 
 #include "mcp_client.h"
@@ -12,9 +12,9 @@
 /**
  * @brief MCP client implementation structure
  */
-struct TinyAIMcpClient {
-    TinyAIMcpConfig          config;                   /* Client configuration */
-    TinyAIMcpConnectionState connectionState;          /* Current connection state */
+struct HyperionMcpClient {
+    HyperionMcpConfig          config;                   /* Client configuration */
+    HyperionMcpConnectionState connectionState;          /* Current connection state */
     char                     serverUrl[256];           /* Current server URL */
     time_t                   lastConnectionAttempt;    /* Timestamp of last connection attempt */
     int                      connectionAttempts;       /* Number of connection attempts */
@@ -27,12 +27,12 @@ struct TinyAIMcpClient {
 #define DEFAULT_TIMEOUT_MS 5000
 #define DEFAULT_MAX_RETRIES 3
 
-void tinyaiMcpGetDefaultConfig(TinyAIMcpConfig *config)
+void hyperionMcpGetDefaultConfig(HyperionMcpConfig *config)
 {
     if (!config)
         return;
 
-    config->execPreference      = TINYAI_EXEC_PREFER_LOCAL;
+    config->execPreference      = HYPERION_EXEC_PREFER_LOCAL;
     config->enableAutoDiscovery = true;
     config->enableTelemetry     = false;
     config->connectionTimeoutMs = DEFAULT_TIMEOUT_MS;
@@ -40,42 +40,42 @@ void tinyaiMcpGetDefaultConfig(TinyAIMcpConfig *config)
     config->forceOffline        = false;
 }
 
-TinyAIMcpClient *tinyaiMcpCreateClient(const TinyAIMcpConfig *config)
+HyperionMcpClient *hyperionMcpCreateClient(const HyperionMcpConfig *config)
 {
-    TinyAIMcpClient *client = (TinyAIMcpClient *)malloc(sizeof(TinyAIMcpClient));
+    HyperionMcpClient *client = (HyperionMcpClient *)malloc(sizeof(HyperionMcpClient));
     if (!client)
         return NULL;
 
-    memset(client, 0, sizeof(TinyAIMcpClient));
+    memset(client, 0, sizeof(HyperionMcpClient));
 
     if (config) {
-        memcpy(&client->config, config, sizeof(TinyAIMcpConfig));
+        memcpy(&client->config, config, sizeof(HyperionMcpConfig));
     }
     else {
-        tinyaiMcpGetDefaultConfig(&client->config);
+        hyperionMcpGetDefaultConfig(&client->config);
     }
 
-    client->connectionState    = TINYAI_MCP_DISCONNECTED;
+    client->connectionState    = HYPERION_MCP_DISCONNECTED;
     client->isConnectionActive = false;
     client->connectionAttempts = 0;
 
     return client;
 }
 
-void tinyaiMcpDestroyClient(TinyAIMcpClient *client)
+void hyperionMcpDestroyClient(HyperionMcpClient *client)
 {
     if (!client)
         return;
 
     /* If connected, disconnect first */
-    if (client->connectionState == TINYAI_MCP_CONNECTED) {
-        tinyaiMcpDisconnect(client);
+    if (client->connectionState == HYPERION_MCP_CONNECTED) {
+        hyperionMcpDisconnect(client);
     }
 
     free(client);
 }
 
-bool tinyaiMcpConnect(TinyAIMcpClient *client, const char *serverUrl)
+bool hyperionMcpConnect(HyperionMcpClient *client, const char *serverUrl)
 {
     if (!client || !serverUrl)
         return false;
@@ -84,26 +84,26 @@ bool tinyaiMcpConnect(TinyAIMcpClient *client, const char *serverUrl)
     if (client->config.forceOffline) {
         strncpy(client->lastError, "Connection refused: offline mode is forced",
                 sizeof(client->lastError) - 1);
-        client->connectionState = TINYAI_MCP_ERROR;
+        client->connectionState = HYPERION_MCP_ERROR;
         return false;
     }
 
     /* Check if already connected to the same server */
-    if (client->connectionState == TINYAI_MCP_CONNECTED &&
+    if (client->connectionState == HYPERION_MCP_CONNECTED &&
         strcmp(client->serverUrl, serverUrl) == 0) {
         return true;
     }
 
     /* Disconnect from current server if connected */
-    if (client->connectionState == TINYAI_MCP_CONNECTED) {
-        tinyaiMcpDisconnect(client);
+    if (client->connectionState == HYPERION_MCP_CONNECTED) {
+        hyperionMcpDisconnect(client);
     }
 
     /* Store server URL */
     strncpy(client->serverUrl, serverUrl, sizeof(client->serverUrl) - 1);
 
     /* Reset connection state */
-    client->connectionState       = TINYAI_MCP_CONNECTING;
+    client->connectionState       = HYPERION_MCP_CONNECTING;
     client->lastConnectionAttempt = time(NULL);
     client->connectionAttempts    = 1;
 
@@ -118,7 +118,7 @@ bool tinyaiMcpConnect(TinyAIMcpClient *client, const char *serverUrl)
      */
 
     /* Simulate successful connection */
-    client->connectionState    = TINYAI_MCP_CONNECTED;
+    client->connectionState    = HYPERION_MCP_CONNECTED;
     client->isConnectionActive = true;
 
     /* Set some default capabilities for testing */
@@ -128,7 +128,7 @@ bool tinyaiMcpConnect(TinyAIMcpClient *client, const char *serverUrl)
         "  \"tools\": ["
         "    {\"name\": \"generate_text\", \"description\": \"Generate text with remote model\"},"
         "    {\"name\": \"tokenize_text\", \"description\": \"Tokenize text with remote model\"},"
-        "    {\"name\": \"convert_model\", \"description\": \"Convert model to TinyAI format\"}"
+        "    {\"name\": \"convert_model\", \"description\": \"Convert model to Hyperion format\"}"
         "  ],"
         "  \"resources\": ["
         "    {\"name\": \"model_repository\", \"description\": \"Access models from repository\"},"
@@ -139,13 +139,13 @@ bool tinyaiMcpConnect(TinyAIMcpClient *client, const char *serverUrl)
     return true;
 }
 
-void tinyaiMcpDisconnect(TinyAIMcpClient *client)
+void hyperionMcpDisconnect(HyperionMcpClient *client)
 {
     if (!client)
         return;
 
     /* If not connected, nothing to do */
-    if (client->connectionState != TINYAI_MCP_CONNECTED) {
+    if (client->connectionState != HYPERION_MCP_CONNECTED) {
         return;
     }
 
@@ -157,20 +157,20 @@ void tinyaiMcpDisconnect(TinyAIMcpClient *client)
      */
 
     /* Reset connection state */
-    client->connectionState    = TINYAI_MCP_DISCONNECTED;
+    client->connectionState    = HYPERION_MCP_DISCONNECTED;
     client->isConnectionActive = false;
     memset(client->serverUrl, 0, sizeof(client->serverUrl));
     client->connectionAttempts = 0;
 }
 
-TinyAIMcpConnectionState tinyaiMcpGetConnectionState(TinyAIMcpClient *client)
+HyperionMcpConnectionState hyperionMcpGetConnectionState(HyperionMcpClient *client)
 {
     if (!client)
-        return TINYAI_MCP_DISCONNECTED;
+        return HYPERION_MCP_DISCONNECTED;
     return client->connectionState;
 }
 
-bool tinyaiMcpIsAvailable(TinyAIMcpClient *client)
+bool hyperionMcpIsAvailable(HyperionMcpClient *client)
 {
     if (!client)
         return false;
@@ -181,21 +181,21 @@ bool tinyaiMcpIsAvailable(TinyAIMcpClient *client)
     }
 
     /* Check if connected */
-    return (client->connectionState == TINYAI_MCP_CONNECTED && client->isConnectionActive);
+    return (client->connectionState == HYPERION_MCP_CONNECTED && client->isConnectionActive);
 }
 
-bool tinyaiMcpGetServerInfo(TinyAIMcpClient *client, TinyAIMcpServerInfo *info)
+bool hyperionMcpGetServerInfo(HyperionMcpClient *client, HyperionMcpServerInfo *info)
 {
     if (!client || !info)
         return false;
 
     /* If not connected, can't get server info */
-    if (client->connectionState != TINYAI_MCP_CONNECTED) {
+    if (client->connectionState != HYPERION_MCP_CONNECTED) {
         return false;
     }
 
     /* Fill in server info */
-    strcpy(info->serverName, "TinyAI MCP Server");
+    strcpy(info->serverName, "Hyperion MCP Server");
     strcpy(info->serverUrl, client->serverUrl);
     strcpy(info->serverVersion, "0.1.0");
     info->connectionState = client->connectionState;
@@ -204,13 +204,13 @@ bool tinyaiMcpGetServerInfo(TinyAIMcpClient *client, TinyAIMcpServerInfo *info)
     return true;
 }
 
-bool tinyaiMcpHasCapability(TinyAIMcpClient *client, const char *capability)
+bool hyperionMcpHasCapability(HyperionMcpClient *client, const char *capability)
 {
     if (!client || !capability)
         return false;
 
     /* If not connected, no capabilities */
-    if (client->connectionState != TINYAI_MCP_CONNECTED) {
+    if (client->connectionState != HYPERION_MCP_CONNECTED) {
         return false;
     }
 
@@ -218,20 +218,20 @@ bool tinyaiMcpHasCapability(TinyAIMcpClient *client, const char *capability)
     return (strstr(client->serverCapabilities, capability) != NULL);
 }
 
-int tinyaiMcpCallTool(TinyAIMcpClient *client, const char *toolName, const char *arguments,
+int hyperionMcpCallTool(HyperionMcpClient *client, const char *toolName, const char *arguments,
                       char *result, int resultSize)
 {
     if (!client || !toolName || !result || resultSize <= 0)
         return -1;
 
     /* If not connected, can't call tool */
-    if (client->connectionState != TINYAI_MCP_CONNECTED) {
+    if (client->connectionState != HYPERION_MCP_CONNECTED) {
         strncpy(result, "Error: Not connected to MCP server", resultSize - 1);
         return -1;
     }
 
     /* Check if tool exists */
-    if (!tinyaiMcpHasCapability(client, toolName)) {
+    if (!hyperionMcpHasCapability(client, toolName)) {
         snprintf(result, resultSize - 1, "Error: Tool '%s' not supported by server", toolName);
         return -1;
     }
@@ -265,14 +265,14 @@ int tinyaiMcpCallTool(TinyAIMcpClient *client, const char *toolName, const char 
     return strlen(result);
 }
 
-int tinyaiMcpAccessResource(TinyAIMcpClient *client, const char *resourceUri, char *result,
+int hyperionMcpAccessResource(HyperionMcpClient *client, const char *resourceUri, char *result,
                             int resultSize)
 {
     if (!client || !resourceUri || !result || resultSize <= 0)
         return -1;
 
     /* If not connected, can't access resource */
-    if (client->connectionState != TINYAI_MCP_CONNECTED) {
+    if (client->connectionState != HYPERION_MCP_CONNECTED) {
         strncpy(result, "Error: Not connected to MCP server", resultSize - 1);
         return -1;
     }
@@ -299,22 +299,22 @@ int tinyaiMcpAccessResource(TinyAIMcpClient *client, const char *resourceUri, ch
     return strlen(result);
 }
 
-void tinyaiMcpSetExecutionPreference(TinyAIMcpClient             *client,
-                                     TinyAIMcpExecutionPreference preference)
+void hyperionMcpSetExecutionPreference(HyperionMcpClient             *client,
+                                     HyperionMcpExecutionPreference preference)
 {
     if (!client)
         return;
     client->config.execPreference = preference;
 }
 
-TinyAIMcpExecutionPreference tinyaiMcpGetExecutionPreference(TinyAIMcpClient *client)
+HyperionMcpExecutionPreference hyperionMcpGetExecutionPreference(HyperionMcpClient *client)
 {
     if (!client)
-        return TINYAI_EXEC_ALWAYS_LOCAL;
+        return HYPERION_EXEC_ALWAYS_LOCAL;
     return client->config.execPreference;
 }
 
-void tinyaiMcpSetForceOffline(TinyAIMcpClient *client, bool forceOffline)
+void hyperionMcpSetForceOffline(HyperionMcpClient *client, bool forceOffline)
 {
     if (!client)
         return;
@@ -322,12 +322,12 @@ void tinyaiMcpSetForceOffline(TinyAIMcpClient *client, bool forceOffline)
     client->config.forceOffline = forceOffline;
 
     /* If forcing offline and currently connected, disconnect */
-    if (forceOffline && client->connectionState == TINYAI_MCP_CONNECTED) {
-        tinyaiMcpDisconnect(client);
+    if (forceOffline && client->connectionState == HYPERION_MCP_CONNECTED) {
+        hyperionMcpDisconnect(client);
     }
 }
 
-bool tinyaiMcpGetForceOffline(TinyAIMcpClient *client)
+bool hyperionMcpGetForceOffline(HyperionMcpClient *client)
 {
     if (!client)
         return true; /* Default to offline if no client */

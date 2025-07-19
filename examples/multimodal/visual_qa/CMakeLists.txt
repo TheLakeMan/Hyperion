@@ -14,9 +14,9 @@ target_include_directories(visual_qa PRIVATE
 
 # Link libraries
 target_link_libraries(visual_qa PRIVATE
-    tinyai_core
-    tinyai_models
-    tinyai_utils
+    hyperion_core
+    hyperion_models
+    hyperion_utils
 )
 
 # Set optimization flags

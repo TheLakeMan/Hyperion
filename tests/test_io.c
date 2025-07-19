@@ -1,5 +1,5 @@
 /**
- * TinyAI I/O System Tests
+ * Hyperion I/O System Tests
  */
 
 #include "../core/io.h" // Include the header for the functions being tested
@@ -12,70 +12,70 @@
     do { \
         if (!(condition)) { \
             fprintf(stderr, "Assertion Failed: %s (%s:%d)\n", message, __FILE__, __LINE__); \
-            fprintf(stderr, "  Last IO Error: %d (%s)\n", tinyaiIOGetLastError(), tinyaiIOGetErrorString(tinyaiIOGetLastError())); \
+            fprintf(stderr, "  Last IO Error: %d (%s)\n", hyperionIOGetLastError(), hyperionIOGetErrorString(hyperionIOGetLastError())); \
             exit(1); \
         } \
     } while (0)
 
 // Helper to create a temporary test file
 const char* create_temp_file(const char* name, const char* content) {
-    TinyAIFile* f = tinyaiOpenFile(name, TINYAI_FILE_WRITE | TINYAI_FILE_TRUNCATE);
+    HyperionFile* f = hyperionOpenFile(name, TINYAI_FILE_WRITE | TINYAI_FILE_TRUNCATE);
     if (!f) {
         fprintf(stderr, "Failed to create temp file '%s' for testing.\n", name);
         exit(1);
     }
     if (content) {
-        tinyaiWriteFile(f, content, strlen(content));
+        hyperionWriteFile(f, content, strlen(content));
     }
-    tinyaiCloseFile(f);
+    hyperionCloseFile(f);
     return name;
 }
 
 // Helper to delete a temporary test file
 void delete_temp_file(const char* name) {
-    tinyaiDeleteFile(name);
+    hyperionDeleteFile(name);
 }
 
 void test_file_operations() {
     printf("  Testing basic file operations (create, write, read, delete)...\n");
-    const char* testFileName = "tinyai_test_io_temp.txt";
-    const char* testContent = "Hello TinyAI I/O!\nLine 2.";
+    const char* testFileName = "hyperion_test_io_temp.txt";
+    const char* testContent = "Hello Hyperion I/O!\nLine 2.";
     
     // Create and Write
     create_temp_file(testFileName, testContent);
-    ASSERT(tinyaiFileExists(testFileName) == 1, "Temp file should exist after creation.");
+    ASSERT(hyperionFileExists(testFileName) == 1, "Temp file should exist after creation.");
 
     // Read back
-    TinyAIFile* f = tinyaiOpenFile(testFileName, TINYAI_FILE_READ);
+    HyperionFile* f = hyperionOpenFile(testFileName, TINYAI_FILE_READ);
     ASSERT(f != NULL, "Should be able to open temp file for reading.");
     
     char buffer[100];
     memset(buffer, 0, sizeof(buffer));
-    int64_t bytesRead = tinyaiReadFile(f, buffer, sizeof(buffer) - 1);
+    int64_t bytesRead = hyperionReadFile(f, buffer, sizeof(buffer) - 1);
     
     ASSERT(bytesRead == (int64_t)strlen(testContent), "Bytes read should match content length.");
     ASSERT(strcmp(buffer, testContent) == 0, "Read content should match written content.");
 
     // Test EOF - Reading the exact amount might set EOF, so the robust check
     // is trying to read *past* the end.
-    // ASSERT(tinyaiEOF(f) == 0, "Should not be EOF yet."); // Removed this potentially flaky check
-    bytesRead = tinyaiReadFile(f, buffer, 1); // Try reading one more byte
+    // ASSERT(hyperionEOF(f) == 0, "Should not be EOF yet."); // Removed this potentially flaky check
+    bytesRead = hyperionReadFile(f, buffer, 1); // Try reading one more byte
     ASSERT(bytesRead == 0, "Reading past end should return 0 bytes.");
-    ASSERT(tinyaiEOF(f) == 1, "Should be EOF after reading past end.");
+    ASSERT(hyperionEOF(f) == 1, "Should be EOF after reading past end.");
     
-    tinyaiCloseFile(f);
+    hyperionCloseFile(f);
 
     // Delete
-    int delResult = tinyaiDeleteFile(testFileName);
+    int delResult = hyperionDeleteFile(testFileName);
     ASSERT(delResult == TINYAI_IO_SUCCESS, "Deleting temp file should succeed.");
-    ASSERT(tinyaiFileExists(testFileName) == 0, "Temp file should not exist after deletion.");
+    ASSERT(hyperionFileExists(testFileName) == 0, "Temp file should not exist after deletion.");
 
     printf("    PASS\n");
 }
 
 void test_file_modes() {
     printf("  Testing file open modes...\n");
-    const char* testFileName = "tinyai_test_modes_temp.txt";
+    const char* testFileName = "hyperion_test_modes_temp.txt";
     const char* initialContent = "Initial";
     const char* appendContent = " Appended";
 
@@ -83,35 +83,35 @@ void test_file_modes() {
     create_temp_file(testFileName, initialContent);
 
     // Test Append
-    TinyAIFile* f = tinyaiOpenFile(testFileName, TINYAI_FILE_APPEND);
+    HyperionFile* f = hyperionOpenFile(testFileName, TINYAI_FILE_APPEND);
     ASSERT(f != NULL, "Should open for append.");
-    tinyaiWriteFile(f, appendContent, strlen(appendContent));
-    tinyaiCloseFile(f);
+    hyperionWriteFile(f, appendContent, strlen(appendContent));
+    hyperionCloseFile(f);
 
     // Verify append
-    f = tinyaiOpenFile(testFileName, TINYAI_FILE_READ);
+    f = hyperionOpenFile(testFileName, TINYAI_FILE_READ);
     ASSERT(f != NULL, "Should open for read after append.");
     char buffer[100];
     memset(buffer, 0, sizeof(buffer));
-    tinyaiReadFile(f, buffer, sizeof(buffer) - 1);
+    hyperionReadFile(f, buffer, sizeof(buffer) - 1);
     const char* expectedAppend = "Initial Appended";
     ASSERT(strcmp(buffer, expectedAppend) == 0, "Append content should be correct.");
-    tinyaiCloseFile(f);
+    hyperionCloseFile(f);
 
     // Test Truncate (via TINYAI_FILE_WRITE)
-    f = tinyaiOpenFile(testFileName, TINYAI_FILE_WRITE); // Default write truncates
+    f = hyperionOpenFile(testFileName, TINYAI_FILE_WRITE); // Default write truncates
     ASSERT(f != NULL, "Should open for write (truncate).");
     const char* truncateContent = "Truncated";
-    tinyaiWriteFile(f, truncateContent, strlen(truncateContent));
-    tinyaiCloseFile(f);
+    hyperionWriteFile(f, truncateContent, strlen(truncateContent));
+    hyperionCloseFile(f);
 
     // Verify truncate
-    f = tinyaiOpenFile(testFileName, TINYAI_FILE_READ);
+    f = hyperionOpenFile(testFileName, TINYAI_FILE_READ);
     ASSERT(f != NULL, "Should open for read after truncate.");
     memset(buffer, 0, sizeof(buffer));
-    tinyaiReadFile(f, buffer, sizeof(buffer) - 1);
+    hyperionReadFile(f, buffer, sizeof(buffer) - 1);
     ASSERT(strcmp(buffer, truncateContent) == 0, "Truncated content should be correct.");
-    tinyaiCloseFile(f);
+    hyperionCloseFile(f);
 
     delete_temp_file(testFileName);
     printf("    PASS\n");
@@ -119,28 +119,28 @@ void test_file_modes() {
 
 void test_directory_operations() {
      printf("  Testing basic directory operations (create, delete)...\n");
-     const char* testDirName = "tinyai_test_dir_temp";
+     const char* testDirName = "hyperion_test_dir_temp";
 
      // Ensure doesn't exist initially
-     tinyaiDeleteDir(testDirName, 0); // Ignore error if it doesn't exist
+     hyperionDeleteDir(testDirName, 0); // Ignore error if it doesn't exist
 
      // Create
-     int createResult = tinyaiCreateDir(testDirName);
+     int createResult = hyperionCreateDir(testDirName);
      ASSERT(createResult == TINYAI_IO_SUCCESS, "Creating directory should succeed.");
      
      // Check existence (using file info)
-     TinyAIFileInfo info;
-     int infoResult = tinyaiGetFileInfo(testDirName, &info);
+     HyperionFileInfo info;
+     int infoResult = hyperionGetFileInfo(testDirName, &info);
      ASSERT(infoResult == TINYAI_IO_SUCCESS, "Getting info for created directory should succeed.");
      ASSERT(info.isDirectory == 1, "Created path should be a directory.");
-     tinyaiFreeFileInfo(&info); // Clean up allocated path in info struct
+     hyperionFreeFileInfo(&info); // Clean up allocated path in info struct
 
      // Delete
-     int deleteResult = tinyaiDeleteDir(testDirName, 0); // Non-recursive
+     int deleteResult = hyperionDeleteDir(testDirName, 0); // Non-recursive
      ASSERT(deleteResult == TINYAI_IO_SUCCESS, "Deleting empty directory should succeed.");
      
      // Verify deletion
-     ASSERT(tinyaiFileExists(testDirName) == 0, "Directory should not exist after deletion.");
+     ASSERT(hyperionFileExists(testDirName) == 0, "Directory should not exist after deletion.");
 
      printf("    PASS\n");
 }
@@ -150,14 +150,14 @@ void run_io_tests() {
     printf("--- Running I/O Tests ---\n");
     
     // Initialize IO system for tests (if needed, though likely simple)
-    tinyaiIOInit(); 
+    hyperionIOInit(); 
 
     test_file_operations();
     test_file_modes();
     test_directory_operations();
     // Add calls to path tests, directory listing tests, etc.
 
-    tinyaiIOCleanup(); // Cleanup IO system
+    hyperionIOCleanup(); // Cleanup IO system
 
     printf("--- I/O Tests Finished ---\n");
 }

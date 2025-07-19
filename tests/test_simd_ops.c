@@ -1,5 +1,5 @@
 /**
- * TinyAI SIMD Operations Tests
+ * Hyperion SIMD Operations Tests
  */
 
 #include "../utils/simd_ops.h"
@@ -23,7 +23,7 @@ void test_simd_availability()
 {
     printf("  Testing SIMD availability detection...\n");
 
-    bool available = tinyaiSimdAvailable();
+    bool available = hyperionSimdAvailable();
     printf("    SIMD available: %s\n", available ? "YES" : "NO");
 
     // We don't actually fail the test if SIMD is not available,
@@ -42,7 +42,7 @@ void init_random_matrix(float *matrix, int size)
 // Helper function to quantize a float matrix to 4-bit
 void quantize_matrix(const float *input, uint8_t *output, int size, float *scale_factors)
 {
-    tinyaiSimdQuantize4Bit(output, input, size, scale_factors, 256);
+    hyperionSimdQuantize4Bit(output, input, size, scale_factors, 256);
 }
 
 // Helper function to compare two float arrays with epsilon
@@ -93,7 +93,7 @@ void test_matrix_vector_multiplication()
     }
 
     // Compute result using SIMD operations
-    tinyaiSimdMatMul4Bit(result_simd, quantized_matrix, vector, rows, cols, scale_factors);
+    hyperionSimdMatMul4Bit(result_simd, quantized_matrix, vector, rows, cols, scale_factors);
 
     // Compare results - allow some difference due to quantization
     bool match = compare_float_arrays(result_ref, result_simd, rows, 0.1f);
@@ -135,7 +135,7 @@ void test_vector_addition()
     }
 
     // Compute SIMD result
-    tinyaiSimdVecAdd(result_simd, vec_a, vec_b, size);
+    hyperionSimdVecAdd(result_simd, vec_a, vec_b, size);
 
     // Compare results
     bool match = compare_float_arrays(result_ref, result_simd, size, 0.00001f);
@@ -195,9 +195,9 @@ void test_activation_functions()
     }
 
     // Compute SIMD results
-    tinyaiSimdActivate(input_relu, size, 0);    // ReLU
-    tinyaiSimdActivate(input_gelu, size, 1);    // GELU
-    tinyaiSimdActivate(input_sigmoid, size, 2); // Sigmoid
+    hyperionSimdActivate(input_relu, size, 0);    // ReLU
+    hyperionSimdActivate(input_gelu, size, 1);    // GELU
+    hyperionSimdActivate(input_sigmoid, size, 2); // Sigmoid
 
     // Compare results
     bool relu_match    = compare_float_arrays(result_relu_ref, input_relu, size, 0.00001f);
@@ -237,10 +237,10 @@ void test_quantization()
     init_random_matrix(original, size);
 
     // Quantize
-    tinyaiSimdQuantize4Bit(quantized, original, size, scale_factors, 256);
+    hyperionSimdQuantize4Bit(quantized, original, size, scale_factors, 256);
 
     // Dequantize
-    tinyaiSimdDequantize4Bit(reconstructed, quantized, size, scale_factors);
+    hyperionSimdDequantize4Bit(reconstructed, quantized, size, scale_factors);
 
     // Check reconstruction quality
     float max_error = 0.0f;
@@ -298,19 +298,19 @@ void test_performance_benchmarking()
 
     // Benchmark matrix-vector multiplication
     start = clock();
-    tinyaiSimdMatMul4Bit(result, quantized_matrix, vector, rows, cols, scale_factors);
+    hyperionSimdMatMul4Bit(result, quantized_matrix, vector, rows, cols, scale_factors);
     end               = clock();
     float matmul_time = (float)(end - start) / CLOCKS_PER_SEC * 1000.0f; // milliseconds
 
     // Benchmark vector addition (use result and vector to create a new vector)
     start = clock();
-    tinyaiSimdVecAdd(result, result, vector, cols); // Only use the first cols elements
+    hyperionSimdVecAdd(result, result, vector, cols); // Only use the first cols elements
     end               = clock();
     float vecadd_time = (float)(end - start) / CLOCKS_PER_SEC * 1000.0f; // milliseconds
 
     // Benchmark ReLU activation
     start = clock();
-    tinyaiSimdActivate(result, rows, 0); // ReLU
+    hyperionSimdActivate(result, rows, 0); // ReLU
     end             = clock();
     float relu_time = (float)(end - start) / CLOCKS_PER_SEC * 1000.0f; // milliseconds
 

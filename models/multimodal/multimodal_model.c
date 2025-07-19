@@ -1,6 +1,6 @@
 /**
  * @file multimodal_model.c
- * @brief Implementation of the multimodal model functionality in TinyAI
+ * @brief Implementation of the multimodal model functionality in Hyperion
  */
 
 #include "multimodal_model.h"
@@ -69,11 +69,11 @@ typedef struct {
 } ModalityEncoder;
 
 /* Define the MultimodalModel structure */
-struct TinyAIMultimodalModel {
+struct HyperionMultimodalModel {
     int                modelType;
     int                numModalities;
     int                fusionDim;
-    TinyAIFusionMethod fusionMethod;
+    HyperionFusionMethod fusionMethod;
 
     /* Modality encoders */
     ModalityEncoder *modalityEncoders;
@@ -94,7 +94,7 @@ struct TinyAIMultimodalModel {
 /**
  * Initialize a modality encoder
  */
-static bool initModalityEncoder(ModalityEncoder *encoder, TinyAIModalityConfig *config,
+static bool initModalityEncoder(ModalityEncoder *encoder, HyperionModalityConfig *config,
                                 int outputDim, bool useQuantization)
 {
     if (!encoder || !config) {
@@ -107,7 +107,7 @@ static bool initModalityEncoder(ModalityEncoder *encoder, TinyAIModalityConfig *
 
     /* Set modality-specific parameters */
     switch (config->modality) {
-    case TINYAI_MODALITY_TEXT:
+    case HYPERION_MODALITY_TEXT:
         snprintf(encoder->name, sizeof(encoder->name), "text_encoder");
         encoder->inputDim              = config->config.text.maxTokens;
         encoder->outputDim             = outputDim;
@@ -129,7 +129,7 @@ static bool initModalityEncoder(ModalityEncoder *encoder, TinyAIModalityConfig *
         encoder->outputBytes = outputDim * sizeof(float);
         break;
 
-    case TINYAI_MODALITY_IMAGE:
+    case HYPERION_MODALITY_IMAGE:
         snprintf(encoder->name, sizeof(encoder->name), "image_encoder");
         encoder->inputDim = config->config.image.width * config->config.image.height *
                             config->config.image.channels;
@@ -154,7 +154,7 @@ static bool initModalityEncoder(ModalityEncoder *encoder, TinyAIModalityConfig *
         encoder->outputBytes = outputDim * sizeof(float);
         break;
 
-    case TINYAI_MODALITY_AUDIO:
+    case HYPERION_MODALITY_AUDIO:
         snprintf(encoder->name, sizeof(encoder->name), "audio_encoder");
         encoder->inputDim  = config->config.audio.sampleRate * config->config.audio.duration;
         encoder->outputDim = outputDim;
@@ -188,7 +188,7 @@ static bool initModalityEncoder(ModalityEncoder *encoder, TinyAIModalityConfig *
 /**
  * Initialize a fusion layer
  */
-static bool initFusionLayer(FusionLayer *layer, TinyAIFusionMethod fusionMethod, int *inputDims,
+static bool initFusionLayer(FusionLayer *layer, HyperionFusionMethod fusionMethod, int *inputDims,
                             int numModalities, int outputDim, bool useQuantization)
 {
     if (!layer || !inputDims || numModalities <= 0) {
@@ -213,16 +213,16 @@ static bool initFusionLayer(FusionLayer *layer, TinyAIFusionMethod fusionMethod,
 
     /* Set name based on fusion method */
     switch (fusionMethod) {
-    case TINYAI_FUSION_CONCAT:
+    case HYPERION_FUSION_CONCAT:
         snprintf(layer->name, sizeof(layer->name), "fusion_concat");
         break;
-    case TINYAI_FUSION_ADD:
+    case HYPERION_FUSION_ADD:
         snprintf(layer->name, sizeof(layer->name), "fusion_add");
         break;
-    case TINYAI_FUSION_MULTIPLY:
+    case HYPERION_FUSION_MULTIPLY:
         snprintf(layer->name, sizeof(layer->name), "fusion_multiply");
         break;
-    case TINYAI_FUSION_ATTENTION:
+    case HYPERION_FUSION_ATTENTION:
         snprintf(layer->name, sizeof(layer->name), "fusion_attention");
         break;
     default:
@@ -238,7 +238,7 @@ static bool initFusionLayer(FusionLayer *layer, TinyAIFusionMethod fusionMethod,
     }
 
     /* For attention, we need weights */
-    if (fusionMethod == TINYAI_FUSION_ATTENTION) {
+    if (fusionMethod == HYPERION_FUSION_ATTENTION) {
         size_t attnSize = (size_t)totalInputDim * outputDim;
 
         if (useQuantization) {
@@ -266,21 +266,21 @@ static bool initFusionLayer(FusionLayer *layer, TinyAIFusionMethod fusionMethod,
  * @param params Parameters for model creation
  * @return Newly allocated model, or NULL on failure
  */
-TinyAIMultimodalModel *tinyaiMultimodalModelCreate(const TinyAIMultimodalModelParams *params)
+HyperionMultimodalModel *hyperionMultimodalModelCreate(const HyperionMultimodalModelParams *params)
 {
     if (!params || params->numModalities <= 0 || !params->modalityConfigs) {
         return NULL;
     }
 
     /* Allocate model structure */
-    TinyAIMultimodalModel *model = (TinyAIMultimodalModel *)malloc(sizeof(TinyAIMultimodalModel));
+    HyperionMultimodalModel *model = (HyperionMultimodalModel *)malloc(sizeof(HyperionMultimodalModel));
     if (!model) {
         fprintf(stderr, "Failed to allocate model structure\n");
         return NULL;
     }
 
     /* Initialize the model */
-    memset(model, 0, sizeof(TinyAIMultimodalModel));
+    memset(model, 0, sizeof(HyperionMultimodalModel));
     model->modelType       = params->modelType;
     model->numModalities   = params->numModalities;
     model->fusionMethod    = params->fusionMethod;
@@ -362,23 +362,34 @@ TinyAIMultimodalModel *tinyaiMultimodalModelCreate(const TinyAIMultimodalModelPa
     for (int i = 0; i < model->numModalities; i++) {
         totalWeightBytes +=
             model->modalityEncoders[i].weightBytes + model->modalityEncoders[i].biasBytes;
-        if (model->modalityEncoders[i].outputBytes > totalActivationBytes) {
-            totalActivationBytes = model->modalityEncoders[i].outputBytes;
-        }
     }
 
     /* Add memory for fusion layers */
     for (int i = 0; i < model->numFusionLayers; i++) {
         totalWeightBytes += model->fusionLayers[i].weightBytes + model->fusionLayers[i].biasBytes;
-        if (model->fusionLayers[i].outputBytes > totalActivationBytes) {
-            totalActivationBytes = model->fusionLayers[i].outputBytes;
+    }
+
+    /* Calculate maximum activation memory */
+    size_t maxActivationBytes = 0;
+
+    /* Consider encoder activations */
+    for (int i = 0; i < model->numModalities; i++) {
+        if (model->modalityEncoders[i].outputBytes > maxActivationBytes) {
+            maxActivationBytes = model->modalityEncoders[i].outputBytes;
+        }
+    }
+
+    /* Consider fusion layer activations */
+    for (int i = 0; i < model->numFusionLayers; i++) {
+        if (model->fusionLayers[i].outputBytes > maxActivationBytes) {
+            maxActivationBytes = model->fusionLayers[i].outputBytes;
         }
     }
 
     /* Allocate memory pool if needed */
     if (!model->memoryPool && !params->customParams) {
         model->memoryPool =
-            tinyaiMemoryPoolCreate(totalWeightBytes, totalActivationBytes, model->useSIMD);
+            hyperionMemoryPoolCreate(totalWeightBytes, totalActivationBytes, model->useSIMD);
         if (!model->memoryPool) {
             fprintf(stderr, "Failed to allocate memory pool\n");
             if (model->fusionLayers) {
@@ -413,7 +424,7 @@ TinyAIMultimodalModel *tinyaiMultimodalModelCreate(const TinyAIMultimodalModelPa
  * Free a multimodal model
  * @param model The model to free
  */
-void tinyaiMultimodalModelFree(TinyAIMultimodalModel *model)
+void hyperionMultimodalModelFree(HyperionMultimodalModel *model)
 {
     if (!model) {
         return;
@@ -432,7 +443,7 @@ void tinyaiMultimodalModelFree(TinyAIMultimodalModel *model)
 
     /* Free memory pool if we own it */
     if (model->memoryPool && !model->useExternalMemory) {
-        tinyaiMemoryPoolFree(model->memoryPool);
+        hyperionMemoryPoolFree(model->memoryPool);
     }
 
     /* Free the model structure */
@@ -465,8 +476,8 @@ static bool processModality(const ModalityEncoder *encoder, const void *input, i
  * @param output Output structure to store results (must be pre-allocated)
  * @return true on success, false on failure
  */
-bool tinyaiMultimodalModelProcess(TinyAIMultimodalModel *model, const TinyAIMultimodalInput *input,
-                                  TinyAIMultimodalOutput *output)
+bool hyperionMultimodalModelProcess(HyperionMultimodalModel *model, const HyperionMultimodalInput *input,
+                                  HyperionMultimodalOutput *output)
 {
     if (!model || !input || !output) {
         return false;
@@ -498,17 +509,17 @@ bool tinyaiMultimodalModelProcess(TinyAIMultimodalModel *model, const TinyAIMult
 
         /* Get input for this modality */
         switch (model->modalityEncoders[i].type) {
-        case TINYAI_MODALITY_TEXT:
+        case HYPERION_MODALITY_TEXT:
             modalityInput = input->textInput;
             inputLength   = input->textLength;
             break;
 
-        case TINYAI_MODALITY_IMAGE:
+        case HYPERION_MODALITY_IMAGE:
             modalityInput = input->imageInput;
             inputLength   = 1; /* For image, we just have one input */
             break;
 
-        case TINYAI_MODALITY_AUDIO:
+        case HYPERION_MODALITY_AUDIO:
             modalityInput = input->audioInput;
             inputLength   = input->audioLength;
             break;
@@ -542,7 +553,7 @@ bool tinyaiMultimodalModelProcess(TinyAIMultimodalModel *model, const TinyAIMult
     if (!output->embeddings) {
         output->embeddings = (float *)malloc(output->embedDim * output->length * sizeof(float));
         if (!output->embeddings) {
-            fprintf(stderr, "Failed to allocate output embeddings\n");
+            fprintf(stderr, "Failed to allocate embeddings\n");
             for (int i = 0; i < model->numModalities; i++) {
                 free(encoderOutputs[i]);
             }
@@ -582,24 +593,24 @@ bool tinyaiMultimodalModelProcess(TinyAIMultimodalModel *model, const TinyAIMult
     /* Apply fusion method */
     bool fusionSuccess = false;
     switch (model->fusionMethod) {
-    case TINYAI_FUSION_CONCAT:
-        fusionSuccess = tinyaiFusionConcat(fusionInputs, fusionDims, model->numModalities,
+    case HYPERION_FUSION_CONCAT:
+        fusionSuccess = hyperionFusionConcat(fusionInputs, fusionDims, model->numModalities,
                                            output->embeddings, output->embedDim);
         break;
 
-    case TINYAI_FUSION_ADD:
-        fusionSuccess = tinyaiFusionAdd(fusionInputs, fusionDims, model->numModalities,
+    case HYPERION_FUSION_ADD:
+        fusionSuccess = hyperionFusionAdd(fusionInputs, fusionDims, model->numModalities,
                                         output->embeddings, output->embedDim);
         break;
 
-    case TINYAI_FUSION_MULTIPLY:
-        fusionSuccess = tinyaiFusionMultiply(fusionInputs, fusionDims, model->numModalities,
+    case HYPERION_FUSION_MULTIPLY:
+        fusionSuccess = hyperionFusionMultiply(fusionInputs, fusionDims, model->numModalities,
                                              output->embeddings, output->embedDim);
         break;
 
-    case TINYAI_FUSION_ATTENTION:
+    case HYPERION_FUSION_ATTENTION:
         /* For attention, we need to use the fusion layers weights */
-        fusionSuccess = tinyaiFusionAttention(fusionInputs, fusionDims, model->numModalities,
+        fusionSuccess = hyperionFusionAttention(fusionInputs, fusionDims, model->numModalities,
                                               NULL, /* No pre-defined weights, use learned ones */
                                               output->embeddings, output->embedDim,
                                               model->useQuantization, model->useSIMD);
@@ -626,14 +637,14 @@ bool tinyaiMultimodalModelProcess(TinyAIMultimodalModel *model, const TinyAIMult
  * @param input Multimodal input structure to initialize
  * @return true on success, false on failure
  */
-bool tinyaiMultimodalInputInit(TinyAIMultimodalInput *input)
+bool hyperionMultimodalInputInit(HyperionMultimodalInput *input)
 {
     if (!input) {
         return false;
     }
 
     /* Initialize to zeros */
-    memset(input, 0, sizeof(TinyAIMultimodalInput));
+    memset(input, 0, sizeof(HyperionMultimodalInput));
 
     return true;
 }
@@ -643,7 +654,7 @@ bool tinyaiMultimodalInputInit(TinyAIMultimodalInput *input)
  * @param input Multimodal input to free
  * @param freeContents Whether to free the contained inputs
  */
-void tinyaiMultimodalInputFree(TinyAIMultimodalInput *input, bool freeContents)
+void hyperionMultimodalInputFree(HyperionMultimodalInput *input, bool freeContents)
 {
     if (!input) {
         return;
@@ -657,7 +668,7 @@ void tinyaiMultimodalInputFree(TinyAIMultimodalInput *input, bool freeContents)
 
         /* Free image input */
         if (input->imageInput) {
-            tinyaiImageFree(input->imageInput);
+            hyperionImageFree(input->imageInput);
         }
 
         /* Free audio input */
@@ -667,7 +678,7 @@ void tinyaiMultimodalInputFree(TinyAIMultimodalInput *input, bool freeContents)
     }
 
     /* Clear the structure */
-    memset(input, 0, sizeof(TinyAIMultimodalInput));
+    memset(input, 0, sizeof(HyperionMultimodalInput));
 }
 
 /**
@@ -679,7 +690,7 @@ void tinyaiMultimodalInputFree(TinyAIMultimodalInput *input, bool freeContents)
  * @param numClasses Number of image classes (0 if not applicable)
  * @return true on success, false on failure
  */
-bool tinyaiMultimodalOutputInit(TinyAIMultimodalOutput *output, int embedDim, int length,
+bool hyperionMultimodalOutputInit(HyperionMultimodalOutput *output, int embedDim, int length,
                                 int vocabSize, int numClasses)
 {
     if (!output || embedDim <= 0 || length <= 0) {
@@ -687,7 +698,7 @@ bool tinyaiMultimodalOutputInit(TinyAIMultimodalOutput *output, int embedDim, in
     }
 
     /* Initialize the output structure */
-    memset(output, 0, sizeof(TinyAIMultimodalOutput));
+    memset(output, 0, sizeof(HyperionMultimodalOutput));
     output->embedDim   = embedDim;
     output->length     = length;
     output->vocabSize  = vocabSize;
@@ -733,7 +744,7 @@ bool tinyaiMultimodalOutputInit(TinyAIMultimodalOutput *output, int embedDim, in
  * Free multimodal output
  * @param output Multimodal output to free
  */
-void tinyaiMultimodalOutputFree(TinyAIMultimodalOutput *output)
+void hyperionMultimodalOutputFree(HyperionMultimodalOutput *output)
 {
     if (!output) {
         return;
@@ -755,7 +766,7 @@ void tinyaiMultimodalOutputFree(TinyAIMultimodalOutput *output)
     }
 
     /* Clear the structure */
-    memset(output, 0, sizeof(TinyAIMultimodalOutput));
+    memset(output, 0, sizeof(HyperionMultimodalOutput));
 }
 
 /**
@@ -764,7 +775,7 @@ void tinyaiMultimodalOutputFree(TinyAIMultimodalOutput *output)
  * @param memoryPool Memory pool to use
  * @return true on success, false on failure
  */
-bool tinyaiMultimodalModelSetMemoryPool(TinyAIMultimodalModel *model, void *memoryPool)
+bool hyperionMultimodalModelSetMemoryPool(HyperionMultimodalModel *model, void *memoryPool)
 {
     if (!model || !memoryPool) {
         return false;
@@ -772,7 +783,7 @@ bool tinyaiMultimodalModelSetMemoryPool(TinyAIMultimodalModel *model, void *memo
 
     /* Free existing memory pool if we own it */
     if (model->memoryPool && !model->useExternalMemory) {
-        tinyaiMemoryPoolFree(model->memoryPool);
+        hyperionMemoryPoolFree(model->memoryPool);
     }
 
     model->memoryPool        = memoryPool;
@@ -787,7 +798,7 @@ bool tinyaiMultimodalModelSetMemoryPool(TinyAIMultimodalModel *model, void *memo
  * @param enable Whether to enable SIMD
  * @return true on success, false on failure
  */
-bool tinyaiMultimodalModelEnableSIMD(TinyAIMultimodalModel *model, bool enable)
+bool hyperionMultimodalModelEnableSIMD(HyperionMultimodalModel *model, bool enable)
 {
     if (!model) {
         return false;
@@ -797,7 +808,7 @@ bool tinyaiMultimodalModelEnableSIMD(TinyAIMultimodalModel *model, bool enable)
 
     /* If using our own memory pool, update it */
     if (model->memoryPool && !model->useExternalMemory) {
-        tinyaiMemoryPoolUpdateSIMD(model->memoryPool, enable);
+        hyperionMemoryPoolUpdateSIMD(model->memoryPool, enable);
     }
 
     return true;
@@ -806,11 +817,10 @@ bool tinyaiMultimodalModelEnableSIMD(TinyAIMultimodalModel *model, bool enable)
 /**
  * Get memory usage statistics
  * @param model The model to query
- * @param weightMemory Output parameter for weight memory (in bytes)
- * @param activationMemory Output parameter for activation memory (in bytes)
+ * @param weightMemory Output parameter for weight memory (in bytes) \n * @param activationMemory Output parameter for activation memory (in bytes)
  * @return true on success, false on failure
  */
-bool tinyaiMultimodalModelGetMemoryUsage(const TinyAIMultimodalModel *model, size_t *weightMemory,
+bool hyperionMultimodalModelGetMemoryUsage(const HyperionMultimodalModel *model, size_t *weightMemory,
                                          size_t *activationMemory)
 {
     if (!model || !weightMemory || !activationMemory) {

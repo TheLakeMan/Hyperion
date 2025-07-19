@@ -49,7 +49,7 @@ typedef struct MemoryRegion {
 } MemoryRegion;
 
 /* Memory pool structure */
-struct TinyAIMemoryPool {
+struct HyperionMemoryPool {
     MemoryRegion *regions;          /* List of memory regions */
     MemoryBlock  *blocks;           /* List of allocated and free blocks */
     size_t        totalSize;        /* Total size of all regions */
@@ -66,7 +66,7 @@ struct TinyAIMemoryPool {
 };
 
 /* Get default memory pool configuration */
-void tinyaiMemoryPoolGetDefaultConfig(TinyAIMemoryPoolConfig *config)
+void hyperionMemoryPoolGetDefaultConfig(HyperionMemoryPoolConfig *config)
 {
     if (config) {
         config->initialCapacity  = DEFAULT_INITIAL_CAPACITY;
@@ -115,7 +115,7 @@ static MemoryRegion *createMemoryRegion(size_t size)
 }
 
 /* Find a free block of sufficient size using best-fit */
-static MemoryBlock *findFreeBlock(TinyAIMemoryPool *pool, size_t size, size_t alignment)
+static MemoryBlock *findFreeBlock(HyperionMemoryPool *pool, size_t size, size_t alignment)
 {
     MemoryBlock *block = pool->blocks;
     MemoryBlock *bestFitBlock = NULL;
@@ -127,7 +127,7 @@ static MemoryBlock *findFreeBlock(TinyAIMemoryPool *pool, size_t size, size_t al
             void *alignedAddr = (void *)ALIGN_UP(
                 (uintptr_t)((char *)block->address + sizeof(MemoryBlock)), alignment);
             /* Calculate the total size needed within this block (header + alignment padding + user size) */
-            /* Note: The requested 'size' already includes the header size in the calling function tinyaiMemoryPoolAlloc */
+            /* Note: The requested 'size' already includes the header size in the calling function hyperionMemoryPoolAlloc */
             /* We just need to ensure the block->size can accommodate the aligned start + requested size */
             size_t requiredBlockSize = ((char *)alignedAddr - (char *)block->address) + size;
 
@@ -149,7 +149,7 @@ static MemoryBlock *findFreeBlock(TinyAIMemoryPool *pool, size_t size, size_t al
 }
 
 /* Split a block if possible */
-static void splitBlock(TinyAIMemoryPool *pool, MemoryBlock *block, size_t size)
+static void splitBlock(HyperionMemoryPool *pool, MemoryBlock *block, size_t size)
 {
     /* Only split if the remaining size is at least blockSize + sizeof(MemoryBlock) */
     size_t minSplitSize = pool->blockSize + sizeof(MemoryBlock);
@@ -178,7 +178,7 @@ static void splitBlock(TinyAIMemoryPool *pool, MemoryBlock *block, size_t size)
 }
 
 /* Add a memory region to the pool */
-static bool addMemoryRegion(TinyAIMemoryPool *pool, size_t size)
+static bool addMemoryRegion(HyperionMemoryPool *pool, size_t size)
 {
     /* Check if adding this region would exceed the max capacity */
     if (pool->maxCapacity > 0 && pool->totalSize + size > pool->maxCapacity) {
@@ -219,7 +219,7 @@ static bool addMemoryRegion(TinyAIMemoryPool *pool, size_t size)
 }
 
 /* Merge adjacent free blocks */
-static void mergeAdjacentFreeBlocks(TinyAIMemoryPool *pool)
+static void mergeAdjacentFreeBlocks(HyperionMemoryPool *pool)
 {
     MemoryBlock *block = pool->blocks;
 
@@ -250,24 +250,24 @@ static void mergeAdjacentFreeBlocks(TinyAIMemoryPool *pool)
 }
 
 /* Create a new memory pool */
-TinyAIMemoryPool *tinyaiMemoryPoolCreate(const TinyAIMemoryPoolConfig *config)
+HyperionMemoryPool *hyperionMemoryPoolCreate(const HyperionMemoryPoolConfig *config)
 {
-    TinyAIMemoryPoolConfig defaultConfig;
+    HyperionMemoryPoolConfig defaultConfig;
 
     /* Use default config if none provided */
     if (!config) {
-        tinyaiMemoryPoolGetDefaultConfig(&defaultConfig);
+        hyperionMemoryPoolGetDefaultConfig(&defaultConfig);
         config = &defaultConfig;
     }
 
     /* Allocate the pool structure */
-    TinyAIMemoryPool *pool = (TinyAIMemoryPool *)malloc(sizeof(TinyAIMemoryPool));
+    HyperionMemoryPool *pool = (HyperionMemoryPool *)malloc(sizeof(HyperionMemoryPool));
     if (!pool) {
         return NULL;
     }
 
     /* Initialize pool */
-    memset(pool, 0, sizeof(TinyAIMemoryPool));
+    memset(pool, 0, sizeof(HyperionMemoryPool));
     pool->blockSize        = config->blockSize;
     pool->maxCapacity      = config->maxCapacity;
     pool->allowGrowth      = config->allowGrowth;
@@ -283,7 +283,7 @@ TinyAIMemoryPool *tinyaiMemoryPoolCreate(const TinyAIMemoryPoolConfig *config)
 }
 
 /* Destroy a memory pool */
-void tinyaiMemoryPoolDestroy(TinyAIMemoryPool *pool)
+void hyperionMemoryPoolDestroy(HyperionMemoryPool *pool)
 {
     if (!pool) {
         return;
@@ -302,7 +302,7 @@ void tinyaiMemoryPoolDestroy(TinyAIMemoryPool *pool)
 }
 
 /* Allocate memory from pool */
-void *tinyaiMemoryPoolAlloc(TinyAIMemoryPool *pool, size_t size, size_t alignment)
+void *hyperionMemoryPoolAlloc(HyperionMemoryPool *pool, size_t size, size_t alignment)
 {
     if (!pool || size == 0) {
         return NULL;
@@ -374,7 +374,7 @@ void *tinyaiMemoryPoolAlloc(TinyAIMemoryPool *pool, size_t size, size_t alignmen
 }
 
 /* Free memory allocated from pool */
-void tinyaiMemoryPoolFree(TinyAIMemoryPool *pool, void *ptr)
+void hyperionMemoryPoolFree(HyperionMemoryPool *pool, void *ptr)
 {
     if (!pool || !ptr) {
         return;
@@ -420,7 +420,7 @@ void tinyaiMemoryPoolFree(TinyAIMemoryPool *pool, void *ptr)
 }
 
 /* Reset a memory pool */
-void tinyaiMemoryPoolReset(TinyAIMemoryPool *pool)
+void hyperionMemoryPoolReset(HyperionMemoryPool *pool)
 {
     if (!pool) {
         return;
@@ -453,7 +453,7 @@ void tinyaiMemoryPoolReset(TinyAIMemoryPool *pool)
 }
 
 /* Get memory pool statistics */
-void tinyaiMemoryPoolGetStats(TinyAIMemoryPool *pool, TinyAIMemoryPoolStats *stats)
+void hyperionMemoryPoolGetStats(HyperionMemoryPool *pool, HyperionMemoryPoolStats *stats)
 {
     if (!pool || !stats) {
         return;
@@ -482,12 +482,12 @@ void tinyaiMemoryPoolGetStats(TinyAIMemoryPool *pool, TinyAIMemoryPoolStats *sta
         /* Consider both the number of free blocks and the largest block size */
         float blockFrag = 0.0f;
         if (stats->totalBlocks > 1) {
-            blockFrag = (float)stats->freeBlocks / (float)stats->totalBlocks;
+            blockFrag = (float)stats->freeBlocks / (float)stats.totalBlocks;
         }
 
         float sizeFrag = 0.0f;
         if (stats->totalWasted > 0) {
-            sizeFrag = 1.0f - ((float)stats->largestBlock / (float)stats->totalWasted);
+            sizeFrag = 1.0f - ((float)stats.largestBlock / (float)stats.totalWasted);
         }
 
         /* Combine the metrics (higher means more fragmented) */
@@ -500,7 +500,7 @@ void tinyaiMemoryPoolGetStats(TinyAIMemoryPool *pool, TinyAIMemoryPoolStats *sta
 }
 
 /* Check if a pointer was allocated from the given pool */
-bool tinyaiMemoryPoolContains(TinyAIMemoryPool *pool, const void *ptr)
+bool hyperionMemoryPoolContains(HyperionMemoryPool *pool, const void *ptr)
 {
     if (!pool || !ptr) {
         return false;
@@ -523,7 +523,7 @@ bool tinyaiMemoryPoolContains(TinyAIMemoryPool *pool, const void *ptr)
 }
 
 /* Specialized 4-bit weight allocation */
-uint8_t *tinyaiMemoryPoolAllocWeights4Bit(TinyAIMemoryPool *pool, size_t rows, size_t cols,
+uint8_t *hyperionMemoryPoolAllocWeights4Bit(HyperionMemoryPool *pool, size_t rows, size_t cols,
                                           bool requiresSIMD)
 {
     if (!pool || rows == 0 || cols == 0) {
@@ -537,11 +537,11 @@ uint8_t *tinyaiMemoryPoolAllocWeights4Bit(TinyAIMemoryPool *pool, size_t rows, s
     /* Allocate with SIMD alignment if required */
     size_t alignment = requiresSIMD ? SIMD_ALIGNMENT : DEFAULT_ALIGNMENT;
 
-    return (uint8_t *)tinyaiMemoryPoolAlloc(pool, totalBytes, alignment);
+    return (uint8_t *)hyperionMemoryPoolAlloc(pool, totalBytes, alignment);
 }
 
 /* Specialized activation allocation */
-float *tinyaiMemoryPoolAllocActivations(TinyAIMemoryPool *pool, size_t size, bool requiresSIMD)
+float *hyperionMemoryPoolAllocActivations(HyperionMemoryPool *pool, size_t size, bool requiresSIMD)
 {
     if (!pool || size == 0) {
         return NULL;
@@ -550,11 +550,11 @@ float *tinyaiMemoryPoolAllocActivations(TinyAIMemoryPool *pool, size_t size, boo
     /* Allocate with SIMD alignment if required */
     size_t alignment = requiresSIMD ? SIMD_ALIGNMENT : DEFAULT_ALIGNMENT;
 
-    return (float *)tinyaiMemoryPoolAlloc(pool, size * sizeof(float), alignment);
+    return (float *)hyperionMemoryPoolAlloc(pool, size * sizeof(float), alignment);
 }
 
 /* Reallocate memory block */
-void *tinyaiMemoryPoolRealloc(TinyAIMemoryPool *pool, void *ptr, size_t size, size_t alignment)
+void *hyperionMemoryPoolRealloc(HyperionMemoryPool *pool, void *ptr, size_t size, size_t alignment)
 {
     if (!pool) {
         return NULL;
@@ -562,12 +562,12 @@ void *tinyaiMemoryPoolRealloc(TinyAIMemoryPool *pool, void *ptr, size_t size, si
 
     /* If ptr is NULL, this is equivalent to alloc */
     if (!ptr) {
-        return tinyaiMemoryPoolAlloc(pool, size, alignment);
+        return hyperionMemoryPoolAlloc(pool, size, alignment);
     }
 
     /* If size is 0, this is equivalent to free */
     if (size == 0) {
-        tinyaiMemoryPoolFree(pool, ptr);
+        hyperionMemoryPoolFree(pool, ptr);
         return NULL;
     }
 
@@ -584,7 +584,7 @@ void *tinyaiMemoryPoolRealloc(TinyAIMemoryPool *pool, void *ptr, size_t size, si
         void *blockStart = (char *)block->address + sizeof(MemoryBlock);
         void *blockEnd   = (char *)block->address + block->size;
 
-        if (ptr >= blockStart && ptr < blockEnd && !block->isFree) {
+        if (ptr >= blockStart && ptr < blockEnd) {
             /* Calculate the current user data size */
             size_t headerOffset = (char *)ptr - (char *)block->address;
             size_t currentSize  = block->size - headerOffset;
@@ -595,13 +595,13 @@ void *tinyaiMemoryPoolRealloc(TinyAIMemoryPool *pool, void *ptr, size_t size, si
             }
 
             /* Otherwise allocate a new block and copy the data */
-            void *newPtr = tinyaiMemoryPoolAlloc(pool, size, alignment);
+            void *newPtr = hyperionMemoryPoolAlloc(pool, size, alignment);
             if (!newPtr) {
                 return NULL;
             }
 
             memcpy(newPtr, ptr, currentSize);
-            tinyaiMemoryPoolFree(pool, ptr);
+            hyperionMemoryPoolFree(pool, ptr);
 
             return newPtr;
         }
@@ -614,7 +614,7 @@ void *tinyaiMemoryPoolRealloc(TinyAIMemoryPool *pool, void *ptr, size_t size, si
 }
 
 /* Compact pool memory to reduce fragmentation */
-bool tinyaiMemoryPoolCompact(TinyAIMemoryPool *pool)
+bool hyperionMemoryPoolCompact(HyperionMemoryPool *pool)
 {
     if (!pool) {
         return false;
@@ -629,7 +629,7 @@ bool tinyaiMemoryPoolCompact(TinyAIMemoryPool *pool)
 }
 
 /* Dump memory pool information for debugging */
-void tinyaiMemoryPoolDump(TinyAIMemoryPool *pool, bool dumpAllocations)
+void hyperionMemoryPoolDump(HyperionMemoryPool *pool, bool dumpAllocations)
 {
     if (!pool) {
         return;
@@ -646,8 +646,8 @@ void tinyaiMemoryPoolDump(TinyAIMemoryPool *pool, bool dumpAllocations)
            (double)pool->peakUsage / (1024.0 * 1024.0));
 
     /* Get detailed statistics */
-    TinyAIMemoryPoolStats stats;
-    tinyaiMemoryPoolGetStats(pool, &stats);
+    HyperionMemoryPoolStats stats;
+    hyperionMemoryPoolGetStats(pool, &stats);
 
     printf("  Fragmentation Score: %zu%%\n", stats.fragmentationScore);
     printf("  Largest Free Block: %zu bytes (%.2f MB)\n", stats.largestBlock,

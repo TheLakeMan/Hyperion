@@ -1,6 +1,6 @@
-# TinyAI Visual Question Answering (VQA) Example
+# Hyperion Visual Question Answering (VQA) Example
 
-This example demonstrates how to use TinyAI's multimodal capabilities to answer natural language questions about images. The visual question answering system combines computer vision and natural language processing to understand image content and provide relevant answers to user questions.
+This example demonstrates how to use Hyperion's multimodal capabilities to answer natural language questions about images. The visual question answering system combines computer vision and natural language processing to understand image content and provide relevant answers to user questions.
 
 ## Features
 
@@ -17,7 +17,7 @@ This example demonstrates how to use TinyAI's multimodal capabilities to answer 
 
 ## Building the Example
 
-To build the visual question answering example, ensure the `BUILD_EXAMPLES` option is set to `ON` when configuring TinyAI:
+To build the visual question answering example, ensure the `BUILD_EXAMPLES` option is set to `ON` when configuring Hyperion:
 
 ```bash
 mkdir build && cd build
@@ -169,4 +169,4 @@ The system performs best with clear, well-framed images and questions about visi
 
 ## Integration
 
-The visual question answering functionality can be integrated into your own applications by including the `visual_qa.h` header and linking against the TinyAI libraries. See the API documentation for details on how to use the VQA functions programmatically.
+The visual question answering functionality can be integrated into your own applications by including the `visual_qa.h` header and linking against the Hyperion libraries. See the API documentation for details on how to use the VQA functions programmatically.

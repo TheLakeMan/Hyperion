@@ -1,6 +1,6 @@
 /**
  * @file main.c
- * @brief Speech Recognition example for TinyAI
+ * @brief Speech Recognition example for Hyperion
  */
 
 #include "../../../core/memory.h"
@@ -25,7 +25,7 @@
 /* Display usage information */
 static void showUsage(const char *progName)
 {
-    printf("TinyAI Speech Recognition Example\n");
+    printf("Hyperion Speech Recognition Example\n");
     printf("----------------------------------\n");
     printf("Usage: %s [input_wav] [options]\n", progName);
     printf("\n");
@@ -54,7 +54,7 @@ static void showUsage(const char *progName)
 
 /* Parse command-line arguments */
 static bool parseArgs(int argc, char **argv, char **inputFile, char **outputFile,
-                      char **acousticModelPath, char **languageModelPath, TinyAIASRMode *mode,
+                      char **acousticModelPath, char **languageModelPath, HyperionASRMode *mode,
                       float *lmWeight, int *beamWidth, bool *useMic, bool *enablePunctuation,
                       bool *verbose, bool *includeTimestamps, bool *listModels)
 {
@@ -67,7 +67,7 @@ static bool parseArgs(int argc, char **argv, char **inputFile, char **outputFile
     *outputFile        = DEFAULT_OUTPUT_PATH;
     *acousticModelPath = DEFAULT_ACOUSTIC_MODEL_PATH;
     *languageModelPath = DEFAULT_LANGUAGE_MODEL_PATH;
-    *mode              = TINYAI_ASR_MODE_BALANCED;
+    *mode              = HYPERION_ASR_MODE_BALANCED;
     *lmWeight          = 0.5f;
     *beamWidth         = 8;
     *useMic            = false;
@@ -93,13 +93,13 @@ static bool parseArgs(int argc, char **argv, char **inputFile, char **outputFile
         else if (strcmp(argv[i], "--mode") == 0 && i + 1 < argc) {
             i++;
             if (strcmp(argv[i], "fast") == 0) {
-                *mode = TINYAI_ASR_MODE_FAST;
+                *mode = HYPERION_ASR_MODE_FAST;
             }
             else if (strcmp(argv[i], "accurate") == 0) {
-                *mode = TINYAI_ASR_MODE_ACCURATE;
+                *mode = HYPERION_ASR_MODE_ACCURATE;
             }
             else {
-                *mode = TINYAI_ASR_MODE_BALANCED;
+                *mode = HYPERION_ASR_MODE_BALANCED;
             }
         }
         else if (strcmp(argv[i], "--lm-weight") == 0 && i + 1 < argc) {
@@ -113,8 +113,8 @@ static bool parseArgs(int argc, char **argv, char **inputFile, char **outputFile
             *beamWidth = atoi(argv[++i]);
             if (*beamWidth < 1)
                 *beamWidth = 1;
-            if (*beamWidth > TINYAI_ASR_MAX_BEAM_WIDTH)
-                *beamWidth = TINYAI_ASR_MAX_BEAM_WIDTH;
+            if (*beamWidth > HYPERION_ASR_MAX_BEAM_WIDTH)
+                *beamWidth = HYPERION_ASR_MAX_BEAM_WIDTH;
         }
         else if (strcmp(argv[i], "--mic") == 0) {
             *useMic = true;
@@ -158,10 +158,10 @@ static bool parseArgs(int argc, char **argv, char **inputFile, char **outputFile
  * @param sampleRate Sample rate in Hz
  * @return Simulated audio data (caller must free)
  */
-static TinyAIAudioData *generateSimulatedAudio(int durationMs, int sampleRate)
+static HyperionAudioData *generateSimulatedAudio(int durationMs, int sampleRate)
 {
     /* Create audio data */
-    TinyAIAudioData *audio = (TinyAIAudioData *)malloc(sizeof(TinyAIAudioData));
+    HyperionAudioData *audio = (HyperionAudioData *)malloc(sizeof(HyperionAudioData));
     if (!audio) {
         return NULL;
     }
@@ -228,12 +228,12 @@ static TinyAIAudioData *generateSimulatedAudio(int durationMs, int sampleRate)
  * @param durationMs Duration to record in milliseconds
  * @return Simulated microphone data (caller must free)
  */
-static TinyAIAudioData *recordFromMicrophone(int durationMs)
+static HyperionAudioData *recordFromMicrophone(int durationMs)
 {
     printf("Recording from microphone (simulation)...\n");
 
     /* Generate simulated audio */
-    TinyAIAudioData *audio = generateSimulatedAudio(durationMs, 16000); /* 16kHz audio */
+    HyperionAudioData *audio = generateSimulatedAudio(durationMs, 16000); /* 16kHz audio */
 
     if (audio) {
         printf("Recorded %d ms of audio (%d samples at %d Hz).\n", durationMs,
@@ -249,7 +249,7 @@ int main(int argc, char **argv)
     char         *outputFile;
     char         *acousticModelPath;
     char         *languageModelPath;
-    TinyAIASRMode mode;
+    HyperionASRMode mode;
     float         lmWeight;
     int           beamWidth;
     bool          useMic;
@@ -271,17 +271,17 @@ int main(int argc, char **argv)
 
     /* Just list models and exit if requested */
     if (listModels) {
-        tinyaiASRPrintModelInfo();
+        hyperionASRPrintModelInfo();
         return 0;
     }
 
     /* Configure recognition */
-    TinyAIASRConfig config;
-    tinyaiASRInitConfig(&config);
+    HyperionASRConfig config;
+    hyperionASRInitConfig(&config);
 
     /* Update configuration based on command-line options */
     config.mode                 = mode;
-    config.lmType               = TINYAI_ASR_LM_BIGRAM; /* Use bigram LM by default */
+    config.lmType               = HYPERION_ASR_LM_BIGRAM; /* Use bigram LM by default */
     config.lmWeight             = lmWeight;
     config.beamWidth            = beamWidth;
     config.enablePunctuation    = enablePunctuation;
@@ -290,12 +290,12 @@ int main(int argc, char **argv)
 
     /* Display configuration */
     if (verbose) {
-        printf("TinyAI Speech Recognition\n");
+        printf("Hyperion Speech Recognition\n");
         printf("Acoustic model: %s\n", acousticModelPath);
         printf("Language model: %s\n", languageModelPath);
         printf("Configuration:\n");
-        printf("  Mode: %s\n", mode == TINYAI_ASR_MODE_FAST       ? "Fast"
-                               : mode == TINYAI_ASR_MODE_ACCURATE ? "Accurate"
+        printf("  Mode: %s\n", mode == HYPERION_ASR_MODE_FAST       ? "Fast"
+                               : mode == HYPERION_ASR_MODE_ACCURATE ? "Accurate"
                                                                   : "Balanced");
         printf("  Language model weight: %.2f\n", config.lmWeight);
         printf("  Beam width: %d\n", config.beamWidth);
@@ -305,14 +305,14 @@ int main(int argc, char **argv)
     }
 
     /* Create ASR state */
-    TinyAIASRState *asrState = tinyaiASRCreate(&config, acousticModelPath, languageModelPath);
+    HyperionASRState *asrState = hyperionASRCreate(&config, acousticModelPath, languageModelPath);
     if (!asrState) {
         printf("Error: Failed to create ASR state.\n");
         return 1;
     }
 
     /* Get audio data */
-    TinyAIAudioData *audio = NULL;
+    HyperionAudioData *audio = NULL;
 
     if (useMic) {
         /* Record from microphone (simulation) */
@@ -324,9 +324,9 @@ int main(int argc, char **argv)
             printf("Loading audio file: %s\n", inputFile);
         }
 
-        audio = (TinyAIAudioData *)malloc(sizeof(TinyAIAudioData));
+        audio = (HyperionAudioData *)malloc(sizeof(HyperionAudioData));
         if (audio) {
-            if (!tinyaiAudioLoadFile(inputFile, (TinyAIAudioFileFormat)(-1), audio)) {
+            if (!hyperionAudioLoadFile(inputFile, (HyperionAudioFileFormat)(-1), audio)) {
                 printf("Error: Failed to load audio file: %s\n", inputFile);
                 free(audio);
                 audio = NULL;
@@ -344,7 +344,7 @@ int main(int argc, char **argv)
 
     if (!audio) {
         printf("Error: Failed to get audio data.\n");
-        tinyaiASRFree(asrState);
+        hyperionASRFree(asrState);
         return 1;
     }
 
@@ -360,11 +360,11 @@ int main(int argc, char **argv)
     /* Perform recognition */
     printf("Recognizing speech (this might take a few seconds)...\n");
 
-    TinyAIASRResult result;
-    if (!tinyaiASRProcessAudio(asrState, audio, &result)) {
+    HyperionASRResult result;
+    if (!hyperionASRProcessAudio(asrState, audio, &result)) {
         printf("Error: Speech recognition failed.\n");
-        tinyaiAudioDataFree(audio);
-        tinyaiASRFree(asrState);
+        hyperionAudioDataFree(audio);
+        hyperionASRFree(asrState);
         return 1;
     }
 
@@ -375,21 +375,21 @@ int main(int argc, char **argv)
     /* Save to file if requested */
     if (outputFile) {
         printf("Saving transcript to: %s\n", outputFile);
-        if (!tinyaiASRSaveResult(&result, outputFile, includeTimestamps)) {
+        if (!hyperionASRSaveResult(&result, outputFile, includeTimestamps)) {
             printf("Error: Failed to save transcript.\n");
         }
     }
 
     /* Get word error rate against dummy reference (for testing) */
     const char *dummyReference = "this is a dummy reference for testing purposes";
-    float       wer            = tinyaiASRCalculateWER(&result, dummyReference);
+    float       wer            = hyperionASRCalculateWER(&result, dummyReference);
     if (verbose) {
         printf("\nSimulated Word Error Rate: %.1f%%\n", wer * 100.0f);
     }
 
     /* Cleanup */
-    tinyaiAudioDataFree(audio);
-    tinyaiASRFree(asrState);
+    hyperionAudioDataFree(audio);
+    hyperionASRFree(asrState);
 
     return 0;
 }

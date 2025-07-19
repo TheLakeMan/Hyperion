@@ -66,7 +66,7 @@ void run_depthwise_conv_tests()
     // Reference implementation
     printf("Running reference implementation...\n");
     clock_t start = clock();
-    tinyaiDepthwiseConv2d4BitReference(
+    hyperionDepthwiseConv2d4BitReference(
         outputRef, input, weights, biases, scaleFactors, TEST_WIDTH, TEST_HEIGHT, TEST_IN_CHANNELS,
         outWidth, outHeight, TEST_MULTIPLIER, TEST_KERNEL_SIZE, TEST_STRIDE, TEST_PADDING);
     clock_t end      = clock();
@@ -76,7 +76,7 @@ void run_depthwise_conv_tests()
     // SIMD implementation
     printf("Running SIMD implementation...\n");
     start = clock();
-    tinyaiSimdDepthwiseConv2d4Bit(outputSimd, input, weights, biases, scaleFactors, TEST_WIDTH,
+    hyperionSimdDepthwiseConv2d4Bit(outputSimd, input, weights, biases, scaleFactors, TEST_WIDTH,
                                   TEST_HEIGHT, TEST_IN_CHANNELS, outWidth, outHeight,
                                   TEST_MULTIPLIER, TEST_KERNEL_SIZE, TEST_STRIDE, TEST_PADDING);
     end              = clock();

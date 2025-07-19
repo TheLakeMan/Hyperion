@@ -1,6 +1,6 @@
 /**
  * @file image_classifier.h
- * @brief Header for image classification in TinyAI
+ * @brief Header for image classification in Hyperion
  */
 
 #ifndef TINYAI_IMAGE_CLASSIFIER_H
@@ -21,7 +21,7 @@ typedef struct {
     int   class_id;   /* Class index */
     float confidence; /* Confidence score (0-1) */
     char *label;      /* Class label (owned by classifier) */
-} TinyAIPrediction;
+} HyperionPrediction;
 
 /**
  * Image classifier configuration
@@ -40,12 +40,12 @@ typedef struct {
     /* Optimization options */
     bool useQuantization; /* Whether to use quantization */
     bool useSIMD;         /* Whether to use SIMD acceleration */
-} TinyAIClassifierConfig;
+} HyperionClassifierConfig;
 
 /**
  * Image classifier
  */
-typedef struct TinyAIImageClassifier TinyAIImageClassifier;
+typedef struct HyperionImageClassifier HyperionImageClassifier;
 
 /**
  * Create a new image classifier
@@ -53,14 +53,14 @@ typedef struct TinyAIImageClassifier TinyAIImageClassifier;
  * @param config Classifier configuration
  * @return New classifier or NULL on error
  */
-TinyAIImageClassifier *tinyaiClassifierCreate(const TinyAIClassifierConfig *config);
+HyperionImageClassifier *hyperionClassifierCreate(const HyperionClassifierConfig *config);
 
 /**
  * Free an image classifier
  *
  * @param classifier Classifier to free
  */
-void tinyaiClassifierFree(TinyAIImageClassifier *classifier);
+void hyperionClassifierFree(HyperionImageClassifier *classifier);
 
 /**
  * Classify an image file
@@ -72,8 +72,8 @@ void tinyaiClassifierFree(TinyAIImageClassifier *classifier);
  * @param numPredictions Output parameter for number of predictions stored
  * @return True on success, false on failure
  */
-bool tinyaiClassifyImage(TinyAIImageClassifier *classifier, const char *imagePath,
-                         TinyAIPrediction *predictions, int maxPredictions, int *numPredictions);
+bool hyperionClassifyImage(HyperionImageClassifier *classifier, const char *imagePath,
+                         HyperionPrediction *predictions, int maxPredictions, int *numPredictions);
 
 /**
  * Classify an in-memory image
@@ -85,8 +85,8 @@ bool tinyaiClassifyImage(TinyAIImageClassifier *classifier, const char *imagePat
  * @param numPredictions Output parameter for number of predictions stored
  * @return True on success, false on failure
  */
-bool tinyaiClassifyImageData(TinyAIImageClassifier *classifier, const TinyAIImage *image,
-                             TinyAIPrediction *predictions, int maxPredictions,
+bool hyperionClassifyImageData(HyperionImageClassifier *classifier, const HyperionImage *image,
+                             HyperionPrediction *predictions, int maxPredictions,
                              int *numPredictions);
 
 /**
@@ -95,7 +95,7 @@ bool tinyaiClassifyImageData(TinyAIImageClassifier *classifier, const TinyAIImag
  * @param classifier Classifier
  * @return Inference time in milliseconds or -1 if not available
  */
-double tinyaiClassifierGetInferenceTime(const TinyAIImageClassifier *classifier);
+double hyperionClassifierGetInferenceTime(const HyperionImageClassifier *classifier);
 
 /**
  * Get memory usage statistics
@@ -105,7 +105,7 @@ double tinyaiClassifierGetInferenceTime(const TinyAIImageClassifier *classifier)
  * @param totalMemory Output parameter for total memory (in bytes)
  * @return True on success, false on failure
  */
-bool tinyaiClassifierGetMemoryUsage(const TinyAIImageClassifier *classifier, size_t *modelMemory,
+bool hyperionClassifierGetMemoryUsage(const HyperionImageClassifier *classifier, size_t *modelMemory,
                                     size_t *totalMemory);
 
 /**
@@ -116,7 +116,7 @@ bool tinyaiClassifierGetMemoryUsage(const TinyAIImageClassifier *classifier, siz
  * @param bufferSize Size of output buffer
  * @return True on success, false on failure
  */
-bool tinyaiFormatPrediction(const TinyAIPrediction *prediction, char *buffer, size_t bufferSize);
+bool hyperionFormatPrediction(const HyperionPrediction *prediction, char *buffer, size_t bufferSize);
 
 /**
  * Enable or disable SIMD acceleration
@@ -125,10 +125,10 @@ bool tinyaiFormatPrediction(const TinyAIPrediction *prediction, char *buffer, si
  * @param enable Whether to enable SIMD
  * @return True on success, false on failure
  */
-bool tinyaiClassifierEnableSIMD(TinyAIImageClassifier *classifier, bool enable);
+bool hyperionClassifierEnableSIMD(HyperionImageClassifier *classifier, bool enable);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* TINYAI_IMAGE_CLASSIFIER_H */
+#endif /* HYPERION_IMAGE_CLASSIFIER_H */

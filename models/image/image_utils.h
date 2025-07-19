@@ -1,24 +1,24 @@
 /**
  * @file image_utils.h
- * @brief Image utility functions for TinyAI
+ * @brief Image utility functions for Hyperion
  */
 
-#ifndef TINYAI_IMAGE_UTILS_H
-#define TINYAI_IMAGE_UTILS_H
+#ifndef HYPERION_IMAGE_UTILS_H
+#define HYPERION_IMAGE_UTILS_H
 
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
 /* Forward declarations for types */
-#ifndef TINYAI_IMAGE_MODEL_H
+#ifndef HYPERION_IMAGE_MODEL_H
 #include "image_model.h"
 #else
 
 /* Forward declarations if image_model.h is already included */
-typedef enum TinyAIImageFormat             TinyAIImageFormat;
-typedef struct TinyAIImage                 TinyAIImage;
-typedef struct TinyAIImagePreprocessParams TinyAIImagePreprocessParams;
+typedef enum HyperionImageFormat             HyperionImageFormat;
+typedef struct HyperionImage                 HyperionImage;
+typedef struct HyperionImagePreprocessParams HyperionImagePreprocessParams;
 
 #endif
 
@@ -33,20 +33,20 @@ extern "C" {
  * @param format Image format
  * @return Newly allocated image, or NULL on failure
  */
-TinyAIImage *tinyaiImageCreate(int width, int height, TinyAIImageFormat format);
+HyperionImage *hyperionImageCreate(int width, int height, HyperionImageFormat format);
 
 /**
  * Free an image
  * @param image The image to free
  */
-void tinyaiImageFree(TinyAIImage *image);
+void hyperionImageFree(HyperionImage *image);
 
 /**
  * Create a copy of an image
  * @param image The image to copy
  * @return Newly allocated copy of image, or NULL on failure
  */
-TinyAIImage *tinyaiImageCopy(const TinyAIImage *image);
+HyperionImage *hyperionImageCopy(const HyperionImage *image);
 
 /**
  * Resize an image using bilinear interpolation
@@ -55,14 +55,14 @@ TinyAIImage *tinyaiImageCopy(const TinyAIImage *image);
  * @param newHeight New height
  * @return Newly allocated resized image, or NULL on failure
  */
-TinyAIImage *tinyaiImageResize(const TinyAIImage *image, int newWidth, int newHeight);
+HyperionImage *hyperionImageResize(const HyperionImage *image, int newWidth, int newHeight);
 
 /**
  * Convert image to grayscale
  * @param image The image to convert
  * @return Newly allocated grayscale image, or NULL on failure
  */
-TinyAIImage *tinyaiImageToGrayscale(const TinyAIImage *image);
+HyperionImage *hyperionImageToGrayscale(const HyperionImage *image);
 
 /**
  * Convert image to float array
@@ -71,13 +71,13 @@ TinyAIImage *tinyaiImageToGrayscale(const TinyAIImage *image);
  * @param normalize Whether to normalize to 0-1 range
  * @return true on success, false on failure
  */
-bool tinyaiImageToFloatArray(const TinyAIImage *image, float *output, bool normalize);
+bool hyperionImageToFloatArray(const HyperionImage *image, float *output, bool normalize);
 
 /**
  * Set default preprocessing parameters
  * @param params The parameters structure to initialize
  */
-void tinyaiImagePreprocessParamsDefault(TinyAIImagePreprocessParams *params);
+void hyperionImagePreprocessParamsDefault(HyperionImagePreprocessParams *params);
 
 /**
  * Preprocess an image for model input
@@ -85,15 +85,15 @@ void tinyaiImagePreprocessParamsDefault(TinyAIImagePreprocessParams *params);
  * @param params Preprocessing parameters
  * @return Newly allocated preprocessed image, or NULL on failure
  */
-TinyAIImage *tinyaiImagePreprocess(const TinyAIImage                 *image,
-                                   const TinyAIImagePreprocessParams *params);
+HyperionImage *hyperionImagePreprocess(const HyperionImage                 *image,
+                                   const HyperionImagePreprocessParams *params);
 
 /**
  * Load an image from a file
  * @param filepath Path to the image file
  * @return Newly allocated image, or NULL on failure
  */
-TinyAIImage *tinyaiImageLoadFromFile(const char *filepath);
+HyperionImage *hyperionImageLoadFromFile(const char *filepath);
 
 /**
  * Save an image to a file
@@ -102,7 +102,7 @@ TinyAIImage *tinyaiImageLoadFromFile(const char *filepath);
  * @param format Output format (jpg, png, bmp, tga)
  * @return true on success, false on failure
  */
-bool tinyaiImageSaveToFile(const TinyAIImage *image, const char *filepath, const char *format);
+bool hyperionImageSaveToFile(const HyperionImage *image, const char *filepath, const char *format);
 
 /**
  * Apply a simple convolution filter to an image
@@ -111,7 +111,7 @@ bool tinyaiImageSaveToFile(const TinyAIImage *image, const char *filepath, const
  * @param kernelSize The size of the kernel (must be odd)
  * @return Newly allocated filtered image, or NULL on failure
  */
-TinyAIImage *tinyaiImageApplyFilter(const TinyAIImage *image, const float *kernel, int kernelSize);
+HyperionImage *hyperionImageApplyFilter(const HyperionImage *image, const float *kernel, int kernelSize);
 
 /**
  * Extract a crop from an image
@@ -122,7 +122,7 @@ TinyAIImage *tinyaiImageApplyFilter(const TinyAIImage *image, const float *kerne
  * @param height Height of crop
  * @return Newly allocated cropped image, or NULL on failure
  */
-TinyAIImage *tinyaiImageCrop(const TinyAIImage *image, int x, int y, int width, int height);
+HyperionImage *hyperionImageCrop(const HyperionImage *image, int x, int y, int width, int height);
 
 /**
  * Rotate an image
@@ -130,10 +130,10 @@ TinyAIImage *tinyaiImageCrop(const TinyAIImage *image, int x, int y, int width, 
  * @param angleDegrees Rotation angle in degrees
  * @return Newly allocated rotated image, or NULL on failure
  */
-TinyAIImage *tinyaiImageRotate(const TinyAIImage *image, float angleDegrees);
+HyperionImage *hyperionImageRotate(const HyperionImage *image, float angleDegrees);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* TINYAI_IMAGE_UTILS_H */
+#endif /* HYPERION_IMAGE_UTILS_H */

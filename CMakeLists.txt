@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
-# TinyAI Project
-project(TinyAI VERSION 0.1.0 LANGUAGES C)
+# Hyperion Project
+project(Hyperion VERSION 0.1.0 LANGUAGES C)
 
 # Set C standard
 set(CMAKE_C_STANDARD 99)
@@ -42,51 +42,51 @@ include_directories(
 )
 
 # Collect source files
-file(GLOB_RECURSE TINYAI_CORE_SOURCES "core/*.c")
-file(GLOB_RECURSE TINYAI_UTILS_SOURCES "utils/*.c")
-file(GLOB_RECURSE TINYAI_MODELS_SOURCES "models/*.c")
+file(GLOB_RECURSE HYPERION_CORE_SOURCES "core/*.c")
+file(GLOB_RECURSE HYPERION_UTILS_SOURCES "utils/*.c")
+file(GLOB_RECURSE HYPERION_MODELS_SOURCES "models/*.c")
 # Explicitly list interface sources for the main executable (excluding interface/main.c)
-set(TINYAI_MAIN_INTERFACE_SOURCES
+set(HYPERION_MAIN_INTERFACE_SOURCES
     interface/cli.c
     interface/web_server.c  # Web server interface
-    # Add other interface files here if needed for tinyai.exe
+    # Add other interface files here if needed for hyperion.exe
 )
 
 # Define MCP_ENABLED to enable Model Context Protocol support
 add_compile_definitions(MCP_ENABLED)
 
-# Define the TINYAI_BUILD preprocessor symbol to exclude main() from picol.c
-add_compile_definitions(TINYAI_BUILD)
+# Define the HYPERION_BUILD preprocessor symbol to exclude main() from picol.c
+add_compile_definitions(HYPERION_BUILD)
 
 
 # Main executable
-add_executable(tinyai
+add_executable(hyperion
     main.c # Add main.c back explicitly
-    ${TINYAI_CORE_SOURCES} # Now including picol.c with TINYAI_BUILD defined
-    ${TINYAI_UTILS_SOURCES}
-    ${TINYAI_MODELS_SOURCES}
-    ${TINYAI_MAIN_INTERFACE_SOURCES} # Use the explicit list
+    ${HYPERION_CORE_SOURCES} # Now including picol.c with HYPERION_BUILD defined
+    ${HYPERION_UTILS_SOURCES}
+    ${HYPERION_MODELS_SOURCES}
+    ${HYPERION_MAIN_INTERFACE_SOURCES} # Use the explicit list
     vendor/mongoose/mongoose.c # Add Mongoose source
 )
 
 # Check if math library is needed (Unix/Linux)
 if(UNIX)
-    target_link_libraries(tinyai PRIVATE m)
+    target_link_libraries(hyperion PRIVATE m)
 endif()
 
 # Link network library if needed (e.g., for Mongoose)
 if(WIN32)
-    target_link_libraries(tinyai PRIVATE ws2_32)
+    target_link_libraries(hyperion PRIVATE ws2_32)
 endif()
 
 # Create install rules
-install(TARGETS tinyai
+install(TARGETS hyperion
     RUNTIME DESTINATION bin
 )
 
 # Install data directories
 install(DIRECTORY data/
-    DESTINATION share/tinyai/data
+    DESTINATION share/hyperion/data
     PATTERN "*.md" EXCLUDE
 )
 
@@ -95,43 +95,43 @@ install(FILES
     README.md
     ARCHITECTURE.md
     IMPLEMENTATION_PLAN.md
-    DESTINATION share/doc/tinyai
+    DESTINATION share/doc/hyperion
 )
 
 # Enable testing
 enable_testing()
 
 # Collect test source files (excluding main)
-file(GLOB TINYAI_TEST_SOURCES "tests/test_*.c")
+file(GLOB HYPERION_TEST_SOURCES "tests/test_*.c")
 
 # Test executable
-add_executable(tinyai_tests
+add_executable(hyperion_tests
     tests/test_main.c # Explicitly list main test file
-    ${TINYAI_TEST_SOURCES} # Add other test files
-    ${TINYAI_CORE_SOURCES} # Now including picol.c with TINYAI_BUILD defined
-    ${TINYAI_UTILS_SOURCES}
-    ${TINYAI_MODELS_SOURCES}
+    ${HYPERION_TEST_SOURCES} # Add other test files
+    ${HYPERION_CORE_SOURCES} # Now including picol.c with HYPERION_BUILD defined
+    ${HYPERION_UTILS_SOURCES}
+    ${HYPERION_MODELS_SOURCES}
     # Add interface/cli.c explicitly as it's needed by tests but not in other lists
     interface/cli.c 
 )
 
 # Link math library for tests if needed
 if(UNIX)
-    target_link_libraries(tinyai_tests m)
+    target_link_libraries(hyperion_tests m)
 endif()
 
 # Add tests
-add_test(NAME CoreTests COMMAND tinyai_tests core)
-add_test(NAME UtilsTests COMMAND tinyai_tests utils)
-add_test(NAME ModelsTests COMMAND tinyai_tests models)
-add_test(NAME SimdTests COMMAND tinyai_tests simd)
-add_test(NAME SparseMatrixTests COMMAND tinyai_tests sparse)
-add_test(NAME MultimodalTests COMMAND tinyai_tests multimodal)
+add_test(NAME CoreTests COMMAND hyperion_tests core)
+add_test(NAME UtilsTests COMMAND hyperion_tests utils)
+add_test(NAME ModelsTests COMMAND hyperion_tests models)
+add_test(NAME SimdTests COMMAND hyperion_tests simd)
+add_test(NAME SparseMatrixTests COMMAND hyperion_tests sparse)
+add_test(NAME MultimodalTests COMMAND hyperion_tests multimodal)
 
 # Sparse matrix operations test executable
 add_executable(sparse_matrix_test
     tests/test_sparse_ops.c
-    ${TINYAI_UTILS_SOURCES}
+    ${HYPERION_UTILS_SOURCES}
 )
 
 # Link math library for sparse matrix test if needed
@@ -144,7 +144,7 @@ add_executable(image_test
     models/image/image_test.c
     models/image/image_model.c
     models/image/image_utils.c
-    ${TINYAI_UTILS_SOURCES}
+    ${HYPERION_UTILS_SOURCES}
 )
 
 # Link math library for image test if needed
@@ -159,7 +159,7 @@ add_executable(audio_test
     # TODO: Implement these audio module files:
     # models/audio/audio_features.c
     # models/audio/audio_utils.c
-    ${TINYAI_UTILS_SOURCES}
+    ${HYPERION_UTILS_SOURCES}
 )
 
 # Link math library for audio test if needed
@@ -172,7 +172,7 @@ add_executable(attention_test
     tests/test_attention.c
     models/text/attention.c
     models/text/attention.h
-    ${TINYAI_UTILS_SOURCES}
+    ${HYPERION_UTILS_SOURCES}
 )
 
 # Link math library for attention test if needed
@@ -185,7 +185,7 @@ add_executable(simd_benchmark_test
     tests/test_simd_benchmark.c
     utils/simd_benchmark.c
     models/text/attention.c
-    ${TINYAI_UTILS_SOURCES}
+    ${HYPERION_UTILS_SOURCES}
 )
 
 # Link math library for SIMD benchmark test if needed
@@ -200,7 +200,7 @@ add_test(NAME SimdBenchmarkTest COMMAND simd_benchmark_test)
 add_executable(cache_opt_test
     tests/test_cache_opt.c
     utils/cache_opt.c
-    ${TINYAI_UTILS_SOURCES}
+    ${HYPERION_UTILS_SOURCES}
 )
 
 # Link math library for cache optimization test if needed
@@ -216,8 +216,8 @@ add_executable(multimodal_test
     tests/test_multimodal.c
     models/multimodal/multimodal_model.c
     models/multimodal/fusion.c
-    ${TINYAI_UTILS_SOURCES}
-    ${TINYAI_CORE_SOURCES}
+    ${HYPERION_UTILS_SOURCES}
+    ${HYPERION_CORE_SOURCES}
     models/image/image_model.c
     models/image/image_utils.c
 )
@@ -235,7 +235,7 @@ add_executable(mmap_loader_test
     tests/test_mmap_loader.c
     utils/mmap_loader.c
     utils/forward_scheduler.c
-    ${TINYAI_UTILS_SOURCES}
+    ${HYPERION_UTILS_SOURCES}
 )
 
 # Link math library for memory-mapped model loader test if needed
@@ -252,7 +252,7 @@ add_executable(oom_handling_test
     utils/memory_pool.c
     utils/mmap_loader.c
     utils/forward_scheduler.c
-    ${TINYAI_UTILS_SOURCES}
+    ${HYPERION_UTILS_SOURCES}
 )
 
 # Link math library for OOM test if needed
@@ -267,11 +267,11 @@ add_test(NAME OutOfMemoryHandlingTest COMMAND oom_handling_test)
 add_subdirectory(examples)
 
 # Create a package
-set(CPACK_PACKAGE_NAME "tinyai")
-set(CPACK_PACKAGE_VENDOR "TinyAI Team")
+set(CPACK_PACKAGE_NAME "hyperion")
+set(CPACK_PACKAGE_VENDOR "Hyperion Team")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Ultra-Lightweight AI Framework")
 set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
-set(CPACK_PACKAGE_INSTALL_DIRECTORY "TinyAI")
+set(CPACK_PACKAGE_INSTALL_DIRECTORY "Hyperion")
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
 set(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
 

@@ -6,8 +6,8 @@
  * the image model implementation. These are not part of the public API.
  */
 
-#ifndef TINYAI_IMAGE_MODEL_INTERNAL_H
-#define TINYAI_IMAGE_MODEL_INTERNAL_H
+#ifndef HYPERION_IMAGE_MODEL_INTERNAL_H
+#define HYPERION_IMAGE_MODEL_INTERNAL_H
 
 #include "image_model.h"
 #include <float.h>
@@ -66,7 +66,7 @@ typedef struct Layer {
 /**
  * Internal model structure - matches the definition in image_model.c
  */
-struct TinyAIImageModel {
+struct HyperionImageModel {
     int modelType;
     int inputWidth;
     int inputHeight;
@@ -88,7 +88,7 @@ struct TinyAIImageModel {
     int    numLabels;
 
     /* Preprocessing parameters */
-    TinyAIImagePreprocessParams preprocess;
+    HyperionImagePreprocessParams preprocess;
 };
 
 /**
@@ -98,10 +98,10 @@ struct TinyAIImageModel {
  * @param output Output buffer for classification results
  * @return true on success, false on failure
  */
-bool tinyaiImageModelForwardPass(const TinyAIImageModel *model, const float *input, float *output);
+bool hyperionImageModelForwardPass(const HyperionImageModel *model, const float *input, float *output);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* TINYAI_IMAGE_MODEL_INTERNAL_H */
+#endif /* HYPERION_IMAGE_MODEL_INTERNAL_H */

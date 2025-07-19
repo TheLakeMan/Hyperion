@@ -7,7 +7,7 @@
 // Test basic performance tracking
 static void test_basic_tracking()
 {
-    TinyAIPerformanceConfig config = {.track_execution_time  = true,
+    HyperionPerformanceConfig config = {.track_execution_time  = true,
                                       .track_memory_usage    = true,
                                       .track_cpu_usage       = true,
                                       .track_cache_usage     = true,
@@ -15,33 +15,33 @@ static void test_basic_tracking()
                                       .sample_interval_ms    = 100,
                                       .analysis_window_ms    = 1000};
 
-    TinyAIPerformanceAnalysis *analysis = tinyaiCreatePerformanceAnalysis(&config);
+    HyperionPerformanceAnalysis *analysis = hyperionCreatePerformanceAnalysis(&config);
     assert(analysis != NULL);
 
     // Record baseline metrics
-    TinyAIPerformanceMetrics baseline = {.execution_time  = 100.0,
+    HyperionPerformanceMetrics baseline = {.execution_time  = 100.0,
                                          .memory_usage    = 1024 * 1024,
                                          .cpu_usage       = 50.0,
                                          .cache_misses    = 1000,
                                          .cache_hits      = 9000,
                                          .cache_hit_ratio = 0.9};
-    tinyaiRecordMetrics(analysis, &baseline);
+    hyperionRecordMetrics(analysis, &baseline);
     analysis->baseline = baseline;
 
     // Record improved metrics
-    TinyAIPerformanceMetrics improved = {.execution_time  = 50.0,
+    HyperionPerformanceMetrics improved = {.execution_time  = 50.0,
                                          .memory_usage    = 512 * 1024,
                                          .cpu_usage       = 25.0,
                                          .cache_misses    = 500,
                                          .cache_hits      = 9500,
                                          .cache_hit_ratio = 0.95};
-    tinyaiRecordMetrics(analysis, &improved);
+    hyperionRecordMetrics(analysis, &improved);
 
     // Analyze impact
-    tinyaiAnalyzeOptimizationImpact(analysis);
+    hyperionAnalyzeOptimizationImpact(analysis);
 
     // Check impact
-    TinyAIOptimizationImpact impact = tinyaiGetOptimizationImpact(analysis);
+    HyperionOptimizationImpact impact = hyperionGetOptimizationImpact(analysis);
     assert(impact.speedup_factor == 2.0);    // 100ms -> 50ms
     assert(impact.memory_reduction == 50.0); // 1MB -> 512KB
     assert(impact.cpu_efficiency == 2.0);    // 50% -> 25%
@@ -49,22 +49,22 @@ static void test_basic_tracking()
     assert(impact.is_beneficial);
 
     // Cleanup
-    tinyaiFreePerformanceAnalysis(analysis);
+    hyperionFreePerformanceAnalysis(analysis);
 }
 
 // Test performance sampling
 static void test_performance_sampling()
 {
-    TinyAIPerformanceAnalysis *analysis = tinyaiCreatePerformanceAnalysis(NULL);
+    HyperionPerformanceAnalysis *analysis = hyperionCreatePerformanceAnalysis(NULL);
     assert(analysis != NULL);
 
     // Take multiple samples
     for (int i = 0; i < 10; i++) {
-        tinyaiTakePerformanceSample(analysis);
+        hyperionTakePerformanceSample(analysis);
     }
 
     // Get current metrics
-    TinyAIPerformanceMetrics metrics = tinyaiGetPerformanceMetrics(analysis);
+    HyperionPerformanceMetrics metrics = hyperionGetPerformanceMetrics(analysis);
     assert(metrics.execution_time >= 0.0);
     assert(metrics.memory_usage >= 0);
     assert(metrics.cpu_usage >= 0.0);
@@ -72,13 +72,13 @@ static void test_performance_sampling()
     assert(metrics.cache_misses >= 0);
 
     // Cleanup
-    tinyaiFreePerformanceAnalysis(analysis);
+    hyperionFreePerformanceAnalysis(analysis);
 }
 
 // Test performance reporting
 static void test_performance_reporting()
 {
-    TinyAIPerformanceAnalysis *analysis = tinyaiCreatePerformanceAnalysis(NULL);
+    HyperionPerformanceAnalysis *analysis = hyperionCreatePerformanceAnalysis(NULL);
     assert(analysis != NULL);
 
     // Set baseline metrics
@@ -94,50 +94,50 @@ static void test_performance_reporting()
     analysis->current.cache_hit_ratio = 0.95;
 
     // Generate report
-    tinyaiGeneratePerformanceReport(analysis, "performance_report.txt");
+    hyperionGeneratePerformanceReport(analysis, "performance_report.txt");
 
     // Cleanup
-    tinyaiFreePerformanceAnalysis(analysis);
+    hyperionFreePerformanceAnalysis(analysis);
 }
 
 // Test configuration changes
 static void test_configuration()
 {
-    TinyAIPerformanceAnalysis *analysis = tinyaiCreatePerformanceAnalysis(NULL);
+    HyperionPerformanceAnalysis *analysis = hyperionCreatePerformanceAnalysis(NULL);
     assert(analysis != NULL);
 
     // Test enabling/disabling
-    tinyaiEnablePerformanceAnalysis(analysis, false);
-    TinyAIPerformanceMetrics metrics = {.execution_time  = 100.0,
+    hyperionEnablePerformanceAnalysis(analysis, false);
+    HyperionPerformanceMetrics metrics = {.execution_time  = 100.0,
                                         .memory_usage    = 1024 * 1024,
                                         .cpu_usage       = 50.0,
                                         .cache_misses    = 1000,
                                         .cache_hits      = 9000,
                                         .cache_hit_ratio = 0.9};
-    tinyaiRecordMetrics(analysis, &metrics);
-    assert(tinyaiGetPerformanceMetrics(analysis).execution_time == 0.0);
+    hyperionRecordMetrics(analysis, &metrics);
+    assert(hyperionGetPerformanceMetrics(analysis).execution_time == 0.0);
 
     // Test configuration changes
-    TinyAIPerformanceConfig new_config = {.track_execution_time  = true,
+    HyperionPerformanceConfig new_config = {.track_execution_time  = true,
                                           .track_memory_usage    = true,
                                           .track_cpu_usage       = true,
                                           .track_cache_usage     = true,
                                           .analyze_optimizations = true,
                                           .sample_interval_ms    = 50,
                                           .analysis_window_ms    = 500};
-    tinyaiSetPerformanceConfig(analysis, &new_config);
-    tinyaiEnablePerformanceAnalysis(analysis, true);
-    tinyaiRecordMetrics(analysis, &metrics);
-    assert(tinyaiGetPerformanceMetrics(analysis).execution_time == 100.0);
+    hyperionSetPerformanceConfig(analysis, &new_config);
+    hyperionEnablePerformanceAnalysis(analysis, true);
+    hyperionRecordMetrics(analysis, &metrics);
+    assert(hyperionGetPerformanceMetrics(analysis).execution_time == 100.0);
 
     // Cleanup
-    tinyaiFreePerformanceAnalysis(analysis);
+    hyperionFreePerformanceAnalysis(analysis);
 }
 
 // Test performance trend
 static void test_performance_trend()
 {
-    TinyAIPerformanceAnalysis *analysis = tinyaiCreatePerformanceAnalysis(NULL);
+    HyperionPerformanceAnalysis *analysis = hyperionCreatePerformanceAnalysis(NULL);
     assert(analysis != NULL);
 
     // Set baseline and current metrics
@@ -145,11 +145,11 @@ static void test_performance_trend()
     analysis->current.execution_time  = 50.0;
 
     // Check trend
-    double trend = tinyaiGetPerformanceTrend(analysis);
+    double trend = hyperionGetPerformanceTrend(analysis);
     assert(trend == 0.5); // 50ms / 100ms
 
     // Cleanup
-    tinyaiFreePerformanceAnalysis(analysis);
+    hyperionFreePerformanceAnalysis(analysis);
 }
 
 int main()

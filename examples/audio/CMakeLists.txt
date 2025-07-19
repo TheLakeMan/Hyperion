@@ -1,4 +1,4 @@
-# Audio Examples for TinyAI
+# Audio Examples for Hyperion
 
 # Voice Activity Detection example
 add_subdirectory(voice_detection)
@@ -26,5 +26,5 @@ file(COPY
 
 # Install audio examples and data
 install(DIRECTORY ${AUDIO_SAMPLE_DIR}
-    DESTINATION share/tinyai/examples
+    DESTINATION share/hyperion/examples
 )

@@ -14,9 +14,9 @@ target_include_directories(media_tagging PRIVATE
 
 # Link libraries
 target_link_libraries(media_tagging PRIVATE
-    tinyai_core
-    tinyai_models
-    tinyai_utils
+    hyperion_core
+    hyperion_models
+    hyperion_utils
 )
 
 # Set optimization flags

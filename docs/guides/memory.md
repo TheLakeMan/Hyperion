@@ -1,8 +1,8 @@
-# TinyAI Memory Guide
+# Hyperion Memory Guide
 
 ## Overview
 
-This comprehensive guide covers all aspects of memory management and optimization in TinyAI, from basic allocation strategies to advanced optimization techniques.
+This comprehensive guide covers all aspects of memory management and optimization in Hyperion, from basic allocation strategies to advanced optimization techniques.
 
 ## Table of Contents
 1. [Basic Memory Management](#basic-memory-management)
@@ -32,8 +32,8 @@ This comprehensive guide covers all aspects of memory management and optimizatio
    - Best for fixed-size, frequently accessed data
    - Low overhead, predictable performance
    ```c
-   TinyAIMemoryConfig config = {
-       .strategy = TINYAI_MEMORY_STRATEGY_STATIC,
+   HyperionMemoryConfig config = {
+       .strategy = HYPERION_MEMORY_STRATEGY_STATIC,
        .initial_pool_size = 1024 * 1024  // 1MB
    };
    ```
@@ -42,8 +42,8 @@ This comprehensive guide covers all aspects of memory management and optimizatio
    - Best for frequent allocations/deallocations
    - Reduces fragmentation
    ```c
-   TinyAIMemoryConfig config = {
-       .strategy = TINYAI_MEMORY_STRATEGY_POOLED,
+   HyperionMemoryConfig config = {
+       .strategy = HYPERION_MEMORY_STRATEGY_POOLED,
        .initial_pool_size = 2 * 1024 * 1024,  // 2MB
        .block_size = 4096  // 4KB blocks
    };
@@ -53,8 +53,8 @@ This comprehensive guide covers all aspects of memory management and optimizatio
    - Best for unpredictable memory needs
    - More flexible but higher overhead
    ```c
-   TinyAIMemoryConfig config = {
-       .strategy = TINYAI_MEMORY_STRATEGY_DYNAMIC,
+   HyperionMemoryConfig config = {
+       .strategy = HYPERION_MEMORY_STRATEGY_DYNAMIC,
        .track_allocations = true
    };
    ```
@@ -63,8 +63,8 @@ This comprehensive guide covers all aspects of memory management and optimizatio
    - Combines multiple strategies
    - Optimizes for different use cases
    ```c
-   TinyAIMemoryConfig config = {
-       .strategy = TINYAI_MEMORY_STRATEGY_HYBRID,
+   HyperionMemoryConfig config = {
+       .strategy = HYPERION_MEMORY_STRATEGY_HYBRID,
        .initial_pool_size = 1024 * 1024,
        .enable_optimization = true
    };
@@ -75,16 +75,16 @@ This comprehensive guide covers all aspects of memory management and optimizatio
 1. **Creating and Using Pools**
    ```c
    // Create a memory pool
-   TinyAIMemoryPool* pool = tinyai_create_pool(
+   HyperionMemoryPool* pool = hyperion_create_pool(
        1024 * 1024,  // 1MB total size
        4096          // 4KB block size
    );
 
    // Allocate from pool
-   void* data = tinyai_pool_alloc(pool, size);
+   void* data = hyperion_pool_alloc(pool, size);
 
    // Free pool memory
-   tinyai_pool_free(pool, data);
+   hyperion_pool_free(pool, data);
    ```
 
 2. **Pool Configuration**
@@ -98,18 +98,18 @@ This comprehensive guide covers all aspects of memory management and optimizatio
 
 1. **Basic Usage**
    ```c
-   #include <tinyai/utils/mmap_loader.h>
+   #include <hyperion/utils/mmap_loader.h>
 
    // Create a default configuration
-   TinyAIMmapConfig config = tinyaiCreateDefaultMmapConfig();
+   HyperionMmapConfig config = hyperionCreateDefaultMmapConfig();
 
    // Open the model with memory mapping
-   TinyAIMappedModel* model = tinyaiOpenMappedModel("path/to/model.tmai", &config);
+   HyperionMappedModel* model = hyperionOpenMappedModel("path/to/model.tmai", &config);
    ```
 
 2. **Configuration Options**
    ```c
-   TinyAIMmapConfig config = tinyaiCreateDefaultMmapConfig();
+   HyperionMmapConfig config = hyperionCreateDefaultMmapConfig();
    config.maxCacheSize = 100 * 1024 * 1024;  // 100MB
    config.prefetchEnabled = true;
    config.prefetchThreads = 2;
@@ -122,9 +122,9 @@ This comprehensive guide covers all aspects of memory management and optimizatio
 1. **Basic Setup**
    ```c
    // Create a scheduler with memory limit
-   TinyAIForwardScheduler* scheduler = tinyaiCreateForwardScheduler(
+   HyperionForwardScheduler* scheduler = hyperionCreateForwardScheduler(
        model,                  // Mapped model
-       TINYAI_EXEC_MEMORY_OPT, // Memory optimization mode
+       HYPERION_EXEC_MEMORY_OPT, // Memory optimization mode
        100 * 1024 * 1024      // 100MB memory limit
    );
    ```
@@ -132,19 +132,19 @@ This comprehensive guide covers all aspects of memory management and optimizatio
 2. **Layer Dependencies**
    ```c
    // Sequential dependency
-   tinyaiAddLayerToSchedule(scheduler, layerIndex, prevLayer, 
-                           TINYAI_DEP_SEQUENTIAL, outputSize);
+   hyperionAddLayerToSchedule(scheduler, layerIndex, prevLayer, 
+                           HYPERION_DEP_SEQUENTIAL, outputSize);
 
    // Residual connection
-   tinyaiAddLayerToSchedule(scheduler, layerIndex, residualLayer,
-                           TINYAI_DEP_RESIDUAL, outputSize);
+   hyperionAddLayerToSchedule(scheduler, layerIndex, residualLayer,
+                           HYPERION_DEP_RESIDUAL, outputSize);
    ```
 
 ### Progressive Loading
 
 1. **Configuration**
    ```c
-   TinyAIProgressiveConfig config = {
+   HyperionProgressiveConfig config = {
        .enable_prefetch = true,
        .prefetch_window = 2,
        .enable_unload = true,
@@ -154,15 +154,15 @@ This comprehensive guide covers all aspects of memory management and optimizatio
 
 2. **Implementation**
    ```c
-   TinyAIProgressiveLoader* loader = tinyai_create_progressive_loader(&config);
+   HyperionProgressiveLoader* loader = hyperion_create_progressive_loader(&config);
 
    for (int i = 0; i < num_layers; i++) {
-       if (!tinyai_load_layer(loader, i)) {
+       if (!hyperion_load_layer(loader, i)) {
            break;
        }
        process_layer(i);
        if (memory_pressure) {
-           tinyai_unload_layer(loader, i - 2);
+           hyperion_unload_layer(loader, i - 2);
        }
    }
    ```
@@ -170,28 +170,28 @@ This comprehensive guide covers all aspects of memory management and optimizatio
 ### Mixed Precision Quantization
 
 ```c
-TinyAIMixedPrecisionConfig mpConfig;
-tinyaiInitMixedPrecisionConfig(&mpConfig);
+HyperionMixedPrecisionConfig mpConfig;
+hyperionInitMixedPrecisionConfig(&mpConfig);
 
-mpConfig.embeddingPrecision = TINYAI_PREC_INT8;
-mpConfig.attentionPrecision = TINYAI_PREC_INT4;
-mpConfig.ffnPrecision = TINYAI_PREC_INT4;
-mpConfig.outputPrecision = TINYAI_PREC_FP16;
+mpConfig.embeddingPrecision = HYPERION_PREC_INT8;
+mpConfig.attentionPrecision = HYPERION_PREC_INT4;
+mpConfig.ffnPrecision = HYPERION_PREC_INT4;
+mpConfig.outputPrecision = HYPERION_PREC_FP16;
 
-tinyaiApplyMixedPrecision(model, &mpConfig);
+hyperionApplyMixedPrecision(model, &mpConfig);
 ```
 
 ### Model Pruning
 
 ```c
-TinyAIPruneConfig pruneConfig;
-tinyaiInitPruneConfig(&pruneConfig);
+HyperionPruneConfig pruneConfig;
+hyperionInitPruneConfig(&pruneConfig);
 
-pruneConfig.method = TINYAI_PRUNE_MAGNITUDE;
+pruneConfig.method = HYPERION_PRUNE_MAGNITUDE;
 pruneConfig.sparsity = 0.7;
 pruneConfig.blockSize = 4;
 
-tinyaiPruneModel(model, &pruneConfig);
+hyperionPruneModel(model, &pruneConfig);
 ```
 
 ## Memory Monitoring
@@ -201,10 +201,10 @@ tinyaiPruneModel(model, &pruneConfig);
 1. **Basic Monitoring**
    ```c
    // Enable memory tracking
-   tinyai_enable_memory_tracking(true);
+   hyperion_enable_memory_tracking(true);
 
    // Get memory statistics
-   TinyAIMemoryStats stats = tinyai_get_memory_stats();
+   HyperionMemoryStats stats = hyperion_get_memory_stats();
    printf("Current usage: %zu bytes\n", stats.current_usage);
    printf("Peak usage: %zu bytes\n", stats.peak_usage);
    ```
@@ -212,7 +212,7 @@ tinyaiPruneModel(model, &pruneConfig);
 2. **Detailed Analysis**
    ```c
    // Generate memory report
-   tinyai_generate_memory_report("memory_report.txt");
+   hyperion_generate_memory_report("memory_report.txt");
    ```
 
 ### Performance Analysis
@@ -227,10 +227,10 @@ tinyaiPruneModel(model, &pruneConfig);
 2. **Optimization Impact**
    ```c
    // Get current memory usage
-   size_t memUsage = tinyaiGetSchedulerMemoryUsage(scheduler);
+   size_t memUsage = hyperionGetSchedulerMemoryUsage(scheduler);
 
    // Get peak memory usage
-   size_t peakMemUsage = tinyaiGetSchedulerPeakMemoryUsage(scheduler);
+   size_t peakMemUsage = hyperionGetSchedulerPeakMemoryUsage(scheduler);
    ```
 
 ## Best Practices
@@ -253,11 +253,11 @@ tinyaiPruneModel(model, &pruneConfig);
 
 1. **Memory Pool Usage**
    ```c
-   TinyAIMemoryPool* pool = tinyai_create_pool(pool_size, object_size);
+   HyperionMemoryPool* pool = hyperion_create_pool(pool_size, object_size);
    for (int i = 0; i < num_objects; i++) {
-       void* obj = tinyai_pool_alloc(pool, object_size);
+       void* obj = hyperion_pool_alloc(pool, object_size);
        // Use object
-       tinyai_pool_free(pool, obj);
+       hyperion_pool_free(pool, obj);
    }
    ```
 
@@ -297,4 +297,4 @@ tinyaiPruneModel(model, &pruneConfig);
 - [ ] Implement cleanup procedures
 - [ ] Consider mixed precision quantization
 - [ ] Evaluate model pruning options
-- [ ] Set up performance monitoring 
+- [ ] Set up performance monitoring

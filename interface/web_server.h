@@ -1,5 +1,5 @@
-#ifndef TINYAI_WEB_SERVER_H
-#define TINYAI_WEB_SERVER_H
+#ifndef HYPERION_WEB_SERVER_H
+#define HYPERION_WEB_SERVER_H
 
 #include "../core/picol.h" // Include picol for interpreter access if needed
 
@@ -15,4 +15,4 @@
  */
 int start_web_server(picolInterp *interp, const char *port, const char *document_root);
 
-#endif // TINYAI_WEB_SERVER_H
+#endif // HYPERION_WEB_SERVER_H

@@ -1,7 +1,7 @@
-#ifndef TINYAI_PERFORMANCE_IMPACT_H
-#define TINYAI_PERFORMANCE_IMPACT_H
+#ifndef HYPERION_PERFORMANCE_IMPACT_H
+#define HYPERION_PERFORMANCE_IMPACT_H
 
-#include "tinyai.h"
+#include "hyperion.h"
 #include <stdbool.h>
 #include <stddef.h>
 
@@ -14,7 +14,7 @@ typedef struct {
     bool   analyze_optimizations; // Analyze optimization impact
     size_t sample_interval_ms;    // Sampling interval in milliseconds
     size_t analysis_window_ms;    // Analysis window in milliseconds
-} TinyAIPerformanceConfig;
+} HyperionPerformanceConfig;
 
 // Performance metrics
 typedef struct {
@@ -24,7 +24,7 @@ typedef struct {
     size_t cache_misses;    // Number of cache misses
     size_t cache_hits;      // Number of cache hits
     double cache_hit_ratio; // Cache hit ratio
-} TinyAIPerformanceMetrics;
+} HyperionPerformanceMetrics;
 
 // Optimization impact
 typedef struct {
@@ -34,55 +34,55 @@ typedef struct {
     double cache_improvement;   // Cache performance improvement
     bool   is_beneficial;       // Whether optimization is beneficial
     char   recommendation[256]; // Optimization recommendation
-} TinyAIOptimizationImpact;
+} HyperionOptimizationImpact;
 
 // Performance analysis context
 typedef struct {
-    TinyAIPerformanceConfig  config;
-    TinyAIPerformanceMetrics baseline;
-    TinyAIPerformanceMetrics current;
-    TinyAIOptimizationImpact impact;
+    HyperionPerformanceConfig  config;
+    HyperionPerformanceMetrics baseline;
+    HyperionPerformanceMetrics current;
+    HyperionOptimizationImpact impact;
     uint64_t                 start_time;
     uint64_t                 last_sample_time;
-} TinyAIPerformanceAnalysis;
+} HyperionPerformanceAnalysis;
 
 // Create performance analysis context
-TinyAIPerformanceAnalysis *tinyaiCreatePerformanceAnalysis(const TinyAIPerformanceConfig *config);
+HyperionPerformanceAnalysis *hyperionCreatePerformanceAnalysis(const HyperionPerformanceConfig *config);
 
 // Free performance analysis context
-void tinyaiFreePerformanceAnalysis(TinyAIPerformanceAnalysis *analysis);
+void hyperionFreePerformanceAnalysis(HyperionPerformanceAnalysis *analysis);
 
 // Record performance metrics
-void tinyaiRecordMetrics(TinyAIPerformanceAnalysis      *analysis,
-                         const TinyAIPerformanceMetrics *metrics);
+void hyperionRecordMetrics(HyperionPerformanceAnalysis      *analysis,
+                         const HyperionPerformanceMetrics *metrics);
 
 // Take a performance sample
-void tinyaiTakePerformanceSample(TinyAIPerformanceAnalysis *analysis);
+void hyperionTakePerformanceSample(HyperionPerformanceAnalysis *analysis);
 
 // Get current performance metrics
-TinyAIPerformanceMetrics tinyaiGetPerformanceMetrics(const TinyAIPerformanceAnalysis *analysis);
+HyperionPerformanceMetrics hyperionGetPerformanceMetrics(const HyperionPerformanceAnalysis *analysis);
 
 // Analyze optimization impact
-void tinyaiAnalyzeOptimizationImpact(TinyAIPerformanceAnalysis *analysis);
+void hyperionAnalyzeOptimizationImpact(HyperionPerformanceAnalysis *analysis);
 
 // Get optimization impact
-TinyAIOptimizationImpact tinyaiGetOptimizationImpact(const TinyAIPerformanceAnalysis *analysis);
+HyperionOptimizationImpact hyperionGetOptimizationImpact(const HyperionPerformanceAnalysis *analysis);
 
 // Generate performance report
-void tinyaiGeneratePerformanceReport(const TinyAIPerformanceAnalysis *analysis,
+void hyperionGeneratePerformanceReport(const HyperionPerformanceAnalysis *analysis,
                                      const char                      *filename);
 
 // Get performance trend
-double tinyaiGetPerformanceTrend(const TinyAIPerformanceAnalysis *analysis);
+double hyperionGetPerformanceTrend(const HyperionPerformanceAnalysis *analysis);
 
 // Reset performance analysis
-void tinyaiResetPerformanceAnalysis(TinyAIPerformanceAnalysis *analysis);
+void hyperionResetPerformanceAnalysis(HyperionPerformanceAnalysis *analysis);
 
 // Enable/disable performance analysis
-void tinyaiEnablePerformanceAnalysis(TinyAIPerformanceAnalysis *analysis, bool enable);
+void hyperionEnablePerformanceAnalysis(HyperionPerformanceAnalysis *analysis, bool enable);
 
 // Set performance analysis configuration
-void tinyaiSetPerformanceConfig(TinyAIPerformanceAnalysis     *analysis,
-                                const TinyAIPerformanceConfig *config);
+void hyperionSetPerformanceConfig(HyperionPerformanceAnalysis     *analysis,
+                                const HyperionPerformanceConfig *config);
 
-#endif // TINYAI_PERFORMANCE_IMPACT_H
+#endif // HYPERION_PERFORMANCE_IMPACT_H

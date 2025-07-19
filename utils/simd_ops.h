@@ -1,13 +1,13 @@
 /**
  * @file simd_ops.h
- * @brief SIMD-accelerated operations for TinyAI
+ * @brief SIMD-accelerated operations for Hyperion
  *
  * This header provides SIMD-accelerated functions for matrix operations
  * with 4-bit quantized values.
  */
 
-#ifndef TINYAI_SIMD_OPS_H
-#define TINYAI_SIMD_OPS_H
+#ifndef HYPERION_SIMD_OPS_H
+#define HYPERION_SIMD_OPS_H
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -20,7 +20,7 @@ extern "C" {
  * @brief Check if SIMD extensions are available at runtime
  * @return true if SIMD acceleration is available
  */
-bool tinyaiSimdAvailable(void);
+bool hyperionSimdAvailable(void);
 
 /**
  * @brief SIMD-accelerated matrix-vector multiplication for 4-bit weights
@@ -35,7 +35,7 @@ bool tinyaiSimdAvailable(void);
  * @param cols Number of columns in the weight matrix
  * @param scaleFactors Scale factors for dequantizing weights
  */
-void tinyaiSimdMatMul4Bit(float *out, const uint8_t *weights, const float *input, int rows,
+void hyperionSimdMatMul4Bit(float *out, const uint8_t *weights, const float *input, int rows,
                           int cols, const float *scaleFactors);
 
 /**
@@ -48,7 +48,7 @@ void tinyaiSimdMatMul4Bit(float *out, const uint8_t *weights, const float *input
  * @param b Second vector
  * @param size Vector size
  */
-void tinyaiSimdVecAdd(float *out, const float *a, const float *b, int size);
+void hyperionSimdVecAdd(float *out, const float *a, const float *b, int size);
 
 /**
  * @brief SIMD-accelerated vector activation function
@@ -59,7 +59,7 @@ void tinyaiSimdVecAdd(float *out, const float *a, const float *b, int size);
  * @param size Vector size
  * @param activationType Type of activation (0=ReLU, 1=GELU, 2=Sigmoid)
  */
-void tinyaiSimdActivate(float *inout, int size, int activationType);
+void hyperionSimdActivate(float *inout, int size, int activationType);
 
 /**
  * @brief SIMD-accelerated matrix-matrix multiplication for 4-bit weights
@@ -72,7 +72,7 @@ void tinyaiSimdActivate(float *inout, int size, int activationType);
  * @param colsB Number of columns in matrix B
  * @param scaleFactors Scale factors for dequantizing weights
  */
-void tinyaiSimdMatMul4BitMM(float *out, const uint8_t *a, const float *b, int rowsA, int colsA,
+void hyperionSimdMatMul4BitMM(float *out, const uint8_t *a, const float *b, int rowsA, int colsA,
                             int colsB, const float *scaleFactors);
 
 /**
@@ -83,7 +83,7 @@ void tinyaiSimdMatMul4BitMM(float *out, const uint8_t *a, const float *b, int ro
  * @param size Number of elements (after unpacking)
  * @param scaleFactors Scale factors for dequantization
  */
-void tinyaiSimdDequantize4Bit(float *out, const uint8_t *in, int size, const float *scaleFactors);
+void hyperionSimdDequantize4Bit(float *out, const uint8_t *in, int size, const float *scaleFactors);
 
 /**
  * @brief SIMD-accelerated quantization from float to 4-bit
@@ -94,7 +94,7 @@ void tinyaiSimdDequantize4Bit(float *out, const uint8_t *in, int size, const flo
  * @param scaleFactors Scale factors for quantization (output)
  * @param blockSize Number of elements per scale factor
  */
-void tinyaiSimdQuantize4Bit(uint8_t *out, const float *in, int size, float *scaleFactors,
+void hyperionSimdQuantize4Bit(uint8_t *out, const float *in, int size, float *scaleFactors,
                             int blockSize);
 
 /**
@@ -115,7 +115,7 @@ void tinyaiSimdQuantize4Bit(uint8_t *out, const float *in, int size, float *scal
  * @param stride Stride of the convolution
  * @param padding Padding size
  */
-void tinyaiSimdConv2d4Bit(float *output, const float *input, const uint8_t *weights,
+void hyperionSimdConv2d4Bit(float *output, const float *input, const uint8_t *weights,
                           const float *biases, const float *scaleFactors, int inWidth, int inHeight,
                           int inChannels, int outWidth, int outHeight, int outChannels,
                           int kernelSize, int stride, int padding);
@@ -138,7 +138,7 @@ void tinyaiSimdConv2d4Bit(float *output, const float *input, const uint8_t *weig
  * @param stride Stride of the convolution
  * @param padding Padding size
  */
-void tinyaiSimdDepthwiseConv2d4Bit(float *output, const float *input, const uint8_t *weights,
+void hyperionSimdDepthwiseConv2d4Bit(float *output, const float *input, const uint8_t *weights,
                                    const float *biases, const float *scaleFactors, int inWidth,
                                    int inHeight, int inChannels, int outWidth, int outHeight,
                                    int multiplier, int kernelSize, int stride, int padding);
@@ -147,4 +147,4 @@ void tinyaiSimdDepthwiseConv2d4Bit(float *output, const float *input, const uint
 } /* extern "C" */
 #endif
 
-#endif /* TINYAI_SIMD_OPS_H */
+#endif /* HYPERION_SIMD_OPS_H */

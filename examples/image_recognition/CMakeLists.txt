@@ -14,9 +14,9 @@ target_include_directories(image_recognition PRIVATE
 
 # Link libraries
 target_link_libraries(image_recognition PRIVATE
-    tinyai_core
-    tinyai_models
-    tinyai_utils
+    hyperion_core
+    hyperion_models
+    hyperion_utils
 )
 
 # Add optimization flags

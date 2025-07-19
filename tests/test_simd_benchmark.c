@@ -1,5 +1,5 @@
 /**
- * TinyAI - SIMD Benchmark Test Suite
+ * Hyperion - SIMD Benchmark Test Suite
  *
  * This file contains tests for the SIMD benchmarking utilities,
  * comparing performance between SIMD and reference implementations.

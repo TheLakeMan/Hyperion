@@ -1,6 +1,6 @@
 /**
  * @file test_audio_model.c
- * @brief Test program for audio model functionality in TinyAI
+ * @brief Test program for audio model functionality in Hyperion
  */
 
 #include "../models/audio/audio_features.h"
@@ -35,23 +35,23 @@ static bool createSampleAudio(const char *filename, int durationMs, float freque
     }
 
     /* Create audio data */
-    TinyAIAudioData   audio;
-    TinyAIAudioFormat format;
+    HyperionAudioData   audio;
+    HyperionAudioFormat format;
     format.sampleRate    = sampleRate;
     format.channels      = 1;  /* Mono */
     format.bitsPerSample = 16; /* 16-bit */
 
-    if (!tinyaiAudioCreateFromSamples(samples, numSamples, &format, &audio)) {
+    if (!hyperionAudioCreateFromSamples(samples, numSamples, &format, &audio)) {
         fprintf(stderr, "Failed to create audio data\n");
         free(samples);
         return false;
     }
 
     /* Save audio to file */
-    bool result = tinyaiAudioSaveFile(filename, TINYAI_AUDIO_FORMAT_WAV, &audio);
+    bool result = hyperionAudioSaveFile(filename, TINYAI_AUDIO_FORMAT_WAV, &audio);
 
     /* Clean up */
-    tinyaiAudioDataFree(&audio);
+    hyperionAudioDataFree(&audio);
     free(samples);
 
     return result;
@@ -73,14 +73,14 @@ static bool testAudioFeatures()
     }
 
     /* Load audio file */
-    TinyAIAudioData audio;
-    if (!tinyaiAudioLoadFile(sampleFile, TINYAI_AUDIO_FORMAT_WAV, &audio)) {
+    HyperionAudioData audio;
+    if (!hyperionAudioLoadFile(sampleFile, TINYAI_AUDIO_FORMAT_WAV, &audio)) {
         fprintf(stderr, "Failed to load audio file\n");
         return false;
     }
 
     /* Set up feature extraction configuration */
-    TinyAIAudioFeaturesConfig config;
+    HyperionAudioFeaturesConfig config;
     memset(&config, 0, sizeof(config));
     config.type              = TINYAI_AUDIO_FEATURES_MFCC;
     config.frameLength       = 400; /* 25ms at 16kHz */
@@ -91,14 +91,14 @@ static bool testAudioFeatures()
     config.includeDeltaDelta = false;
 
     /* Set up advanced options */
-    TinyAIAudioFeaturesAdvancedOptions options;
-    tinyaiAudioFeaturesInitAdvancedOptions(&options);
+    HyperionAudioFeaturesAdvancedOptions options;
+    hyperionAudioFeaturesInitAdvancedOptions(&options);
 
     /* Extract features */
-    TinyAIAudioFeatures features;
-    if (!tinyaiAudioExtractMFCC(&audio, &config, &options, &features)) {
+    HyperionAudioFeatures features;
+    if (!hyperionAudioExtractMFCC(&audio, &config, &options, &features)) {
         fprintf(stderr, "Failed to extract MFCC features\n");
-        tinyaiAudioDataFree(&audio);
+        hyperionAudioDataFree(&audio);
         return false;
     }
 
@@ -107,8 +107,8 @@ static bool testAudioFeatures()
            features.numFeatures);
 
     /* Clean up */
-    tinyaiAudioFeaturesFree(&features);
-    tinyaiAudioDataFree(&audio);
+    hyperionAudioFeaturesFree(&features);
+    hyperionAudioDataFree(&audio);
 
     printf("Audio feature extraction test passed!\n");
     return true;
@@ -130,14 +130,14 @@ static bool testAudioModel()
     }
 
     /* Load audio file */
-    TinyAIAudioData audio;
-    if (!tinyaiAudioLoadFile(sampleFile, TINYAI_AUDIO_FORMAT_WAV, &audio)) {
+    HyperionAudioData audio;
+    if (!hyperionAudioLoadFile(sampleFile, TINYAI_AUDIO_FORMAT_WAV, &audio)) {
         fprintf(stderr, "Failed to load audio file\n");
         return false;
     }
 
     /* Set up model configuration */
-    TinyAIAudioModelConfig config;
+    HyperionAudioModelConfig config;
     memset(&config, 0, sizeof(config));
 
     /* Feature configuration */
@@ -158,28 +158,28 @@ static bool testAudioModel()
     config.weightsFile         = NULL; /* Initialize with random weights */
 
     /* Create audio model */
-    TinyAIAudioModel *model = tinyaiAudioModelCreate(&config);
+    HyperionAudioModel *model = hyperionAudioModelCreate(&config);
     if (!model) {
         fprintf(stderr, "Failed to create audio model\n");
-        tinyaiAudioDataFree(&audio);
+        hyperionAudioDataFree(&audio);
         return false;
     }
 
     /* Initialize output structure */
-    TinyAIAudioModelOutput output;
-    if (!tinyaiAudioModelOutputInit(&output, config.numClasses)) {
+    HyperionAudioModelOutput output;
+    if (!hyperionAudioModelOutputInit(&output, config.numClasses)) {
         fprintf(stderr, "Failed to initialize audio model output\n");
-        tinyaiAudioModelFree(model);
-        tinyaiAudioDataFree(&audio);
+        hyperionAudioModelFree(model);
+        hyperionAudioDataFree(&audio);
         return false;
     }
 
     /* Process audio with model */
-    if (!tinyaiAudioModelProcess(model, &audio, &output)) {
+    if (!hyperionAudioModelProcess(model, &audio, &output)) {
         fprintf(stderr, "Failed to process audio with model\n");
-        tinyaiAudioModelOutputFree(&output);
-        tinyaiAudioModelFree(model);
-        tinyaiAudioDataFree(&audio);
+        hyperionAudioModelOutputFree(&output);
+        hyperionAudioModelFree(model);
+        hyperionAudioDataFree(&audio);
         return false;
     }
 
@@ -208,9 +208,9 @@ static bool testAudioModel()
     }
 
     /* Clean up */
-    tinyaiAudioModelOutputFree(&output);
-    tinyaiAudioModelFree(model);
-    tinyaiAudioDataFree(&audio);
+    hyperionAudioModelOutputFree(&output);
+    hyperionAudioModelFree(model);
+    hyperionAudioDataFree(&audio);
 
     printf("Audio model test passed!\n");
     return true;
@@ -221,7 +221,7 @@ static bool testAudioModel()
  */
 int main(int argc, char *argv[])
 {
-    printf("TinyAI Audio Model Tests\n");
+    printf("Hyperion Audio Model Tests\n");
     printf("=========================\n");
 
     /* Seed random number generator */

@@ -1,6 +1,6 @@
 /**
  * @file advanced_memory_pool.h
- * @brief Advanced memory pooling system for TinyAI
+ * @brief Advanced memory pooling system for Hyperion
  *
  * This header provides a hierarchical, size-specific memory pooling system
  * that significantly reduces fragmentation and improves allocation speed
@@ -8,8 +8,8 @@
  * but adds specialized pools for different allocation patterns.
  */
 
-#ifndef TINYAI_ADVANCED_MEMORY_POOL_H
-#define TINYAI_ADVANCED_MEMORY_POOL_H
+#ifndef HYPERION_ADVANCED_MEMORY_POOL_H
+#define HYPERION_ADVANCED_MEMORY_POOL_H
 
 #include "memory_pool.h"
 #include <stdbool.h>
@@ -24,40 +24,40 @@ extern "C" {
  * @brief Pool usage pattern types
  */
 typedef enum {
-    TINYAI_POOL_USAGE_WEIGHTS,     /**< For model weights (mostly read-only) */
-    TINYAI_POOL_USAGE_ACTIVATIONS, /**< For activations (read-write, temporary) */
-    TINYAI_POOL_USAGE_GENERAL,     /**< For general allocations */
-    TINYAI_POOL_USAGE_COUNT        /**< Number of usage patterns */
-} TinyAIPoolUsagePattern;
+    HYPERION_POOL_USAGE_WEIGHTS,     /**< For model weights (mostly read-only) */
+    HYPERION_POOL_USAGE_ACTIVATIONS, /**< For activations (read-write, temporary) */
+    HYPERION_POOL_USAGE_GENERAL,     /**< For general allocations */
+    HYPERION_POOL_USAGE_COUNT        /**< Number of usage patterns */
+} HyperionPoolUsagePattern;
 
 /**
  * @brief Size class for memory pools
  */
 typedef enum {
-    TINYAI_POOL_SIZE_TINY,   /**< For very small allocations (< 64 bytes) */
-    TINYAI_POOL_SIZE_SMALL,  /**< For small allocations (64-256 bytes) */
-    TINYAI_POOL_SIZE_MEDIUM, /**< For medium allocations (256-1024 bytes) */
-    TINYAI_POOL_SIZE_LARGE,  /**< For large allocations (1-4 KB) */
-    TINYAI_POOL_SIZE_XLARGE, /**< For very large allocations (4-64 KB) */
-    TINYAI_POOL_SIZE_HUGE,   /**< For huge allocations (64 KB+) */
-    TINYAI_POOL_SIZE_COUNT   /**< Number of size classes */
-} TinyAIPoolSizeClass;
+    HYPERION_POOL_SIZE_TINY,   /**< For very small allocations (< 64 bytes) */
+    HYPERION_POOL_SIZE_SMALL,  /**< For small allocations (64-256 bytes) */
+    HYPERION_POOL_SIZE_MEDIUM, /**< For medium allocations (256-1024 bytes) */
+    HYPERION_POOL_SIZE_LARGE,  /**< For large allocations (1-4 KB) */
+    HYPERION_POOL_SIZE_XLARGE, /**< For very large allocations (4-64 KB) */
+    HYPERION_POOL_SIZE_HUGE,   /**< For huge allocations (64 KB+) */
+    HYPERION_POOL_SIZE_COUNT   /**< Number of size classes */
+} HyperionPoolSizeClass;
 
 /**
  * @brief Advanced memory pool configuration
  */
 typedef struct {
     /* Base configuration for all pools */
-    TinyAIMemoryPoolConfig baseConfig;
+    HyperionMemoryPoolConfig baseConfig;
 
     /* Pool size limits */
-    size_t sizeClassLimits[TINYAI_POOL_SIZE_COUNT];
+    size_t sizeClassLimits[HYPERION_POOL_SIZE_COUNT];
 
     /* Initial capacity per pool type */
-    size_t initialCapacity[TINYAI_POOL_USAGE_COUNT][TINYAI_POOL_SIZE_COUNT];
+    size_t initialCapacity[HYPERION_POOL_USAGE_COUNT][HYPERION_POOL_SIZE_COUNT];
 
     /* Maximum capacity per pool type */
-    size_t maxCapacity[TINYAI_POOL_USAGE_COUNT][TINYAI_POOL_SIZE_COUNT];
+    size_t maxCapacity[HYPERION_POOL_USAGE_COUNT][HYPERION_POOL_SIZE_COUNT];
 
     /* Thread safety */
     bool threadSafe;
@@ -70,14 +70,14 @@ typedef struct {
 
     /* Aggressive defragmentation */
     bool aggressiveDefrag;
-} TinyAIAdvancedPoolConfig;
+} HyperionAdvancedPoolConfig;
 
 /**
  * @brief Advanced memory pool statistics
  */
 typedef struct {
     /* Stats per pool type */
-    TinyAIMemoryPoolStats poolStats[TINYAI_POOL_USAGE_COUNT][TINYAI_POOL_SIZE_COUNT];
+    HyperionMemoryPoolStats poolStats[HYPERION_POOL_USAGE_COUNT][HYPERION_POOL_SIZE_COUNT];
 
     /* Summary stats */
     size_t totalAllocated; /**< Total bytes allocated across all pools */
@@ -97,19 +97,19 @@ typedef struct {
     /* Memory pressure indicators */
     uint8_t pressureScore;            /**< Memory pressure score (0-100) */
     bool    outOfMemoryEventOccurred; /**< Whether an out-of-memory event occurred */
-} TinyAIAdvancedPoolStats;
+} HyperionAdvancedPoolStats;
 
 /**
  * @brief Advanced memory pool handle
  */
-typedef struct TinyAIAdvancedMemoryPool TinyAIAdvancedMemoryPool;
+typedef struct HyperionAdvancedMemoryPool HyperionAdvancedMemoryPool;
 
 /**
  * @brief Get default advanced memory pool configuration
  *
  * @param config Pointer to configuration struct to fill
  */
-void tinyaiAdvancedPoolGetDefaultConfig(TinyAIAdvancedPoolConfig *config);
+void hyperionAdvancedPoolGetDefaultConfig(HyperionAdvancedPoolConfig *config);
 
 /**
  * @brief Create a new advanced memory pool system
@@ -117,14 +117,14 @@ void tinyaiAdvancedPoolGetDefaultConfig(TinyAIAdvancedPoolConfig *config);
  * @param config Pool configuration
  * @return Pointer to new advanced memory pool or NULL on failure
  */
-TinyAIAdvancedMemoryPool *tinyaiAdvancedPoolCreate(const TinyAIAdvancedPoolConfig *config);
+HyperionAdvancedMemoryPool *hyperionAdvancedPoolCreate(const HyperionAdvancedPoolConfig *config);
 
 /**
  * @brief Destroy an advanced memory pool and free all its resources
  *
  * @param pool Pool to destroy
  */
-void tinyaiAdvancedPoolDestroy(TinyAIAdvancedMemoryPool *pool);
+void hyperionAdvancedPoolDestroy(HyperionAdvancedMemoryPool *pool);
 
 /**
  * @brief Allocate memory from the appropriate pool based on size and usage pattern
@@ -135,8 +135,8 @@ void tinyaiAdvancedPoolDestroy(TinyAIAdvancedMemoryPool *pool);
  * @param usage Usage pattern for the allocation
  * @return Pointer to allocated memory or NULL on failure
  */
-void *tinyaiAdvancedPoolAlloc(TinyAIAdvancedMemoryPool *pool, size_t size, size_t alignment,
-                              TinyAIPoolUsagePattern usage);
+void *hyperionAdvancedPoolAlloc(HyperionAdvancedMemoryPool *pool, size_t size, size_t alignment,
+                              HyperionPoolUsagePattern usage);
 
 /**
  * @brief Free memory allocated from advanced pool
@@ -144,7 +144,7 @@ void *tinyaiAdvancedPoolAlloc(TinyAIAdvancedMemoryPool *pool, size_t size, size_
  * @param pool Advanced pool that the memory was allocated from
  * @param ptr Pointer to allocated memory
  */
-void tinyaiAdvancedPoolFree(TinyAIAdvancedMemoryPool *pool, void *ptr);
+void hyperionAdvancedPoolFree(HyperionAdvancedMemoryPool *pool, void *ptr);
 
 /**
  * @brief Reallocate memory from advanced pool
@@ -156,8 +156,8 @@ void tinyaiAdvancedPoolFree(TinyAIAdvancedMemoryPool *pool, void *ptr);
  * @param usage Usage pattern for the allocation
  * @return Pointer to reallocated memory or NULL on failure
  */
-void *tinyaiAdvancedPoolRealloc(TinyAIAdvancedMemoryPool *pool, void *ptr, size_t size,
-                                size_t alignment, TinyAIPoolUsagePattern usage);
+void *hyperionAdvancedPoolRealloc(HyperionAdvancedMemoryPool *pool, void *ptr, size_t size,
+                                size_t alignment, HyperionPoolUsagePattern usage);
 
 /**
  * @brief Get statistics for the advanced memory pool
@@ -165,14 +165,14 @@ void *tinyaiAdvancedPoolRealloc(TinyAIAdvancedMemoryPool *pool, void *ptr, size_
  * @param pool Advanced pool to query
  * @param stats Pointer to stats struct to fill
  */
-void tinyaiAdvancedPoolGetStats(TinyAIAdvancedMemoryPool *pool, TinyAIAdvancedPoolStats *stats);
+void hyperionAdvancedPoolGetStats(HyperionAdvancedMemoryPool *pool, HyperionAdvancedPoolStats *stats);
 
 /**
  * @brief Reset all pools in the advanced memory pool system
  *
  * @param pool Advanced pool to reset
  */
-void tinyaiAdvancedPoolReset(TinyAIAdvancedMemoryPool *pool);
+void hyperionAdvancedPoolReset(HyperionAdvancedMemoryPool *pool);
 
 /**
  * @brief Optimize the memory pool distribution based on usage patterns
@@ -183,7 +183,7 @@ void tinyaiAdvancedPoolReset(TinyAIAdvancedMemoryPool *pool);
  * @param pool Advanced pool to optimize
  * @return true if optimization was successful
  */
-bool tinyaiAdvancedPoolOptimize(TinyAIAdvancedMemoryPool *pool);
+bool hyperionAdvancedPoolOptimize(HyperionAdvancedMemoryPool *pool);
 
 /**
  * @brief Register a tensor operation with the memory pool
@@ -198,7 +198,7 @@ bool tinyaiAdvancedPoolOptimize(TinyAIAdvancedMemoryPool *pool);
  * @param numOutputs Number of output tensors
  * @return true if the operation was successfully registered
  */
-bool tinyaiAdvancedPoolRegisterTensorOp(TinyAIAdvancedMemoryPool *pool, int opType,
+bool hyperionAdvancedPoolRegisterTensorOp(HyperionAdvancedMemoryPool *pool, int opType,
                                         const size_t *inputSizes, int numInputs,
                                         const size_t *outputSizes, int numOutputs);
 
@@ -212,7 +212,7 @@ bool tinyaiAdvancedPoolRegisterTensorOp(TinyAIAdvancedMemoryPool *pool, int opTy
  * @param size Size in bytes
  * @return Pointer to allocated memory or NULL on failure
  */
-void *tinyaiAdvancedPoolAllocForTensorOp(TinyAIAdvancedMemoryPool *pool, int opType, bool isInput,
+void *hyperionAdvancedPoolAllocForTensorOp(HyperionAdvancedMemoryPool *pool, int opType, bool isInput,
                                          int tensorIndex, size_t size);
 
 /**
@@ -221,7 +221,7 @@ void *tinyaiAdvancedPoolAllocForTensorOp(TinyAIAdvancedMemoryPool *pool, int opT
  * @param pool Advanced pool
  * @param enable Whether to enable thread safety
  */
-void tinyaiAdvancedPoolSetThreadSafety(TinyAIAdvancedMemoryPool *pool, bool enable);
+void hyperionAdvancedPoolSetThreadSafety(HyperionAdvancedMemoryPool *pool, bool enable);
 
 /**
  * @brief Set memory pressure callback function
@@ -232,7 +232,7 @@ void tinyaiAdvancedPoolSetThreadSafety(TinyAIAdvancedMemoryPool *pool, bool enab
  * @param callback Function to call on high memory pressure
  * @param userData User data to pass to the callback
  */
-void tinyaiAdvancedPoolSetPressureCallback(TinyAIAdvancedMemoryPool *pool,
+void hyperionAdvancedPoolSetPressureCallback(HyperionAdvancedMemoryPool *pool,
                                            void (*callback)(void *userData, uint8_t pressureLevel),
                                            void *userData);
 
@@ -242,10 +242,10 @@ void tinyaiAdvancedPoolSetPressureCallback(TinyAIAdvancedMemoryPool *pool,
  * @param pool Advanced pool to dump
  * @param dumpAllocations Whether to dump individual allocations
  */
-void tinyaiAdvancedPoolDump(TinyAIAdvancedMemoryPool *pool, bool dumpAllocations);
+void hyperionAdvancedPoolDump(HyperionAdvancedMemoryPool *pool, bool dumpAllocations);
 
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
 
-#endif /* TINYAI_ADVANCED_MEMORY_POOL_H */
+#endif /* HYPERION_ADVANCED_MEMORY_POOL_H */

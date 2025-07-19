@@ -36,7 +36,7 @@ static MemoryBenchmarkStats run_memory_benchmark(const char *model_path, size_t 
                                           .recompute_activations = true,
                                           .max_activation_memory = memory_budget / 2};
 
-    TinyAIMemoryOptimizer *optimizer = tinyaiCreateMemoryOptimizer(&config);
+    TinyAIMemoryOptimizer *optimizer = hyperionCreateMemoryOptimizer(&config);
     if (!optimizer) {
         fprintf(stderr, "Failed to create memory optimizer\n");
         return stats;
@@ -49,10 +49,10 @@ static MemoryBenchmarkStats run_memory_benchmark(const char *model_path, size_t 
                                                        TINYAI_PRIORITY_ACCESS_PATTERN,
                                                    .prefetch_threshold = 0.7f};
 
-    TinyAIProgressiveLoader *loader = tinyaiCreateProgressiveLoader(model_path, &loader_config);
+    TinyAIProgressiveLoader *loader = hyperionCreateProgressiveLoader(model_path, &loader_config);
     if (!loader) {
         fprintf(stderr, "Failed to create progressive loader\n");
-        tinyaiFreeMemoryOptimizer(optimizer);
+        hyperionFreeMemoryOptimizer(optimizer);
         return stats;
     }
 
@@ -63,7 +63,7 @@ static MemoryBenchmarkStats run_memory_benchmark(const char *model_path, size_t 
 
         // Load model layers
         for (int layer = 0; layer < loader->layer_count; layer++) {
-            if (!tinyaiLoadModelLayer(loader, layer)) {
+            if (!hyperionLoadModelLayer(loader, layer)) {
                 fprintf(stderr, "Failed to load layer %d\n", layer);
                 continue;
             }
@@ -73,7 +73,7 @@ static MemoryBenchmarkStats run_memory_benchmark(const char *model_path, size_t 
         stats.allocation_time += (double)(end_time - start_time) / CLOCKS_PER_SEC;
 
         // Get memory stats
-        TinyAIMemoryStats memory_stats = tinyaiGetProgressiveLoaderMemoryStats(loader);
+        TinyAIMemoryStats memory_stats = hyperionGetProgressiveLoaderMemoryStats(loader);
         stats.peak_memory              = (memory_stats.peak_allocated > stats.peak_memory)
                                              ? memory_stats.peak_allocated
                                              : stats.peak_memory;
@@ -86,7 +86,7 @@ static MemoryBenchmarkStats run_memory_benchmark(const char *model_path, size_t 
 
         // Unload model layers
         for (int layer = 0; layer < loader->layer_count; layer++) {
-            if (!tinyaiUnloadModelLayer(loader, layer)) {
+            if (!hyperionUnloadModelLayer(loader, layer)) {
                 fprintf(stderr, "Failed to unload layer %d\n", layer);
                 continue;
             }
@@ -102,8 +102,8 @@ static MemoryBenchmarkStats run_memory_benchmark(const char *model_path, size_t 
     stats.free_time /= BENCHMARK_ITERATIONS;
 
     // Cleanup
-    tinyaiFreeProgressiveLoader(loader);
-    tinyaiFreeMemoryOptimizer(optimizer);
+    hyperionFreeProgressiveLoader(loader);
+    hyperionFreeMemoryOptimizer(optimizer);
 
     return stats;
 }

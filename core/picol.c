@@ -828,7 +828,7 @@ void picolRegisterCoreCommands(picolInterp *i)
     picolRegisterCommand(i, "return", picolCommandReturn, NULL);
 }
 
-#ifndef TINYAI_BUILD // Exclude picol's main() when building TinyAI
+#ifndef HYPERION_BUILD // Exclude picol's main() when building Hyperion
 int main(int argc, char **argv)
 {
     picolInterp interp; // Use typedef
@@ -965,4 +965,4 @@ char *picolGetArrayVar(picolInterp *i, char *name, char *key)
     return picolGetVar(i, fullname);
 }
 
-#endif // TINYAI_BUILD
+#endif // HYPERION_BUILD

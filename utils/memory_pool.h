@@ -7,8 +7,8 @@
  * improves memory locality for model weights and activations.
  */
 
-#ifndef TINYAI_MEMORY_POOL_H
-#define TINYAI_MEMORY_POOL_H
+#ifndef HYPERION_MEMORY_POOL_H
+#define HYPERION_MEMORY_POOL_H
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -27,12 +27,12 @@ typedef struct {
     size_t blockSize;        /**< Minimum allocation block size */
     bool   allowGrowth;      /**< Whether the pool can grow beyond initial capacity */
     bool   trackAllocations; /**< Whether to track individual allocations (for debugging) */
-} TinyAIMemoryPoolConfig;
+} HyperionMemoryPoolConfig;
 
 /**
  * @brief Memory pool handle
  */
-typedef struct TinyAIMemoryPool TinyAIMemoryPool;
+typedef struct HyperionMemoryPool HyperionMemoryPool;
 
 /**
  * @brief Memory usage statistics
@@ -45,14 +45,14 @@ typedef struct {
     size_t totalBlocks;        /**< Total number of allocated blocks */
     size_t freeBlocks;         /**< Number of free blocks */
     size_t fragmentationScore; /**< Fragmentation score (0-100, lower is better) */
-} TinyAIMemoryPoolStats;
+} HyperionMemoryPoolStats;
 
 /**
  * @brief Get default memory pool configuration
  *
  * @param config Pointer to configuration struct to fill
  */
-void tinyaiMemoryPoolGetDefaultConfig(TinyAIMemoryPoolConfig *config);
+void hyperionMemoryPoolGetDefaultConfig(HyperionMemoryPoolConfig *config);
 
 /**
  * @brief Create a new memory pool
@@ -60,14 +60,14 @@ void tinyaiMemoryPoolGetDefaultConfig(TinyAIMemoryPoolConfig *config);
  * @param config Pool configuration
  * @return Pointer to new memory pool or NULL on failure
  */
-TinyAIMemoryPool *tinyaiMemoryPoolCreate(const TinyAIMemoryPoolConfig *config);
+HyperionMemoryPool *hyperionMemoryPoolCreate(const HyperionMemoryPoolConfig *config);
 
 /**
  * @brief Destroy a memory pool and free all its memory
  *
  * @param pool Pool to destroy
  */
-void tinyaiMemoryPoolDestroy(TinyAIMemoryPool *pool);
+void hyperionMemoryPoolDestroy(HyperionMemoryPool *pool);
 
 /**
  * @brief Allocate memory from pool
@@ -80,7 +80,7 @@ void tinyaiMemoryPoolDestroy(TinyAIMemoryPool *pool);
  * @param alignment Memory alignment requirement (must be power of 2)
  * @return Pointer to allocated memory or NULL on failure
  */
-void *tinyaiMemoryPoolAlloc(TinyAIMemoryPool *pool, size_t size, size_t alignment);
+void *hyperionMemoryPoolAlloc(HyperionMemoryPool *pool, size_t size, size_t alignment);
 
 /**
  * @brief Reallocate memory block
@@ -91,7 +91,7 @@ void *tinyaiMemoryPoolAlloc(TinyAIMemoryPool *pool, size_t size, size_t alignmen
  * @param alignment Memory alignment requirement (must be power of 2)
  * @return Pointer to reallocated memory or NULL on failure
  */
-void *tinyaiMemoryPoolRealloc(TinyAIMemoryPool *pool, void *ptr, size_t size, size_t alignment);
+void *hyperionMemoryPoolRealloc(HyperionMemoryPool *pool, void *ptr, size_t size, size_t alignment);
 
 /**
  * @brief Free memory allocated from pool
@@ -99,14 +99,14 @@ void *tinyaiMemoryPoolRealloc(TinyAIMemoryPool *pool, void *ptr, size_t size, si
  * @param pool Pool that the block was allocated from
  * @param ptr Pointer to allocated memory
  */
-void tinyaiMemoryPoolFree(TinyAIMemoryPool *pool, void *ptr);
+void hyperionMemoryPoolFree(HyperionMemoryPool *pool, void *ptr);
 
 /**
  * @brief Reset a memory pool, freeing all allocations
  *
  * @param pool Pool to reset
  */
-void tinyaiMemoryPoolReset(TinyAIMemoryPool *pool);
+void hyperionMemoryPoolReset(HyperionMemoryPool *pool);
 
 /**
  * @brief Get memory pool statistics
@@ -114,7 +114,7 @@ void tinyaiMemoryPoolReset(TinyAIMemoryPool *pool);
  * @param pool Pool to query
  * @param stats Pointer to stats struct to fill
  */
-void tinyaiMemoryPoolGetStats(TinyAIMemoryPool *pool, TinyAIMemoryPoolStats *stats);
+void hyperionMemoryPoolGetStats(HyperionMemoryPool *pool, HyperionMemoryPoolStats *stats);
 
 /**
  * @brief Check if a pointer was allocated from the given pool
@@ -123,7 +123,7 @@ void tinyaiMemoryPoolGetStats(TinyAIMemoryPool *pool, TinyAIMemoryPoolStats *sta
  * @param ptr Pointer to check
  * @return true if the pointer was allocated from the pool
  */
-bool tinyaiMemoryPoolContains(TinyAIMemoryPool *pool, const void *ptr);
+bool hyperionMemoryPoolContains(HyperionMemoryPool *pool, const void *ptr);
 
 /**
  * @brief Specialized 4-bit weight allocation for models
@@ -137,7 +137,7 @@ bool tinyaiMemoryPoolContains(TinyAIMemoryPool *pool, const void *ptr);
  * @param requiresSIMD Whether the allocation will be used with SIMD operations
  * @return Pointer to allocated memory or NULL on failure
  */
-uint8_t *tinyaiMemoryPoolAllocWeights4Bit(TinyAIMemoryPool *pool, size_t rows, size_t cols,
+uint8_t *hyperionMemoryPoolAllocWeights4Bit(HyperionMemoryPool *pool, size_t rows, size_t cols,
                                           bool requiresSIMD);
 
 /**
@@ -151,7 +151,7 @@ uint8_t *tinyaiMemoryPoolAllocWeights4Bit(TinyAIMemoryPool *pool, size_t rows, s
  * @param requiresSIMD Whether the allocation will be used with SIMD operations
  * @return Pointer to allocated memory or NULL on failure
  */
-float *tinyaiMemoryPoolAllocActivations(TinyAIMemoryPool *pool, size_t size, bool requiresSIMD);
+float *hyperionMemoryPoolAllocActivations(HyperionMemoryPool *pool, size_t size, bool requiresSIMD);
 
 /**
  * @brief Compact pool memory to reduce fragmentation
@@ -159,7 +159,7 @@ float *tinyaiMemoryPoolAllocActivations(TinyAIMemoryPool *pool, size_t size, boo
  * @param pool Pool to compact
  * @return true if compaction was successful
  */
-bool tinyaiMemoryPoolCompact(TinyAIMemoryPool *pool);
+bool hyperionMemoryPoolCompact(HyperionMemoryPool *pool);
 
 /**
  * @brief Dump memory pool information for debugging
@@ -167,10 +167,10 @@ bool tinyaiMemoryPoolCompact(TinyAIMemoryPool *pool);
  * @param pool Pool to dump
  * @param dumpAllocations Whether to dump individual allocations
  */
-void tinyaiMemoryPoolDump(TinyAIMemoryPool *pool, bool dumpAllocations);
+void hyperionMemoryPoolDump(HyperionMemoryPool *pool, bool dumpAllocations);
 
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
 
-#endif /* TINYAI_MEMORY_POOL_H */
+#endif /* HYPERION_MEMORY_POOL_H */

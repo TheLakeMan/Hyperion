@@ -1,6 +1,6 @@
 /**
  * @file main.c
- * @brief Voice Activity Detection example for TinyAI
+ * @brief Voice Activity Detection example for Hyperion
  */
 
 #include "../../../core/memory.h"
@@ -14,7 +14,7 @@
 /* Display usage information */
 static void showUsage(const char *progName)
 {
-    printf("TinyAI Voice Activity Detection Example\n");
+    printf("Hyperion Voice Activity Detection Example\n");
     printf("----------------------------------------\n");
     printf("Usage: %s <input_wav> [options]\n", progName);
     printf("\n");
@@ -33,7 +33,7 @@ static void showUsage(const char *progName)
 }
 
 /* Parse command line arguments */
-static bool parseArgs(int argc, char **argv, char **inputFile, TinyAIVADConfig *config,
+static bool parseArgs(int argc, char **argv, char **inputFile, HyperionVADConfig *config,
                       bool *visualize, int *visWidth)
 {
     if (argc < 2) {
@@ -44,7 +44,7 @@ static bool parseArgs(int argc, char **argv, char **inputFile, TinyAIVADConfig *
     *inputFile = NULL;
     *visualize = false;
     *visWidth  = 80;
-    tinyaiVADInitConfig(config);
+    hyperionVADInitConfig(config);
 
     /* Parse arguments */
     for (int i = 1; i < argc; i++) {
@@ -99,7 +99,7 @@ static bool parseArgs(int argc, char **argv, char **inputFile, TinyAIVADConfig *
 int main(int argc, char **argv)
 {
     char           *inputFile;
-    TinyAIVADConfig config;
+    HyperionVADConfig config;
     bool            visualize;
     int             visWidth;
 
@@ -110,7 +110,7 @@ int main(int argc, char **argv)
     }
 
     /* Show configuration */
-    printf("TinyAI Voice Activity Detection\n");
+    printf("Hyperion Voice Activity Detection\n");
     printf("Input file: %s\n", inputFile);
     printf("Configuration:\n");
     printf("  Sensitivity: %.2f\n", config.sensitivity);
@@ -121,8 +121,8 @@ int main(int argc, char **argv)
     printf("\n");
 
     /* Load audio file */
-    TinyAIAudioData audio;
-    if (!tinyaiAudioLoadFile(inputFile, (TinyAIAudioFileFormat)(-1), &audio)) {
+    HyperionAudioData audio;
+    if (!hyperionAudioLoadFile(inputFile, (HyperionAudioFileFormat)(-1), &audio)) {
         printf("Error: Failed to load audio file: %s\n", inputFile);
         return 1;
     }
@@ -135,20 +135,20 @@ int main(int argc, char **argv)
     printf("\n");
 
     /* Create VAD state */
-    TinyAIVADState *vadState = tinyaiVADCreate(&config, audio.format.sampleRate);
+    HyperionVADState *vadState = hyperionVADCreate(&config, audio.format.sampleRate);
     if (!vadState) {
         printf("Error: Failed to create VAD state\n");
-        tinyaiAudioDataFree(&audio);
+        hyperionAudioDataFree(&audio);
         return 1;
     }
 
     /* Process audio */
     bool *activity;
     int   activitySize;
-    if (!tinyaiVADProcessAudio(vadState, &audio, &activity, &activitySize)) {
+    if (!hyperionVADProcessAudio(vadState, &audio, &activity, &activitySize)) {
         printf("Error: Failed to process audio\n");
-        tinyaiVADFree(vadState);
-        tinyaiAudioDataFree(&audio);
+        hyperionVADFree(vadState);
+        hyperionAudioDataFree(&audio);
         return 1;
     }
 
@@ -169,7 +169,7 @@ int main(int argc, char **argv)
 
     /* Visualize results if requested */
     if (visualize) {
-        tinyaiVADVisualize(activity, activitySize, visWidth);
+        hyperionVADVisualize(activity, activitySize, visWidth);
     }
 
     /* Calculate voice segments */
@@ -208,8 +208,8 @@ int main(int argc, char **argv)
 
     /* Memory cleanup */
     free(activity);
-    tinyaiVADFree(vadState);
-    tinyaiAudioDataFree(&audio);
+    hyperionVADFree(vadState);
+    hyperionAudioDataFree(&audio);
 
     return 0;
 }

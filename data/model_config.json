@@ -1,5 +1,5 @@
 {
-    "model_name": "tiny-transformer",
+    "model_name": "hyperion-transformer",
     "model_type": "transformer",
     "model_version": "0.1.0",
     "architecture": {
@@ -16,7 +16,7 @@
         "use_lookup_tables": true
     },
     "tokenizer": {
-        "vocab_file": "data/tiny_vocab.tok",
+        "vocab_file": "data/hyperion_vocab.tok",
         "max_token_length": 16,
         "special_tokens": {
             "bos": "<s>",

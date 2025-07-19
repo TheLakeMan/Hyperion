@@ -5,8 +5,8 @@
  * This file contains declarations for attention mechanisms with SIMD optimization.
  */
 
-#ifndef TINYAI_ATTENTION_H
-#define TINYAI_ATTENTION_H
+#ifndef HYPERION_ATTENTION_H
+#define HYPERION_ATTENTION_H
 
 #include "../../utils/quantize.h"
 #include <stdbool.h>
@@ -23,23 +23,23 @@ typedef struct {
     uint32_t hiddenDim;     /* Hidden dimension (numHeads * headDim) */
     bool     useCausalMask; /* Whether to use causal masking */
     float    scaleFactor;   /* Scale factor for QK^T product (usually 1/sqrt(headDim)) */
-} TinyAIAttentionParams;
+} HyperionAttentionParams;
 
 /**
  * Self-attention structure
  */
 typedef struct {
-    TinyAIAttentionParams params;        /* Attention parameters */
-    TinyAIMatrix4bit      queryWeight;   /* Query projection weights */
-    TinyAIMatrix4bit      keyWeight;     /* Key projection weights */
-    TinyAIMatrix4bit      valueWeight;   /* Value projection weights */
-    TinyAIMatrix4bit      outputWeight;  /* Output projection weights */
+    HyperionAttentionParams params;        /* Attention parameters */
+    HyperionMatrix4bit      queryWeight;   /* Query projection weights */
+    HyperionMatrix4bit      keyWeight;     /* Key projection weights */
+    HyperionMatrix4bit      valueWeight;   /* Value projection weights */
+    HyperionMatrix4bit      outputWeight;  /* Output projection weights */
     float                *queryBias;     /* Query projection bias */
     float                *keyBias;       /* Key projection bias */
     float                *valueBias;     /* Value projection bias */
     float                *outputBias;    /* Output projection bias */
     float                *scratchMemory; /* Scratch memory for intermediate results */
-} TinyAISelfAttention;
+} HyperionSelfAttention;
 
 /**
  * Initialize self-attention structure
@@ -48,14 +48,14 @@ typedef struct {
  * @param params Attention parameters
  * @return 0 on success, -1 on error
  */
-int tinyaiInitSelfAttention(TinyAISelfAttention *attention, const TinyAIAttentionParams *params);
+int hyperionInitSelfAttention(HyperionSelfAttention *attention, const HyperionAttentionParams *params);
 
 /**
  * Free self-attention resources
  *
  * @param attention Attention structure to free
  */
-void tinyaiDestroySelfAttention(TinyAISelfAttention *attention);
+void hyperionDestroySelfAttention(HyperionSelfAttention *attention);
 
 /**
  * Set weights for self-attention
@@ -71,10 +71,10 @@ void tinyaiDestroySelfAttention(TinyAISelfAttention *attention);
  * @param outputBias Output projection bias
  * @return 0 on success, -1 on error
  */
-int tinyaiSetAttentionWeights(TinyAISelfAttention *attention, const TinyAIMatrix4bit *queryWeight,
-                              const TinyAIMatrix4bit *keyWeight,
-                              const TinyAIMatrix4bit *valueWeight,
-                              const TinyAIMatrix4bit *outputWeight, const float *queryBias,
+int hyperionSetAttentionWeights(HyperionSelfAttention *attention, const HyperionMatrix4bit *queryWeight,
+                              const HyperionMatrix4bit *keyWeight,
+                              const HyperionMatrix4bit *valueWeight,
+                              const HyperionMatrix4bit *outputWeight, const float *queryBias,
                               const float *keyBias, const float *valueBias,
                               const float *outputBias);
 
@@ -86,7 +86,7 @@ int tinyaiSetAttentionWeights(TinyAISelfAttention *attention, const TinyAIMatrix
  * @param output Output tensor [seqLength x hiddenDim]
  * @return 0 on success, -1 on error
  */
-int tinyaiSelfAttentionForward(TinyAISelfAttention *attention, const float *input, float *output);
+int hyperionSelfAttentionForward(HyperionSelfAttention *attention, const float *input, float *output);
 
 /**
  * SIMD-accelerated query-key-value projection
@@ -107,8 +107,8 @@ int tinyaiSelfAttentionForward(TinyAISelfAttention *attention, const float *inpu
  * @param headDim Dimension of each head
  * @return 0 on success, -1 on error
  */
-int tinyaiSimdQKVProjection(const float *input, const TinyAIMatrix4bit *queryWeight,
-                            const TinyAIMatrix4bit *keyWeight, const TinyAIMatrix4bit *valueWeight,
+int hyperionSimdQKVProjection(const float *input, const HyperionMatrix4bit *queryWeight,
+                            const HyperionMatrix4bit *keyWeight, const HyperionMatrix4bit *valueWeight,
                             const float *queryBias, const float *keyBias, const float *valueBias,
                             float *query, float *key, float *value, uint32_t seqLength,
                             uint32_t hiddenDim, uint32_t numHeads, uint32_t headDim);
@@ -122,11 +122,11 @@ int tinyaiSimdQKVProjection(const float *input, const TinyAIMatrix4bit *queryWei
  * @param seqLength Sequence length
  * @param numHeads Number of attention heads
  * @param headDim Dimension of each head
- * @param scaleFactor Scale factor (usually 1/sqrt(headDim))
+ * @param scaleFactor Scale factor for QK^T product (usually 1/sqrt(headDim))
  * @param useCausalMask Whether to use causal masking
  * @return 0 on success, -1 on error
  */
-int tinyaiSimdAttentionScores(const float *query, const float *key, float *scores,
+int hyperionSimdAttentionScores(const float *query, const float *key, float *scores,
                               uint32_t seqLength, uint32_t numHeads, uint32_t headDim,
                               float scaleFactor, bool useCausalMask);
 
@@ -139,7 +139,7 @@ int tinyaiSimdAttentionScores(const float *query, const float *key, float *score
  * @param numHeads Number of attention heads
  * @return 0 on success, -1 on error
  */
-int tinyaiSimdAttentionSoftmax(const float *scores, float *softmaxScores, uint32_t seqLength,
+int hyperionSimdAttentionSoftmax(const float *scores, float *softmaxScores, uint32_t seqLength,
                                uint32_t numHeads);
 
 /**
@@ -153,7 +153,7 @@ int tinyaiSimdAttentionSoftmax(const float *scores, float *softmaxScores, uint32
  * @param headDim Dimension of each head
  * @return 0 on success, -1 on error
  */
-int tinyaiSimdAttentionContext(const float *softmaxScores, const float *value, float *context,
+int hyperionSimdAttentionContext(const float *softmaxScores, const float *value, float *context,
                                uint32_t seqLength, uint32_t numHeads, uint32_t headDim);
 
 /**
@@ -167,8 +167,8 @@ int tinyaiSimdAttentionContext(const float *softmaxScores, const float *value, f
  * @param hiddenDim Hidden dimension
  * @return 0 on success, -1 on error
  */
-int tinyaiSimdOutputProjection(const float *context, const TinyAIMatrix4bit *outputWeight,
+int hyperionSimdOutputProjection(const float *context, const HyperionMatrix4bit *outputWeight,
                                const float *outputBias, float *output, uint32_t seqLength,
                                uint32_t hiddenDim);
 
-#endif /* TINYAI_ATTENTION_H */
+#endif /* HYPERION_ATTENTION_H */

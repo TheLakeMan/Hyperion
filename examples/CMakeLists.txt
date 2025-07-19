@@ -2,10 +2,10 @@
 cmake_minimum_required(VERSION 3.10)
 
 # Option to build examples
-option(BUILD_EXAMPLES "Build TinyAI example applications" ON)
+option(BUILD_EXAMPLES "Build Hyperion example applications" ON)
 
 if(BUILD_EXAMPLES)
-    message(STATUS "Building TinyAI examples")
+    message(STATUS "Building Hyperion examples")
     
     # Include subdirectories
     add_subdirectory(chatbot)
@@ -17,9 +17,9 @@ if(BUILD_EXAMPLES)
     
     # Install example data
     install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/data
-        DESTINATION share/tinyai/examples
+        DESTINATION share/hyperion/examples
         PATTERN "*.md" EXCLUDE
     )
 else()
-    message(STATUS "TinyAI examples will not be built (BUILD_EXAMPLES is ON)")
+    message(STATUS "Hyperion examples will not be built (BUILD_EXAMPLES is OFF)")
 endif()

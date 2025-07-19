@@ -1,8 +1,8 @@
 /**
  * @file media_tagger.h
- * @brief Header for media tagging system in TinyAI
+ * @brief Header for media tagging system in Hyperion
  *
- * This header defines the media tagging API for TinyAI, which provides
+ * This header defines the media tagging API for Hyperion, which provides
  * automated tagging of media files (images, audio, text) with relevant metadata.
  */
 
@@ -28,7 +28,7 @@ typedef enum {
     TINYAI_MEDIA_TYPE_AUDIO,
     TINYAI_MEDIA_TYPE_TEXT,
     TINYAI_MEDIA_TYPE_UNKNOWN
-} TinyAIMediaType;
+} HyperionMediaType;
 
 /**
  * Tag category types
@@ -41,7 +41,7 @@ typedef enum {
     TINYAI_TAG_CATEGORY_TOPIC,   /* Topics/subjects */
     TINYAI_TAG_CATEGORY_CUSTOM,  /* Custom category */
     TINYAI_TAG_CATEGORY_ALL      /* All categories */
-} TinyAITagCategory;
+} HyperionTagCategory;
 
 /**
  * Tag structure representing a single tag
@@ -49,8 +49,8 @@ typedef enum {
 typedef struct {
     char             *text;       /* Tag text */
     float             confidence; /* Confidence score (0-1) */
-    TinyAITagCategory category;   /* Tag category */
-} TinyAITag;
+    HyperionTagCategory category;   /* Tag category */
+} HyperionTag;
 
 /**
  * Media tagging configuration
@@ -67,7 +67,7 @@ typedef struct {
     /* Operation parameters */
     int               maxTags;             /* Maximum number of tags to generate */
     float             confidenceThreshold; /* Minimum confidence to include a tag */
-    TinyAITagCategory categories;          /* Categories to include (bitwise OR) */
+    HyperionTagCategory categories;          /* Categories to include (bitwise OR) */
 
     /* Performance configuration */
     bool useQuantization; /* Whether to use 4-bit quantization */
@@ -75,12 +75,12 @@ typedef struct {
     int  imageWidth;      /* Input image width */
     int  imageHeight;     /* Input image height */
     int  maxTextLength;   /* Maximum text length for processing */
-} TinyAIMediaTaggerConfig;
+} HyperionMediaTaggerConfig;
 
 /**
  * Media tagger handle
  */
-typedef struct TinyAIMediaTagger TinyAIMediaTagger;
+typedef struct HyperionMediaTagger HyperionMediaTagger;
 
 /**
  * Create a media tagger
@@ -88,14 +88,14 @@ typedef struct TinyAIMediaTagger TinyAIMediaTagger;
  * @param config Configuration for the tagger
  * @return New tagger or NULL on error
  */
-TinyAIMediaTagger *tinyaiMediaTaggerCreate(const TinyAIMediaTaggerConfig *config);
+HyperionMediaTagger *hyperionMediaTaggerCreate(const HyperionMediaTaggerConfig *config);
 
 /**
  * Free a media tagger
  *
  * @param tagger Tagger to free
  */
-void tinyaiMediaTaggerFree(TinyAIMediaTagger *tagger);
+void hyperionMediaTaggerFree(HyperionMediaTagger *tagger);
 
 /**
  * Detect media type from file extension
@@ -103,16 +103,16 @@ void tinyaiMediaTaggerFree(TinyAIMediaTagger *tagger);
  * @param filepath Path to the media file
  * @return Detected media type
  */
-TinyAIMediaType tinyaiMediaTaggerDetectType(const char *filepath);
+HyperionMediaType hyperionMediaTaggerDetectType(const char *filepath);
 
 /**
  * Set categories to include in tagging
  *
  * @param tagger Tagger to configure
- * @param categories Tag categories to include (bitwise OR of TinyAITagCategory values)
+ * @param categories Tag categories to include (bitwise OR of HyperionTagCategory values)
  * @return true on success, false on failure
  */
-bool tinyaiMediaTaggerSetCategories(TinyAIMediaTagger *tagger, TinyAITagCategory categories);
+bool hyperionMediaTaggerSetCategories(HyperionMediaTagger *tagger, HyperionTagCategory categories);
 
 /**
  * Set confidence threshold for tags
@@ -121,7 +121,7 @@ bool tinyaiMediaTaggerSetCategories(TinyAIMediaTagger *tagger, TinyAITagCategory
  * @param threshold Minimum confidence threshold (0-1)
  * @return true on success, false on failure
  */
-bool tinyaiMediaTaggerSetThreshold(TinyAIMediaTagger *tagger, float threshold);
+bool hyperionMediaTaggerSetThreshold(HyperionMediaTagger *tagger, float threshold);
 
 /**
  * Tag a media file
@@ -133,8 +133,8 @@ bool tinyaiMediaTaggerSetThreshold(TinyAIMediaTagger *tagger, float threshold);
  * @param mediaType Optional pointer to store detected media type
  * @return Number of tags generated or -1 on error
  */
-int tinyaiMediaTaggerTagFile(TinyAIMediaTagger *tagger, const char *filepath, TinyAITag *tags,
-                             int maxTags, TinyAIMediaType *mediaType);
+int hyperionMediaTaggerTagFile(HyperionMediaTagger *tagger, const char *filepath, HyperionTag *tags,
+                             int maxTags, HyperionMediaType *mediaType);
 
 /**
  * Tag an image
@@ -145,7 +145,7 @@ int tinyaiMediaTaggerTagFile(TinyAIMediaTagger *tagger, const char *filepath, Ti
  * @param maxTags Maximum number of tags to generate
  * @return Number of tags generated or -1 on error
  */
-int tinyaiMediaTaggerTagImage(TinyAIMediaTagger *tagger, const TinyAIImage *image, TinyAITag *tags,
+int hyperionMediaTaggerTagImage(HyperionMediaTagger *tagger, const HyperionImage *image, HyperionTag *tags,
                               int maxTags);
 
 /**
@@ -157,7 +157,7 @@ int tinyaiMediaTaggerTagImage(TinyAIMediaTagger *tagger, const TinyAIImage *imag
  * @param maxTags Maximum number of tags to generate
  * @return Number of tags generated or -1 on error
  */
-int tinyaiMediaTaggerTagText(TinyAIMediaTagger *tagger, const char *text, TinyAITag *tags,
+int hyperionMediaTaggerTagText(HyperionMediaTagger *tagger, const char *text, HyperionTag *tags,
                              int maxTags);
 
 /**
@@ -171,9 +171,9 @@ int tinyaiMediaTaggerTagText(TinyAIMediaTagger *tagger, const char *text, TinyAI
  * @param mediaType Type of media for context-appropriate description
  * @return true on success, false on failure
  */
-bool tinyaiMediaTaggerGenerateDescription(TinyAIMediaTagger *tagger, const TinyAITag *tags,
+bool hyperionMediaTaggerGenerateDescription(HyperionMediaTagger *tagger, const HyperionTag *tags,
                                           int numTags, char *description, int maxLength,
-                                          TinyAIMediaType mediaType);
+                                          HyperionMediaType mediaType);
 
 /**
  * Save tags to a file
@@ -184,7 +184,7 @@ bool tinyaiMediaTaggerGenerateDescription(TinyAIMediaTagger *tagger, const TinyA
  * @param format Format to save tags in ("txt", "json", "xml")
  * @return true on success, false on failure
  */
-bool tinyaiMediaTaggerSaveTags(const TinyAITag *tags, int numTags, const char *filepath,
+bool hyperionMediaTaggerSaveTags(const HyperionTag *tags, int numTags, const char *filepath,
                                const char *format);
 
 /**
@@ -193,7 +193,7 @@ bool tinyaiMediaTaggerSaveTags(const TinyAITag *tags, int numTags, const char *f
  * @param tags Array of tags
  * @param numTags Number of tags in the array
  */
-void tinyaiMediaTaggerFreeTags(TinyAITag *tags, int numTags);
+void hyperionMediaTaggerFreeTags(HyperionTag *tags, int numTags);
 
 /**
  * Get memory usage statistics
@@ -203,7 +203,7 @@ void tinyaiMediaTaggerFreeTags(TinyAITag *tags, int numTags);
  * @param activationMemory Output parameter for activation memory (in bytes)
  * @return true on success, false on failure
  */
-bool tinyaiMediaTaggerGetMemoryUsage(const TinyAIMediaTagger *tagger, size_t *weightMemory,
+bool hyperionMediaTaggerGetMemoryUsage(const HyperionMediaTagger *tagger, size_t *weightMemory,
                                      size_t *activationMemory);
 
 /**
@@ -213,10 +213,10 @@ bool tinyaiMediaTaggerGetMemoryUsage(const TinyAIMediaTagger *tagger, size_t *we
  * @param enable Whether to enable SIMD
  * @return true on success, false on failure
  */
-bool tinyaiMediaTaggerEnableSIMD(TinyAIMediaTagger *tagger, bool enable);
+bool hyperionMediaTaggerEnableSIMD(HyperionMediaTagger *tagger, bool enable);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* TINYAI_MEDIA_TAGGER_H */
+#endif /* HYPERION_MEDIA_TAGGER_H */

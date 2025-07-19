@@ -1,4 +1,4 @@
-# TinyAI Project Status
+# Hyperion Project Status
 
 ## Build Status
 
@@ -134,4 +134,4 @@
    - [ ] Tutorial videos
 
 5. Extended model format support
-6. Enhanced developer tools 
+6. Enhanced developer tools

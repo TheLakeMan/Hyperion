@@ -1,4 +1,4 @@
-#include "tinyai.h"
+#include "hyperion.h"
 #include "utils/layer_scheduler.h"
 #include "utils/memory_optimizer.h"
 #include "utils/progressive_loader.h"
@@ -50,7 +50,7 @@ typedef struct {
 // Initialize benchmark configuration
 static void init_benchmark_config(BenchmarkConfig *config)
 {
-    config->model_path  = "models/example.tinyai";
+    config->model_path  = "models/example.hyperion";
     config->prompt      = "The quick brown fox jumps over the lazy dog.";
     config->max_length  = 100;
     config->temperature = 0.7f;
@@ -76,7 +76,7 @@ static void run_warmup(TinyAIModel *model, const char *prompt,
     char output[MAX_PROMPT_LENGTH];
 
     for (int i = 0; i < WARMUP_ITERATIONS; i++) {
-        tinyaiGenerateText(model, prompt, gen_config, output);
+        hyperionGenerateText(model, prompt, gen_config, output);
     }
 }
 
@@ -84,23 +84,23 @@ static void run_warmup(TinyAIModel *model, const char *prompt,
 static void collect_metrics(TinyAIModel *model, PerformanceMetrics *metrics)
 {
     // Get inference time and throughput
-    TinyAIPerformanceMetrics perf_metrics = tinyaiGetPerformanceMetrics(model);
+    TinyAIPerformanceMetrics perf_metrics = hyperionGetPerformanceMetrics(model);
     metrics->inference_time               = perf_metrics.inference_time;
     metrics->throughput                   = perf_metrics.throughput;
 
     // Get memory usage
-    TinyAIResourceUsage usage = tinyaiGetResourceUsage(model);
+    TinyAIResourceUsage usage = hyperionGetResourceUsage(model);
     metrics->memory_usage     = usage.memory_usage;
     metrics->cpu_usage        = usage.cpu_usage;
 
     // Get cache statistics
-    TinyAICacheStats cache_stats = tinyaiGetCacheStats(model);
+    TinyAICacheStats cache_stats = hyperionGetCacheStats(model);
     metrics->cache_hit_rate      = cache_stats.hit_rate;
 
     // Get memory optimizer statistics
-    TinyAIMemoryOptimizer *optimizer = tinyaiGetMemoryOptimizer(model);
+    TinyAIMemoryOptimizer *optimizer = hyperionGetMemoryOptimizer(model);
     if (optimizer) {
-        TinyAIMemoryStats mem_stats = tinyaiGetMemoryOptimizerStats(optimizer);
+        TinyAIMemoryStats mem_stats = hyperionGetMemoryOptimizerStats(optimizer);
         metrics->memory_operations  = mem_stats.operations;
         metrics->tensor_reuses      = mem_stats.tensor_reuses;
     }
@@ -129,7 +129,7 @@ static void run_benchmark_batch(TinyAIModel *model, const BenchmarkConfig *confi
 
     while ((clock() - start_time) / CLOCKS_PER_SEC < BENCHMARK_DURATION_SECONDS) {
         // Generate text
-        tinyaiGenerateText(model, config->prompt, &gen_config, output);
+        hyperionGenerateText(model, config->prompt, &gen_config, output);
 
         // Collect metrics
         PerformanceMetrics sample;
@@ -201,10 +201,10 @@ int main(int argc, char **argv)
                                      .max_pool_size       = 2 * 1024 * 1024 * 1024,
                                      .track_allocations   = true,
                                      .enable_optimization = true};
-    tinyaiInitMemory(&mem_config);
+    hyperionInitMemory(&mem_config);
 
     // Load model
-    TinyAIModel *model = tinyaiLoadModel(config.model_path);
+    TinyAIModel *model = hyperionLoadModel(config.model_path);
     if (!model) {
         fprintf(stderr, "Failed to load model: %s\n", config.model_path);
         return 1;
@@ -212,9 +212,9 @@ int main(int argc, char **argv)
 
     // Configure optimizations
     if (config.enable_simd) {
-        tinyaiEnableSIMD(model, TINYAI_SIMD_OP_MATRIX_MUL, true);
-        tinyaiEnableSIMD(model, TINYAI_SIMD_OP_CONV, true);
-        tinyaiSetSIMDOptimizationLevel(model, 3);
+        hyperionEnableSIMD(model, TINYAI_SIMD_OP_MATRIX_MUL, true);
+        hyperionEnableSIMD(model, TINYAI_SIMD_OP_CONV, true);
+        hyperionSetSIMDOptimizationLevel(model, 3);
     }
 
     if (config.enable_cache_opt) {
@@ -222,7 +222,7 @@ int main(int argc, char **argv)
                                           .cache_line_size   = 64,
                                           .enable_prefetch   = true,
                                           .prefetch_distance = 2};
-        tinyaiConfigureCacheOptimization(model, &cache_config);
+        hyperionConfigureCacheOptimization(model, &cache_config);
     }
 
     if (config.enable_memory_opt) {
@@ -230,8 +230,8 @@ int main(int argc, char **argv)
                                                   .enable_in_place_ops   = true,
                                                   .memory_speed_tradeoff = 0.7f,
                                                   .max_memory_budget     = 768 * 1024 * 1024};
-        TinyAIMemoryOptimizer      *optimizer  = tinyaiCreateMemoryOptimizer(&opt_config);
-        tinyaiSetMemoryOptimizer(model, optimizer);
+        TinyAIMemoryOptimizer      *optimizer  = hyperionCreateMemoryOptimizer(&opt_config);
+        hyperionSetMemoryOptimizer(model, optimizer);
     }
 
     // Run benchmarks
@@ -251,8 +251,8 @@ int main(int argc, char **argv)
     print_results(&config, &results);
 
     // Cleanup
-    tinyaiFreeModel(model);
-    tinyaiFreeMemory();
+    hyperionFreeModel(model);
+    hyperionFreeMemory();
 
     return 0;
 }

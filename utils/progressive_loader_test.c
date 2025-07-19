@@ -41,7 +41,7 @@ MockModelFile   *create_mock_model_file(const char *path);
 void             free_mock_model_file(MockModelFile *model);
 MockMappedModel *mock_map_file(const char *path);
 void             mock_unmap_file(MockMappedModel *mapped);
-void             print_memory_stats(const TinyAIMemoryStats *stats);
+void             print_memory_stats(const HyperionMemoryStats *stats);
 
 // Global mock file for testing
 MockModelFile *g_mock_model = NULL;
@@ -54,12 +54,12 @@ void test_create_progressive_loader()
     printf("=== Testing Progressive Loader Creation ===\n");
 
     // Create default configuration
-    TinyAIProgressiveLoaderConfig config = tinyaiCreateDefaultProgressiveLoaderConfig();
+    HyperionProgressiveLoaderConfig config = hyperionCreateDefaultProgressiveLoaderConfig();
 
     // Modify configuration for testing
     config.max_memory_budget      = 30 * 1024 * 1024; // 30MB memory budget
     config.enable_layer_unloading = true;
-    config.priority_strategy      = TINYAI_PRIORITY_LRU;
+    config.priority_strategy      = HYPERION_PRIORITY_LRU;
     config.max_prefetch_layers    = 2;
 
     // Create the loader with mock file
@@ -67,11 +67,11 @@ void test_create_progressive_loader()
     g_mock_model          = create_mock_model_file(mock_path);
 
     // Create the progressive loader
-    TinyAIProgressiveLoader *loader = tinyaiCreateProgressiveLoader(mock_path, &config);
+    HyperionProgressiveLoader *loader = hyperionCreateProgressiveLoader(mock_path, &config);
     assert(loader != NULL && "Failed to create progressive loader");
 
     // Get initial memory statistics
-    TinyAIMemoryStats stats = tinyaiGetProgressiveLoaderMemoryStats(loader);
+    HyperionMemoryStats stats = hyperionGetProgressiveLoaderMemoryStats(loader);
     print_memory_stats(&stats);
 
     // Verify initial state
@@ -80,7 +80,7 @@ void test_create_progressive_loader()
     assert(stats.loadedLayerCount == 0);
 
     // Clean up
-    tinyaiFreeProgressiveLoader(loader);
+    hyperionFreeProgressiveLoader(loader);
     printf("Progressive loader creation test passed!\n\n");
 }
 
@@ -92,39 +92,39 @@ void test_load_unload_layers()
     printf("=== Testing Layer Loading and Unloading ===\n");
 
     // Create configuration with small memory budget to force unloading
-    TinyAIProgressiveLoaderConfig config = tinyaiCreateDefaultProgressiveLoaderConfig();
+    HyperionProgressiveLoaderConfig config = hyperionCreateDefaultProgressiveLoaderConfig();
     config.max_memory_budget             = LAYER_SIZE * 3; // Only enough for 3 layers
     config.enable_layer_unloading        = true;
-    config.priority_strategy             = TINYAI_PRIORITY_LRU;
+    config.priority_strategy             = HYPERION_PRIORITY_LRU;
 
     // Create the loader
     const char              *mock_path = "mock_model.bin";
-    TinyAIProgressiveLoader *loader    = tinyaiCreateProgressiveLoader(mock_path, &config);
+    HyperionProgressiveLoader *loader    = hyperionCreateProgressiveLoader(mock_path, &config);
     assert(loader != NULL);
 
     // Load first layer
     printf("Loading layer 0...\n");
-    bool success = tinyaiLoadModelLayer(loader, 0);
+    bool success = hyperionLoadModelLayer(loader, 0);
     assert(success && "Failed to load layer 0");
 
     // Check layer state
-    TinyAILayerState state = tinyaiGetLayerState(loader, 0);
-    assert(state == TINYAI_LAYER_LOADED && "Layer 0 should be loaded");
+    HyperionLayerState state = hyperionGetLayerState(loader, 0);
+    assert(state == HYPERION_LAYER_LOADED && "Layer 0 should be loaded");
 
     // Get memory stats after loading first layer
-    TinyAIMemoryStats stats = tinyaiGetProgressiveLoaderMemoryStats(loader);
+    HyperionMemoryStats stats = hyperionGetProgressiveLoaderMemoryStats(loader);
     print_memory_stats(&stats);
     assert(stats.loadedLayerCount == 1);
 
     // Load more layers to test automatic unloading
     printf("Loading layers 1-5 (should trigger automatic unloading)...\n");
     for (int i = 1; i <= 5; i++) {
-        success = tinyaiLoadModelLayer(loader, i);
+        success = hyperionLoadModelLayer(loader, i);
         assert(success && "Failed to load layer");
-        tinyaiUpdateLayerAccessStats(loader, i);
+        hyperionUpdateLayerAccess(loader, i);
 
         // Print current memory stats
-        stats = tinyaiGetProgressiveLoaderMemoryStats(loader);
+        stats = hyperionGetProgressiveLoaderMemoryStats(loader);
         printf("After loading layer %d:\n", i);
         print_memory_stats(&stats);
 
@@ -135,7 +135,7 @@ void test_load_unload_layers()
     // Verify that some layers were unloaded to make room
     int loaded_count = 0;
     for (int i = 0; i < LAYER_COUNT; i++) {
-        if (tinyaiGetLayerState(loader, i) == TINYAI_LAYER_LOADED) {
+        if (hyperionGetLayerState(loader, i) == HYPERION_LAYER_LOADED) {
             loaded_count++;
         }
     }
@@ -145,20 +145,20 @@ void test_load_unload_layers()
 
     // Test explicit unloading
     for (int i = 0; i < LAYER_COUNT; i++) {
-        if (tinyaiGetLayerState(loader, i) == TINYAI_LAYER_LOADED) {
+        if (hyperionGetLayerState(loader, i) == HYPERION_LAYER_LOADED) {
             printf("Explicitly unloading layer %d...\n", i);
-            success = tinyaiUnloadModelLayer(loader, i);
+            success = hyperionUnloadLayer(loader, i);
             assert(success && "Failed to unload layer");
         }
     }
 
     // Verify all layers are unloaded
-    stats = tinyaiGetProgressiveLoaderMemoryStats(loader);
+    stats = hyperionGetProgressiveLoaderMemoryStats(loader);
     print_memory_stats(&stats);
     assert(stats.loadedLayerCount == 0 && "Not all layers were unloaded");
 
     // Clean up
-    tinyaiFreeProgressiveLoader(loader);
+    hyperionFreeProgressiveLoader(loader);
     printf("Layer loading/unloading test passed!\n\n");
 }
 
@@ -170,52 +170,52 @@ void test_layer_dependencies()
     printf("=== Testing Layer Dependencies ===\n");
 
     // Create configuration
-    TinyAIProgressiveLoaderConfig config = tinyaiCreateDefaultProgressiveLoaderConfig();
+    HyperionProgressiveLoaderConfig config = hyperionCreateDefaultProgressiveLoaderConfig();
     config.max_memory_budget             = TEST_MODEL_SIZE; // Large enough for all layers
     config.enable_dependency_tracking    = true;
 
     // Create the loader
     const char              *mock_path = "mock_model.bin";
-    TinyAIProgressiveLoader *loader    = tinyaiCreateProgressiveLoader(mock_path, &config);
+    HyperionProgressiveLoader *loader    = hyperionCreateProgressiveLoader(mock_path, &config);
     assert(loader != NULL);
 
     // Add dependencies: layer 1 depends on layer 0
-    bool success = tinyaiAddLayerDependency(loader, 1, 0);
+    bool success = hyperionAddLayerDependency(loader, 1, 0);
     assert(success && "Failed to add dependency");
 
     // Add more dependencies
-    tinyaiAddLayerDependency(loader, 2, 1);
-    tinyaiAddLayerDependency(loader, 3, 2);
+    hyperionAddLayerDependency(loader, 2, 1);
+    hyperionAddLayerDependency(loader, 3, 2);
 
     // Check if layers can be unloaded (should be false due to dependencies)
     printf("Loading layer 0...\n");
-    tinyaiLoadModelLayer(loader, 0);
+    hyperionLoadModelLayer(loader, 0);
 
     printf("Loading layer 1 (depends on layer 0)...\n");
-    tinyaiLoadModelLayer(loader, 1);
+    hyperionLoadModelLayer(loader, 1);
 
     printf("Loading layer 2 (depends on layer 1)...\n");
-    tinyaiLoadModelLayer(loader, 2);
+    hyperionLoadModelLayer(loader, 2);
 
     // Check dependency chain
     printf("Checking if base layers can be unloaded (should be false)...\n");
-    bool can_unload = tinyaiCanUnloadLayer(loader, 0);
+    bool can_unload = hyperionCanUnloadLayer(loader, 0);
     printf("Can unload layer 0: %s (expected: false)\n", can_unload ? "true" : "false");
     assert(!can_unload && "Should not be able to unload layer 0 due to dependencies");
 
     // Unload in correct order
     printf("Unloading layers in correct order...\n");
-    tinyaiUnloadModelLayer(loader, 2);
-    tinyaiUnloadModelLayer(loader, 1);
+    hyperionUnloadLayer(loader, 2);
+    hyperionUnloadLayer(loader, 1);
 
     // Now layer 0 should be unloadable
-    can_unload = tinyaiCanUnloadLayer(loader, 0);
+    can_unload = hyperionCanUnloadLayer(loader, 0);
     printf("Can unload layer 0 after dependent layers unloaded: %s (expected: true)\n",
            can_unload ? "true" : "false");
     assert(can_unload && "Should be able to unload layer 0 now");
 
     // Clean up
-    tinyaiFreeProgressiveLoader(loader);
+    hyperionFreeProgressiveLoader(loader);
     printf("Layer dependencies test passed!\n\n");
 }
 
@@ -227,27 +227,27 @@ void test_preload_layers()
     printf("=== Testing Layer Preloading ===\n");
 
     // Create configuration
-    TinyAIProgressiveLoaderConfig config = tinyaiCreateDefaultProgressiveLoaderConfig();
+    HyperionProgressiveLoaderConfig config = hyperionCreateDefaultProgressiveLoaderConfig();
     config.max_memory_budget             = TEST_MODEL_SIZE; // Large enough for all layers
     config.max_prefetch_layers           = 3;
 
     // Create the loader
     const char              *mock_path = "mock_model.bin";
-    TinyAIProgressiveLoader *loader    = tinyaiCreateProgressiveLoader(mock_path, &config);
+    HyperionProgressiveLoader *loader    = hyperionCreateProgressiveLoader(mock_path, &config);
     assert(loader != NULL);
 
     // Preload specific layers
     int layers_to_preload[] = {2, 4, 6};
     printf("Preloading layers 2, 4, and 6...\n");
-    bool success = tinyaiPreloadLayers(loader, layers_to_preload, 3);
+    bool success = hyperionPreloadLayers(loader, layers_to_preload, 3);
     assert(success && "Failed to preload layers");
 
     // Check that the layers were loaded
     for (int i = 0; i < 3; i++) {
         int              layer = layers_to_preload[i];
-        TinyAILayerState state = tinyaiGetLayerState(loader, layer);
-        printf("Layer %d state: %d (expected: %d LOADED)\n", layer, state, TINYAI_LAYER_LOADED);
-        assert(state == TINYAI_LAYER_LOADED && "Layer should be loaded");
+        HyperionLayerState state = hyperionGetLayerState(loader, layer);
+        printf("Layer %d state: %d (expected: %d LOADED)\n", layer, state, HYPERION_LAYER_LOADED);
+        assert(state == HYPERION_LAYER_LOADED && "Layer should be loaded");
     }
 
     // Test predictive preloading based on access patterns
@@ -255,12 +255,12 @@ void test_preload_layers()
 
     // Simulate sequential access pattern
     for (int i = 0; i < 3; i++) {
-        tinyaiUpdateLayerAccessStats(loader, i);
+        hyperionUpdateLayerAccess(loader, i);
     }
 
     // Get layers to preload based on pattern
     int  count       = 0;
-    int *next_layers = tinyaiGetLayersToPreload(loader, 2, &count);
+    int *next_layers = hyperionGetLayersToPreload(loader, 2, &count);
     assert(next_layers != NULL && "Failed to get layers to preload");
 
     printf("Predicted next layers to load after layer 2: ");
@@ -274,7 +274,7 @@ void test_preload_layers()
     free(next_layers);
 
     // Clean up
-    tinyaiFreeProgressiveLoader(loader);
+    hyperionFreeProgressiveLoader(loader);
     printf("Layer preloading test passed!\n\n");
 }
 
@@ -286,24 +286,24 @@ void test_memory_budget()
     printf("=== Testing Memory Budget Constraints ===\n");
 
     // Create configuration with limited memory budget
-    TinyAIProgressiveLoaderConfig config = tinyaiCreateDefaultProgressiveLoaderConfig();
+    HyperionProgressiveLoaderConfig config = hyperionCreateDefaultProgressiveLoaderConfig();
     config.max_memory_budget             = LAYER_SIZE * 2; // Only enough for 2 layers
     config.enable_layer_unloading        = true;
 
     // Create the loader
     const char              *mock_path = "mock_model.bin";
-    TinyAIProgressiveLoader *loader    = tinyaiCreateProgressiveLoader(mock_path, &config);
+    HyperionProgressiveLoader *loader    = hyperionCreateProgressiveLoader(mock_path, &config);
     assert(loader != NULL);
 
     // Get initial memory stats
-    TinyAIMemoryStats stats = tinyaiGetProgressiveLoaderMemoryStats(loader);
+    HyperionMemoryStats stats = hyperionGetProgressiveLoaderMemoryStats(loader);
     print_memory_stats(&stats);
 
     // Load layers until we hit the memory budget
     printf("Loading layers until we hit memory budget...\n");
     int loaded_count = 0;
     for (int i = 0; i < LAYER_COUNT; i++) {
-        bool success = tinyaiLoadModelLayer(loader, i);
+        bool success = hyperionLoadModelLayer(loader, i);
         if (success) {
             loaded_count++;
             printf("Successfully loaded layer %d\n", i);
@@ -314,7 +314,7 @@ void test_memory_budget()
         }
 
         // Check current memory stats
-        stats = tinyaiGetProgressiveLoaderMemoryStats(loader);
+        stats = hyperionGetProgressiveLoaderMemoryStats(loader);
         print_memory_stats(&stats);
     }
 
@@ -324,18 +324,18 @@ void test_memory_budget()
 
     // Update memory budget and try loading more
     printf("Increasing memory budget...\n");
-    bool success = tinyaiSetProgressiveLoaderMemoryBudget(loader, LAYER_SIZE * 4);
+    bool success = hyperionSetProgressiveLoaderMemoryBudget(loader, LAYER_SIZE * 4);
     assert(success && "Failed to update memory budget");
 
     // Check updated memory stats
-    stats = tinyaiGetProgressiveLoaderMemoryStats(loader);
+    stats = hyperionGetProgressiveLoaderMemoryStats(loader);
     print_memory_stats(&stats);
 
     // Try loading more layers with increased budget
     printf("Loading more layers with increased budget...\n");
     for (int i = 0; i < LAYER_COUNT; i++) {
-        if (tinyaiGetLayerState(loader, i) != TINYAI_LAYER_LOADED) {
-            success = tinyaiLoadModelLayer(loader, i);
+        if (hyperionGetLayerState(loader, i) != HYPERION_LAYER_LOADED) {
+            success = hyperionLoadModelLayer(loader, i);
             if (success) {
                 printf("Successfully loaded layer %d with increased budget\n", i);
             }
@@ -352,7 +352,7 @@ void test_memory_budget()
     }
 
     // Clean up
-    tinyaiFreeProgressiveLoader(loader);
+    hyperionFreeProgressiveLoader(loader);
     printf("Memory budget test passed!\n\n");
 }
 
@@ -384,7 +384,7 @@ int main()
 /**
  * Print memory statistics
  */
-void print_memory_stats(const TinyAIMemoryStats *stats)
+void print_memory_stats(const HyperionMemoryStats *stats)
 {
     printf("Memory Stats:\n");
     printf("  Total Model Size:      %zu bytes (%.2f MB)\n", stats->totalModelSize,

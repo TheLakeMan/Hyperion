@@ -1,6 +1,6 @@
-# TinyAI Document Processor Example
+# Hyperion Document Processor Example
 
-This example demonstrates how to use TinyAI's document processing capabilities for text classification, summarization, and information extraction. The document processor is built on top of TinyAI's text generation capabilities and uses 4-bit quantized models for efficient operation on resource-constrained devices.
+This example demonstrates how to use Hyperion's document processing capabilities for text classification, summarization, and information extraction. The document processor is built on top of Hyperion's text generation capabilities and uses 4-bit quantized models for efficient operation on resource-constrained devices.
 
 ## Features
 
@@ -12,7 +12,7 @@ This example demonstrates how to use TinyAI's document processing capabilities f
 
 ## Building the Example
 
-To build the document processor example, ensure the `BUILD_EXAMPLES` option is set to `ON` when configuring TinyAI:
+To build the document processor example, ensure the `BUILD_EXAMPLES` option is set to `ON` when configuring Hyperion:
 
 ```bash
 mkdir build && cd build
@@ -100,4 +100,4 @@ You can customize the document processor by:
 3. Adjusting the input and output token lengths
 4. Using different prompts for information extraction
 
-See the TinyAI documentation for more information on training and customizing models.
+See the Hyperion documentation for more information on training and customizing models.

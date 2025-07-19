@@ -1,21 +1,21 @@
 # Quick Start Guide
 
-This guide will help you get started with TinyAI quickly. We'll create a simple text generation example.
+This guide will help you get started with Hyperion quickly. We'll create a simple text generation example.
 
 ## Prerequisites
 
-- TinyAI installed ([Installation Guide](installation.md))
+- Hyperion installed ([Installation Guide](installation.md))
 - Basic understanding of C programming
 - Text editor or IDE
 
-## Your First TinyAI Program
+## Your First Hyperion Program
 
 ### 1. Create a New Project
 
 Create a new directory for your project:
 ```bash
-mkdir tinyai-hello
-cd tinyai-hello
+mkdir hyperion-hello
+cd hyperion-hello
 ```
 
 ### 2. Create the Source File
@@ -23,33 +23,33 @@ cd tinyai-hello
 Create a file named `hello.c` with the following content:
 
 ```c
-#include <tinyai/core.h>
-#include <tinyai/models/text.h>
+#include <hyperion/core.h>
+#include <hyperion/models/text.h>
 #include <stdio.h>
 
 int main() {
-    // Initialize TinyAI
-    tinyai_init();
+    // Initialize Hyperion
+    hyperion_init();
     
-    // Load a small text model (included with TinyAI)
-    TinyAIModel* model = tinyai_load_model("models/small_text_model.tmai");
+    // Load a small text model (included with Hyperion)
+    HyperionModel* model = hyperion_load_model("models/small_text_model.tmai");
     if (!model) {
         printf("Failed to load model\n");
         return 1;
     }
     
     // Generate text
-    const char* prompt = "TinyAI is";
+    const char* prompt = "Hyperion is";
     char output[256];
     
-    tinyai_generate_text(model, prompt, output, sizeof(output), 50);
+    hyperion_generate_text(model, prompt, output, sizeof(output), 50);
     
     // Print the generated text
     printf("Generated: %s\n", output);
     
     // Clean up
-    tinyai_free_model(model);
-    tinyai_shutdown();
+    hyperion_free_model(model);
+    hyperion_shutdown();
     
     return 0;
 }
@@ -61,12 +61,12 @@ Create a `CMakeLists.txt` file:
 
 ```cmake
 cmake_minimum_required(VERSION 3.10)
-project(tinyai-hello C)
+project(hyperion-hello C)
 
-find_package(TinyAI REQUIRED)
+find_package(Hyperion REQUIRED)
 
 add_executable(hello hello.c)
-target_link_libraries(hello PRIVATE TinyAI::TinyAI)
+target_link_libraries(hello PRIVATE Hyperion::Hyperion)
 ```
 
 Build the project:
@@ -85,35 +85,35 @@ cmake --build .
 
 You should see output similar to:
 ```
-Generated: TinyAI is a lightweight AI framework designed for minimal hardware requirements...
+Generated: Hyperion is a lightweight AI framework designed for minimal hardware requirements...
 ```
 
 ## Basic Concepts
 
 ### 1. Initialization
 
-Always initialize TinyAI before use:
+Always initialize Hyperion before use:
 ```c
-tinyai_init();
+hyperion_init();
 ```
 
 ### 2. Loading Models
 
 Load pre-trained models:
 ```c
-TinyAIModel* model = tinyai_load_model("path/to/model.tmai");
+HyperionModel* model = hyperion_load_model("path/to/model.tmai");
 ```
 
 ### 3. Memory Management
 
-TinyAI provides memory-efficient operations:
+Hyperion provides memory-efficient operations:
 ```c
 // Configure memory
-TinyAIMemoryConfig mem_config = {
+HyperionMemoryConfig mem_config = {
     .initial_pool_size = 1024 * 1024,  // 1MB
     .enable_optimization = true
 };
-tinyai_configure_memory(&mem_config);
+hyperion_configure_memory(&mem_config);
 ```
 
 ### 4. Error Handling
@@ -121,7 +121,7 @@ tinyai_configure_memory(&mem_config);
 Check return values and handle errors:
 ```c
 if (!model) {
-    printf("Error: %s\n", tinyai_get_error());
+    printf("Error: %s\n", hyperion_get_error());
     return 1;
 }
 ```
@@ -130,8 +130,8 @@ if (!model) {
 
 Always clean up resources:
 ```c
-tinyai_free_model(model);
-tinyai_shutdown();
+hyperion_free_model(model);
+hyperion_shutdown();
 ```
 
 ## Next Steps
@@ -154,7 +154,7 @@ tinyai_shutdown();
 
 ```c
 // Configure generation parameters
-TinyAIGenerationConfig config = {
+HyperionGenerationConfig config = {
     .max_length = 100,
     .temperature = 0.7f,
     .top_k = 40,
@@ -162,30 +162,30 @@ TinyAIGenerationConfig config = {
 };
 
 // Generate text
-tinyai_generate_text_with_config(model, prompt, output, sizeof(output), &config);
+hyperion_generate_text_with_config(model, prompt, output, sizeof(output), &config);
 ```
 
 ### 2. Memory-Efficient Operations
 
 ```c
 // Enable in-place operations
-TinyAITensorConfig tensor_config = {
+HyperionTensorConfig tensor_config = {
     .enable_in_place = true,
-    .strategy = TINYAI_TENSOR_POOLED
+    .strategy = HYPERION_TENSOR_POOLED
 };
-TinyAITensor* tensor = tinyai_create_tensor_with_config(&tensor_config);
+HyperionTensor* tensor = hyperion_create_tensor_with_config(&tensor_config);
 ```
 
 ### 3. Performance Monitoring
 
 ```c
 // Track performance metrics
-TinyAIPerformanceConfig perf_config = {
+HyperionPerformanceConfig perf_config = {
     .track_memory_usage = true,
     .track_execution_time = true
 };
-TinyAIPerformanceMetrics metrics;
-tinyai_get_performance_metrics(&metrics);
+HyperionPerformanceMetrics metrics;
+hyperion_get_performance_metrics(&metrics);
 ```
 
 ## Tips and Best Practices
@@ -214,12 +214,12 @@ If you encounter issues:
 3. Check system requirements
 4. Enable debug logging:
    ```c
-   tinyai_set_log_level(TINYAI_LOG_DEBUG);
+   hyperion_set_log_level(HYPERION_LOG_DEBUG);
    ```
 
 ## Getting Help
 
 - Read the [Documentation](../index.md)
 - Check [Examples](../examples/)
-- Visit the [GitHub Repository](https://github.com/TheLakeMan/tinyai)
-- Open an issue for bugs or questions 
+- Visit the [GitHub Repository](https://github.com/TheLakeMan/hyperion)
+- Open an issue for bugs or questions

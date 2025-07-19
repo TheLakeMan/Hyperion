@@ -1,6 +1,6 @@
 /**
  * @file fusion.c
- * @brief Implementation of cross-modal fusion operations for TinyAI
+ * @brief Implementation of cross-modal fusion operations for Hyperion
  */
 
 #include "fusion.h"
@@ -21,7 +21,7 @@
  * @param fusedDim Dimension of the fused feature space
  * @return true on success, false on failure
  */
-bool tinyaiFusionConcat(const float **outputs, const int *outDims, int numModalities,
+bool hyperionFusionConcat(const float **outputs, const int *outDims, int numModalities,
                         float *fusedOutput, int fusedDim)
 {
     if (!outputs || !outDims || !fusedOutput || numModalities <= 0 || fusedDim <= 0) {
@@ -67,7 +67,7 @@ bool tinyaiFusionConcat(const float **outputs, const int *outDims, int numModali
  * @param fusedDim Dimension of the fused feature space
  * @return true on success, false on failure
  */
-bool tinyaiFusionAdd(const float **outputs, const int *outDims, int numModalities,
+bool hyperionFusionAdd(const float **outputs, const int *outDims, int numModalities,
                      float *fusedOutput, int fusedDim)
 {
     if (!outputs || !outDims || !fusedOutput || numModalities <= 0 || fusedDim <= 0) {
@@ -112,7 +112,7 @@ bool tinyaiFusionAdd(const float **outputs, const int *outDims, int numModalitie
  * @param fusedDim Dimension of the fused feature space
  * @return true on success, false on failure
  */
-bool tinyaiFusionMultiply(const float **outputs, const int *outDims, int numModalities,
+bool hyperionFusionMultiply(const float **outputs, const int *outDims, int numModalities,
                           float *fusedOutput, int fusedDim)
 {
     if (!outputs || !outDims || !fusedOutput || numModalities <= 0 || fusedDim <= 0) {
@@ -195,7 +195,7 @@ static void softmax(float *input, int size)
  * @param useSIMD Whether to use SIMD acceleration
  * @return true on success, false on failure
  */
-bool tinyaiFusionAttention(const float **outputs, const int *outDims, int numModalities,
+bool hyperionFusionAttention(const float **outputs, const int *outDims, int numModalities,
                            const float *weights, float *fusedOutput, int fusedDim,
                            bool useQuantization, bool useSIMD)
 {
@@ -283,7 +283,7 @@ bool tinyaiFusionAttention(const float **outputs, const int *outDims, int numMod
  * @param useSIMD Whether to use SIMD acceleration
  * @return true on success, false on failure
  */
-bool tinyaiFusionCrossAttention(const float *output1, int dim1, const float *output2, int dim2,
+bool hyperionFusionCrossAttention(const float *output1, int dim1, const float *output2, int dim2,
                                 float *fusedOutput, int fusedDim, const float *weights,
                                 bool useQuantization, bool useSIMD)
 {
@@ -400,7 +400,7 @@ bool tinyaiFusionCrossAttention(const float *output1, int dim1, const float *out
  * @param useSIMD Whether to use SIMD acceleration
  * @return true on success, false on failure
  */
-bool tinyaiFusionProject(const float *input, int inputDim, float *output, int outputDim,
+bool hyperionFusionProject(const float *input, int inputDim, float *output, int outputDim,
                          const void *weights, const float *bias, bool useQuantization, bool useSIMD)
 {
     if (!input || !output || !weights || inputDim <= 0 || outputDim <= 0) {
@@ -421,7 +421,7 @@ bool tinyaiFusionProject(const float *input, int inputDim, float *output, int ou
                 (const float *)(quantWeights + (inputDim * outputDim + 1) / 2);
 
             /* Use SIMD acceleration for matrix-vector multiplication */
-            tinyaiSimdMatMul4Bit(output, quantWeights, input, outputDim, inputDim, scaleFactors);
+            hyperionSimdMatMul4Bit(output, quantWeights, input, outputDim, inputDim, scaleFactors);
         }
         else {
             /* Reference implementation for 4-bit quantized weights */

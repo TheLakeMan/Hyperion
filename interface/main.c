@@ -1,7 +1,7 @@
 /**
- * TinyAI Main Entry Point
+ * Hyperion Main Entry Point
  *
- * This file implements the main entry point for the TinyAI system.
+ * This file implements the main entry point for the Hyperion system.
  */
 
 #include "../core/config.h"
@@ -17,13 +17,13 @@
 #include <string.h>
 
 /* Default configuration path */
-#define DEFAULT_CONFIG_PATH "tinyai.conf"
+#define DEFAULT_CONFIG_PATH "hyperion.conf"
 
 /* Print version information */
 static void printVersion()
 {
-    printf("TinyAI v0.1.0 - Ultra-lightweight AI Model\n");
-    printf("(c) 2025 TinyAI Contributors\n");
+    printf("Hyperion v0.1.0 - Ultra-lightweight AI Model\n");
+    printf("(c) 2025 Hyperion Contributors\n");
 }
 
 /* Print usage information */
@@ -33,7 +33,8 @@ static void printUsage(const char *programName)
     printf("Options:\n");
     printf("  -h, --help              Show this help message\n");
     printf("  -v, --version           Show version information\n");
-    printf("  -c, --config <file>     Use specified config file\n");
+    printf("  -c, --config <file>     Use specified config file\n
+");
     printf("  -m, --model <file>      Load the specified model\n");
     printf("  -t, --tokenizer <file>  Load the specified tokenizer\n");
     printf("  -o, --output <file>     Write output to file instead of stdout\n");
@@ -71,7 +72,7 @@ static int runShell(picolInterp *interp)
 {
     char command[1024];
 
-    printf("TinyAI Shell v0.1.0\n");
+    printf("Hyperion Shell v0.1.0\n");
     printf("Type 'exit' to quit, 'help' for available commands\n");
 
     while (1) {
@@ -128,9 +129,9 @@ int main(int argc, char **argv)
     const char *command       = NULL;
 
     /* Initialize the system */
-    tinyaiIOInit();
-    tinyaiMemTrackInit();
-    tinyaiConfigInit();
+    hyperionIOInit();
+    hyperionMemTrackInit();
+    hyperionConfigInit();
 
     /* Create the interpreter */
     picolInterp *interp = picolCreateInterp();
@@ -140,7 +141,7 @@ int main(int argc, char **argv)
     }
 
     /* Initialize the runtime */
-    tinyaiRuntimeInit(interp);
+    hyperionRuntimeInit(interp);
 
     /* Parse command line arguments */
     for (i = 1; i < argc; i++) {
@@ -236,13 +237,13 @@ int main(int argc, char **argv)
     }
 
     /* Load configuration */
-    if (tinyaiConfigLoad(configPath) != 0) {
+    if (hyperionConfigLoad(configPath) != 0) {
         printf("Warning: Failed to load configuration from %s, using defaults\n", configPath);
-        tinyaiConfigSetDefaults();
+        hyperionConfigSetDefaults();
     }
 
     /* Apply command line overrides */
-    tinyaiConfigApplyCommandLine(argc, argv);
+    hyperionConfigApplyCommandLine(argc, argv);
 
     /* Execute command */
     if (!command) {
@@ -288,16 +289,16 @@ int main(int argc, char **argv)
 
 cleanup:
     /* Clean up */
-    tinyaiRuntimeCleanup(interp);
+    hyperionRuntimeCleanup(interp);
     picolFreeInterp(interp);
-    tinyaiConfigCleanup();
-    tinyaiIOCleanup();
+    hyperionConfigCleanup();
+    hyperionIOCleanup();
 
     /* Check for memory leaks if in debug mode */
-#ifdef TINYAI_MEM_TRACK
-    tinyaiMemCheckLeaks();
+#ifdef HYPERION_MEM_TRACK
+    hyperionMemCheckLeaks();
 #endif
-    tinyaiMemTrackCleanup();
+    hyperionMemTrackCleanup();
 
     return result;
 }

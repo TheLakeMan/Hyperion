@@ -1,7 +1,7 @@
-# TinyAI Priority Test Execution Script (PowerShell)
+# Hyperion Priority Test Execution Script (PowerShell)
 # This script runs tests in the priority order defined in the test plan
 
-Write-Host "===== TinyAI Priority Test Execution =====" -ForegroundColor Cyan
+Write-Host "===== Hyperion Priority Test Execution =====" -ForegroundColor Cyan
 Write-Host
 
 # Create build directory if it doesn't exist
@@ -56,7 +56,7 @@ function Run-Test {
 }
 
 # 1. Core Memory Management Tests
-Run-Test "Memory Management Tests" ".\Debug\tinyai_tests.exe" "memory"
+Run-Test "Memory Management Tests" ".\Debug\hyperion_tests.exe" "memory"
 
 # Out-of-Memory Handling Test
 Run-Test "Out-of-Memory Handling Test" ".\Debug\oom_handling_test.exe"
@@ -65,13 +65,13 @@ Run-Test "Out-of-Memory Handling Test" ".\Debug\oom_handling_test.exe"
 Run-Test "Memory-Mapped Model Test" ".\Debug\mmap_loader_test.exe"
 
 # 2. 4-bit Quantization Tests
-Run-Test "Quantization Tests" ".\Debug\tinyai_tests.exe" "quantize"
+Run-Test "Quantization Tests" ".\Debug\hyperion_tests.exe" "quantize"
 
 # Sparse Matrix Tests
 Run-Test "Sparse Matrix Tests" ".\Debug\sparse_matrix_test.exe"
 
 # 3. SIMD Acceleration Tests
-Run-Test "SIMD Acceleration Tests" ".\Debug\tinyai_tests.exe" "simd"
+Run-Test "SIMD Acceleration Tests" ".\Debug\hyperion_tests.exe" "simd"
 
 # SIMD Benchmark Test
 Run-Test "SIMD Benchmark Test" ".\Debug\simd_benchmark_test.exe"
@@ -80,7 +80,7 @@ Run-Test "SIMD Benchmark Test" ".\Debug\simd_benchmark_test.exe"
 Run-Test "Attention Mechanism Test" ".\Debug\attention_test.exe"
 
 # 4. Text Generation Tests
-Run-Test "Text Generation Tests" ".\Debug\tinyai_tests.exe" "generate"
+Run-Test "Text Generation Tests" ".\Debug\hyperion_tests.exe" "generate"
 
 # 5. Image Model Tests
 Run-Test "Image Model Tests" ".\Debug\image_test.exe"

@@ -1,6 +1,6 @@
-# TinyAI Image Captioning Example
+# Hyperion Image Captioning Example
 
-This example demonstrates how to implement efficient image captioning on resource-constrained devices using the TinyAI framework. Image captioning combines computer vision and natural language processing to generate textual descriptions of images, and is a perfect showcase of TinyAI's multimodal capabilities.
+This example demonstrates how to implement efficient image captioning on resource-constrained devices using the Hyperion framework. Image captioning combines computer vision and natural language processing to generate textual descriptions of images, and is a perfect showcase of Hyperion's multimodal capabilities.
 
 ## Features
 
@@ -14,7 +14,7 @@ This example demonstrates how to implement efficient image captioning on resourc
 
 ## Building the Example
 
-To build the image captioning example, ensure the `BUILD_EXAMPLES` option is set to `ON` when configuring TinyAI:
+To build the image captioning example, ensure the `BUILD_EXAMPLES` option is set to `ON` when configuring Hyperion:
 
 ```bash
 mkdir build && cd build

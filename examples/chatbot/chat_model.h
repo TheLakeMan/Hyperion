@@ -1,13 +1,13 @@
 /**
  * @file chat_model.h
- * @brief Header for memory-constrained chatbot functionality in TinyAI
+ * @brief Header for memory-constrained chatbot functionality in Hyperion
  *
- * This header defines the chatbot functionality for TinyAI, focusing on
+ * This header defines the chatbot functionality for Hyperion, focusing on
  * efficient operation within strict memory constraints.
  */
 
-#ifndef TINYAI_CHAT_MODEL_H
-#define TINYAI_CHAT_MODEL_H
+#ifndef HYPERION_CHAT_MODEL_H
+#define HYPERION_CHAT_MODEL_H
 
 #include "../../models/text/generate.h"
 #include <stdbool.h>
@@ -21,19 +21,19 @@ extern "C" {
  * Message role
  */
 typedef enum {
-    TINYAI_ROLE_SYSTEM,   /* System instructions or context */
-    TINYAI_ROLE_USER,     /* User messages */
-    TINYAI_ROLE_ASSISTANT /* Assistant (model) responses */
-} TinyAIChatRole;
+    HYPERION_ROLE_SYSTEM,   /* System instructions or context */
+    HYPERION_ROLE_USER,     /* User messages */
+    HYPERION_ROLE_ASSISTANT /* Assistant (model) responses */
+} HyperionChatRole;
 
 /**
  * Chat message
  */
 typedef struct {
-    TinyAIChatRole role;        /* Role (system, user, assistant) */
+    HyperionChatRole role;        /* Role (system, user, assistant) */
     char          *content;     /* Message content */
     int            token_count; /* Number of tokens in the message (cached) */
-} TinyAIChatMessage;
+} HyperionChatMessage;
 
 /**
  * Chat session configuration
@@ -56,12 +56,12 @@ typedef struct {
     /* Optimization */
     bool useQuantization; /* Whether to use quantization */
     bool useSIMD;         /* Whether to use SIMD acceleration */
-} TinyAIChatConfig;
+} HyperionChatConfig;
 
 /**
  * Chat session
  */
-typedef struct TinyAIChatSession TinyAIChatSession;
+typedef struct HyperionChatSession HyperionChatSession;
 
 /**
  * Callback for streaming generation
@@ -70,7 +70,7 @@ typedef struct TinyAIChatSession TinyAIChatSession;
  * @param user_data User-provided data pointer
  * @return True to continue generation, false to stop
  */
-typedef bool (*TinyAIChatStreamCallback)(const char *token, bool is_partial, void *user_data);
+typedef bool (*HyperionChatStreamCallback)(const char *token, bool is_partial, void *user_data);
 
 /**
  * Create a new chat session
@@ -78,14 +78,14 @@ typedef bool (*TinyAIChatStreamCallback)(const char *token, bool is_partial, voi
  * @param config Configuration for the chat session
  * @return New chat session or NULL on error
  */
-TinyAIChatSession *tinyaiChatSessionCreate(const TinyAIChatConfig *config);
+HyperionChatSession *hyperionChatSessionCreate(const HyperionChatConfig *config);
 
 /**
  * Free a chat session
  *
  * @param session Chat session to free
  */
-void tinyaiChatSessionFree(TinyAIChatSession *session);
+void hyperionChatSessionFree(HyperionChatSession *session);
 
 /**
  * Add a message to the chat history
@@ -95,7 +95,7 @@ void tinyaiChatSessionFree(TinyAIChatSession *session);
  * @param content Message content
  * @return True on success, false on failure
  */
-bool tinyaiChatAddMessage(TinyAIChatSession *session, TinyAIChatRole role, const char *content);
+bool hyperionChatAddMessage(HyperionChatSession *session, HyperionChatRole role, const char *content);
 
 /**
  * Generate a response to the conversation
@@ -105,8 +105,8 @@ bool tinyaiChatAddMessage(TinyAIChatSession *session, TinyAIChatRole role, const
  * @param user_data User data to pass to the callback
  * @return Generated response (caller must free) or NULL on error
  */
-char *tinyaiChatGenerateResponse(TinyAIChatSession       *session,
-                                 TinyAIChatStreamCallback stream_callback, void *user_data);
+char *hyperionChatGenerateResponse(HyperionChatSession       *session,
+                                 HyperionChatStreamCallback stream_callback, void *user_data);
 
 /**
  * Save chat history to a file (JSON format)
@@ -115,7 +115,7 @@ char *tinyaiChatGenerateResponse(TinyAIChatSession       *session,
  * @param filePath Path to save the history
  * @return True on success, false on failure
  */
-bool tinyaiChatSaveHistory(TinyAIChatSession *session, const char *filePath);
+bool hyperionChatSaveHistory(HyperionChatSession *session, const char *filePath);
 
 /**
  * Load chat history from a file (JSON format)
@@ -124,7 +124,7 @@ bool tinyaiChatSaveHistory(TinyAIChatSession *session, const char *filePath);
  * @param filePath Path to load the history from
  * @return True on success, false on failure
  */
-bool tinyaiChatLoadHistory(TinyAIChatSession *session, const char *filePath);
+bool hyperionChatLoadHistory(HyperionChatSession *session, const char *filePath);
 
 /**
  * Get the number of messages in the chat history
@@ -132,7 +132,7 @@ bool tinyaiChatLoadHistory(TinyAIChatSession *session, const char *filePath);
  * @param session Chat session
  * @return Number of messages
  */
-int tinyaiChatGetMessageCount(TinyAIChatSession *session);
+int hyperionChatGetMessageCount(HyperionChatSession *session);
 
 /**
  * Get a message from the chat history
@@ -143,7 +143,7 @@ int tinyaiChatGetMessageCount(TinyAIChatSession *session);
  * @param content Output parameter for message content (don't free, owned by session)
  * @return True on success, false if index is out of bounds
  */
-bool tinyaiChatGetMessage(TinyAIChatSession *session, int index, TinyAIChatRole *role,
+bool hyperionChatGetMessage(HyperionChatSession *session, int index, HyperionChatRole *role,
                           const char **content);
 
 /**
@@ -151,7 +151,7 @@ bool tinyaiChatGetMessage(TinyAIChatSession *session, int index, TinyAIChatRole 
  *
  * @param session Chat session
  */
-void tinyaiChatClearHistory(TinyAIChatSession *session);
+void hyperionChatClearHistory(HyperionChatSession *session);
 
 /**
  * Get current memory usage statistics
@@ -162,7 +162,7 @@ void tinyaiChatClearHistory(TinyAIChatSession *session);
  * @param totalMemory Output parameter for total memory (in bytes)
  * @return True on success, false on failure
  */
-bool tinyaiChatGetMemoryUsage(TinyAIChatSession *session, size_t *modelMemory,
+bool hyperionChatGetMemoryUsage(HyperionChatSession *session, size_t *modelMemory,
                               size_t *historyMemory, size_t *totalMemory);
 
 /**
@@ -174,11 +174,11 @@ bool tinyaiChatGetMemoryUsage(TinyAIChatSession *session, size_t *modelMemory,
  * @param topP Top-p sampling parameter (0.0-1.0)
  * @return True on success, false on failure
  */
-bool tinyaiChatSetGenerationParams(TinyAIChatSession *session, float temperature, int maxTokens,
+bool hyperionChatSetGenerationParams(HyperionChatSession *session, float temperature, int maxTokens,
                                    float topP);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* TINYAI_CHAT_MODEL_H */
+#endif /* HYPERION_CHAT_MODEL_H */

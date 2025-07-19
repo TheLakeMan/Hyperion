@@ -1,6 +1,6 @@
 /**
  * @file image_test.c
- * @brief Test program for TinyAI image model functionality
+ * @brief Test program for Hyperion image model functionality
  */
 
 #include "image_model.h"
@@ -10,9 +10,9 @@
 /**
  * Create a simple test image for classification
  */
-TinyAIImage *createTestImage(int width, int height)
+HyperionImage *createTestImage(int width, int height)
 {
-    TinyAIImage *image = tinyaiImageCreate(width, height, TINYAI_IMAGE_FORMAT_RGB);
+    HyperionImage *image = hyperionImageCreate(width, height, HYPERION_IMAGE_FORMAT_RGB);
     if (!image) {
         fprintf(stderr, "Failed to create test image\n");
         return NULL;
@@ -39,11 +39,11 @@ TinyAIImage *createTestImage(int width, int height)
 
 int main(int argc, char **argv)
 {
-    printf("TinyAI Image Classification Test\n");
+    printf("Hyperion Image Classification Test\n");
     printf("================================\n\n");
 
-    /* Create a tiny CNN model */
-    TinyAIImageModelParams params = {.modelType       = TINYAI_IMAGE_MODEL_TINY_CNN,
+    /* Create a HyperionCNN model */
+    HyperionImageModelParams params = {.modelType       = HYPERION_IMAGE_MODEL_TINY_CNN,
                                      .inputWidth      = 224,
                                      .inputHeight     = 224,
                                      .inputChannels   = 3,
@@ -54,29 +54,29 @@ int main(int argc, char **argv)
                                      .useSIMD         = true,
                                      .customParams    = NULL};
 
-    TinyAIImageModel *model = tinyaiImageModelCreate(&params);
+    HyperionImageModel *model = hyperionImageModelCreate(&params);
     if (!model) {
         fprintf(stderr, "Failed to create image model\n");
         return 1;
     }
 
     /* Create a test image */
-    TinyAIImage *image = createTestImage(640, 480);
+    HyperionImage *image = createTestImage(640, 480);
     if (!image) {
-        tinyaiImageModelFree(model);
+        hyperionImageModelFree(model);
         return 1;
     }
 
     printf("Created test image (640x480) with RGB gradient pattern\n");
 
     /* Print model information */
-    tinyaiImageModelPrintSummary(model);
+    hyperionImageModelPrintSummary(model);
 
     /* Classify the image */
     printf("\nClassifying image...\n");
 
-    TinyAIImageClassResult results[5]; /* Get top 5 results */
-    int                    numResults = tinyaiImageModelClassify(model, image, 5, results);
+    HyperionImageClassResult results[5]; /* Get top 5 results */
+    int                    numResults = hyperionImageModelClassify(model, image, 5, results);
 
     if (numResults < 0) {
         fprintf(stderr, "Classification failed\n");
@@ -89,8 +89,8 @@ int main(int argc, char **argv)
     }
 
     /* Clean up */
-    tinyaiImageFree(image);
-    tinyaiImageModelFree(model);
+    hyperionImageFree(image);
+    hyperionImageModelFree(model);
 
     printf("\nTest completed\n");
     return 0;

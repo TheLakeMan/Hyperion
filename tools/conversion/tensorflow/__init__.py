@@ -1,5 +1,5 @@
 """
-TensorFlow to TinyAI Converter Package
+TensorFlow to Hyperion Converter Package
 
 This package provides functionality to convert TensorFlow/Keras models to TinyAI format.
 """

@@ -1,6 +1,6 @@
 # Keyword Spotting Example
 
-This example demonstrates how to use TinyAI's audio processing capabilities to perform real-time keyword spotting. Keyword spotting (also known as "wake word detection" or "hotword detection") is a technique used to detect specific words or phrases in an audio stream.
+This example demonstrates how to use Hyperion's audio processing capabilities to perform real-time keyword spotting. Keyword spotting (also known as "wake word detection" or "hotword detection") is a technique used to detect specific words or phrases in an audio stream.
 
 ## Overview
 
@@ -23,22 +23,22 @@ The keyword spotting example showcases:
 
 ```bash
 # Basic usage with default parameters
-./tinyai_kws input.wav --keyword "tinyai"
+./hyperion_kws input.wav --keyword "hyperion"
 
 # Detect a different keyword
-./tinyai_kws input.wav --keyword "hello"
+./hyperion_kws input.wav --keyword "hello"
 
 # Adjust detection threshold (0.0-1.0, higher = less sensitive)
-./tinyai_kws input.wav --keyword "tinyai" --threshold 0.7
+./hyperion_kws input.wav --keyword "hyperion" --threshold 0.7
 
 # Real-time detection from microphone
-./tinyai_kws --mic --keyword "tinyai"
+./hyperion_kws --mic --keyword "hyperion"
 
 # List available keywords in the model
-./tinyai_kws --list-keywords
+./hyperion_kws --list-keywords
 
 # Show detection visualization
-./tinyai_kws input.wav --keyword "tinyai" --visualize
+./hyperion_kws input.wav --keyword "hyperion" --visualize
 ```
 
 ## Technical Implementation
@@ -94,4 +94,4 @@ This example can be extended in several ways:
 1. Train custom keyword models using your own data
 2. Implement multi-keyword detection with prioritization
 3. Add noise-robust feature extraction for challenging environments
-4. Integrate with other TinyAI components for multimodal applications
+4. Integrate with other Hyperion components for multimodal applications

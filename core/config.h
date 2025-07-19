@@ -1,12 +1,12 @@
 /**
- * TinyAI Configuration Header
+ * Hyperion Configuration Header
  * 
- * This header defines the configuration system for TinyAI, allowing
+ * This header defines the configuration system for Hyperion, allowing
  * for flexible runtime configuration of the framework.
  */
 
-#ifndef TINYAI_CONFIG_H
-#define TINYAI_CONFIG_H
+#ifndef HYPERION_CONFIG_H
+#define HYPERION_CONFIG_H
 
 /* ----------------- Configuration Value Types ----------------- */
 
@@ -14,24 +14,24 @@
  * Configuration value type enumeration
  */
 typedef enum {
-    TINYAI_CONFIG_INTEGER,    /* Integer value */
-    TINYAI_CONFIG_FLOAT,      /* Float value */
-    TINYAI_CONFIG_STRING,     /* String value */
-    TINYAI_CONFIG_BOOLEAN     /* Boolean value */
-} TinyAIConfigType;
+    HYPERION_CONFIG_INTEGER,    /* Integer value */
+    HYPERION_CONFIG_FLOAT,      /* Float value */
+    HYPERION_CONFIG_STRING,     /* String value */
+    HYPERION_CONFIG_BOOLEAN     /* Boolean value */
+} HyperionConfigType;
 
 /**
  * Configuration value union
  */
 typedef struct {
-    TinyAIConfigType type;    /* Value type */
+    HyperionConfigType type;    /* Value type */
     union {
         int intValue;         /* Integer value */
         float floatValue;     /* Float value */
         char *stringValue;    /* String value */
         int boolValue;        /* Boolean value */
     } value;
-} TinyAIConfigValue;
+} HyperionConfigValue;
 
 /* ----------------- Configuration API ----------------- */
 
@@ -40,12 +40,12 @@ typedef struct {
  * 
  * @return 0 on success, non-zero on error
  */
-int tinyaiConfigInit();
+int hyperionConfigInit();
 
 /**
  * Clean up the configuration system
  */
-void tinyaiConfigCleanup();
+void hyperionConfigCleanup();
 
 /**
  * Load configuration from a file
@@ -53,7 +53,7 @@ void tinyaiConfigCleanup();
  * @param path File path
  * @return 0 on success, non-zero on error
  */
-int tinyaiConfigLoad(const char *path);
+int hyperionConfigLoad(const char *path);
 
 /**
  * Save configuration to a file
@@ -61,7 +61,7 @@ int tinyaiConfigLoad(const char *path);
  * @param path File path
  * @return 0 on success, non-zero on error
  */
-int tinyaiConfigSave(const char *path);
+int hyperionConfigSave(const char *path);
 
 /**
  * Set an integer configuration value
@@ -70,7 +70,7 @@ int tinyaiConfigSave(const char *path);
  * @param value Integer value
  * @return 0 on success, non-zero on error
  */
-int tinyaiConfigSetInt(const char *key, int value);
+int hyperionConfigSetInt(const char *key, int value);
 
 /**
  * Get an integer configuration value
@@ -79,7 +79,7 @@ int tinyaiConfigSetInt(const char *key, int value);
  * @param defaultValue Default value if key not found
  * @return Configuration value or default value
  */
-int tinyaiConfigGetInt(const char *key, int defaultValue);
+int hyperionConfigGetInt(const char *key, int defaultValue);
 
 /**
  * Set a float configuration value
@@ -88,7 +88,7 @@ int tinyaiConfigGetInt(const char *key, int defaultValue);
  * @param value Float value
  * @return 0 on success, non-zero on error
  */
-int tinyaiConfigSetFloat(const char *key, float value);
+int hyperionConfigSetFloat(const char *key, float value);
 
 /**
  * Get a float configuration value
@@ -97,7 +97,7 @@ int tinyaiConfigSetFloat(const char *key, float value);
  * @param defaultValue Default value if key not found
  * @return Configuration value or default value
  */
-float tinyaiConfigGetFloat(const char *key, float defaultValue);
+float hyperionConfigGetFloat(const char *key, float defaultValue);
 
 /**
  * Set a string configuration value
@@ -106,7 +106,7 @@ float tinyaiConfigGetFloat(const char *key, float defaultValue);
  * @param value String value
  * @return 0 on success, non-zero on error
  */
-int tinyaiConfigSetString(const char *key, const char *value);
+int hyperionConfigSetString(const char *key, const char *value);
 
 /**
  * Get a string configuration value
@@ -115,7 +115,7 @@ int tinyaiConfigSetString(const char *key, const char *value);
  * @param defaultValue Default value if key not found
  * @return Configuration value or default value
  */
-const char* tinyaiConfigGetString(const char *key, const char *defaultValue);
+const char* hyperionConfigGetString(const char *key, const char *defaultValue);
 
 /**
  * Set a boolean configuration value
@@ -124,7 +124,7 @@ const char* tinyaiConfigGetString(const char *key, const char *defaultValue);
  * @param value Boolean value (0 = false, non-zero = true)
  * @return 0 on success, non-zero on error
  */
-int tinyaiConfigSetBool(const char *key, int value);
+int hyperionConfigSetBool(const char *key, int value);
 
 /**
  * Get a boolean configuration value
@@ -133,7 +133,7 @@ int tinyaiConfigSetBool(const char *key, int value);
  * @param defaultValue Default value if key not found
  * @return Configuration value or default value
  */
-int tinyaiConfigGetBool(const char *key, int defaultValue);
+int hyperionConfigGetBool(const char *key, int defaultValue);
 
 /**
  * Check if a configuration key exists
@@ -141,7 +141,7 @@ int tinyaiConfigGetBool(const char *key, int defaultValue);
  * @param key Configuration key
  * @return 1 if key exists, 0 if not
  */
-int tinyaiConfigHasKey(const char *key);
+int hyperionConfigHasKey(const char *key);
 
 /**
  * Remove a configuration key
@@ -149,7 +149,7 @@ int tinyaiConfigHasKey(const char *key);
  * @param key Configuration key
  * @return 1 if key was removed, 0 if key not found
  */
-int tinyaiConfigRemoveKey(const char *key);
+int hyperionConfigRemoveKey(const char *key);
 
 /**
  * Get all configuration keys
@@ -158,14 +158,14 @@ int tinyaiConfigRemoveKey(const char *key);
  * @param maxKeys Maximum number of keys to store
  * @return Number of keys stored
  */
-int tinyaiConfigGetKeys(char **keys, int maxKeys);
+int hyperionConfigGetKeys(char **keys, int maxKeys);
 
 /**
  * Set default configuration values
  * 
  * @return 0 on success, non-zero on error
  */
-int tinyaiConfigSetDefaults();
+int hyperionConfigSetDefaults();
 
 /**
  * Override a configuration value from command line
@@ -174,7 +174,7 @@ int tinyaiConfigSetDefaults();
  * @param value Value string
  * @return 0 on success, non-zero on error
  */
-int tinyaiConfigOverride(const char *key, const char *value);
+int hyperionConfigOverride(const char *key, const char *value);
 
 /**
  * Apply command line overrides
@@ -183,6 +183,6 @@ int tinyaiConfigOverride(const char *key, const char *value);
  * @param argv Argument array
  * @return 0 on success, non-zero on error
  */
-int tinyaiConfigApplyCommandLine(int argc, char **argv);
+int hyperionConfigApplyCommandLine(int argc, char **argv);
 
-#endif /* TINYAI_CONFIG_H */
+#endif /* HYPERION_CONFIG_H */

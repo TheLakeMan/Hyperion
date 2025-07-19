@@ -1,8 +1,8 @@
 #!/bin/bash
-# TinyAI Priority Test Execution Script
+# Hyperion Priority Test Execution Script
 # This script runs tests in the priority order defined in the test plan
 
-echo "===== TinyAI Priority Test Execution ====="
+echo "===== Hyperion Priority Test Execution ====="
 echo
 
 # Create build directory if it doesn't exist
@@ -29,7 +29,7 @@ echo
 
 # 1. Core Memory Management Tests
 echo "------ Memory Management Tests ------"
-./tinyai_tests memory
+./hyperion_tests memory
 if [ $? -ne 0 ]; then
   echo "ERROR: Memory management tests failed"
   exit 1
@@ -53,7 +53,7 @@ fi
 
 # 2. 4-bit Quantization Tests
 echo "------ Quantization Tests ------"
-./tinyai_tests quantize
+./hyperion_tests quantize
 if [ $? -ne 0 ]; then
   echo "ERROR: Quantization tests failed"
   exit 1
@@ -69,7 +69,7 @@ fi
 
 # 3. SIMD Acceleration Tests
 echo "------ SIMD Acceleration Tests ------"
-./tinyai_tests simd
+./hyperion_tests simd
 if [ $? -ne 0 ]; then
   echo "ERROR: SIMD acceleration tests failed"
   exit 1
@@ -93,7 +93,7 @@ fi
 
 # 4. Text Generation Tests
 echo "------ Text Generation Tests ------"
-./tinyai_tests generate
+./hyperion_tests generate
 if [ $? -ne 0 ]; then
   echo "ERROR: Text generation tests failed"
   exit 1

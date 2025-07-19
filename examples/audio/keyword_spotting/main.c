@@ -1,6 +1,6 @@
 /**
  * @file main.c
- * @brief Keyword Spotting example for TinyAI
+ * @brief Keyword Spotting example for Hyperion
  */
 
 #include "../../../core/memory.h"
@@ -17,14 +17,14 @@
 /* Display usage information */
 static void showUsage(const char *progName)
 {
-    printf("TinyAI Keyword Spotting Example\n");
+    printf("Hyperion Keyword Spotting Example\n");
     printf("--------------------------------\n");
     printf("Usage: %s [input_wav] [options]\n", progName);
     printf("\n");
     printf("Options:\n");
     printf("  --keyword <word>        Set keyword to detect (required if not using "
            "--list-keywords)\n");
-    printf("  --threshold <value>     Set detection threshold (0.0-1.0, default 0.5)\n");
+    printf("  --threshold <value>     Set detection threshold (0.0-1.0, default 0.5)\n
     printf("  --frame-size <ms>       Set frame size in milliseconds (default 25)\n");
     printf("  --frame-shift <ms>      Set frame shift in milliseconds (default 10)\n");
     printf("  --no-deltas             Disable delta features\n");
@@ -39,7 +39,7 @@ static void showUsage(const char *progName)
     printf("\n");
     printf("Example:\n");
     printf("  %s input.wav --keyword \"hello\" --visualize\n", progName);
-    printf("  %s --mic --keyword \"tinyai\"\n", progName);
+    printf("  %s --mic --keyword \"hyperion\"\n", progName);
 }
 
 /* Parse command line arguments */
@@ -159,14 +159,14 @@ static bool parseArgs(int argc, char **argv, char **inputFile, char **keyword, c
  * @param durationMs Duration to record in milliseconds
  * @return Audio data, or NULL on failure (caller must free)
  */
-static TinyAIAudioData *recordFromMicrophone(int durationMs)
+static HyperionAudioData *recordFromMicrophone(int durationMs)
 {
     /* This is a stub function for the example
      * In a real implementation, this would capture from the microphone
      */
 
     /* Create fake audio data for simulation */
-    TinyAIAudioData *audio = (TinyAIAudioData *)malloc(sizeof(TinyAIAudioData));
+    HyperionAudioData *audio = (HyperionAudioData *)malloc(sizeof(HyperionAudioData));
     if (!audio) {
         return NULL;
     }
@@ -210,17 +210,17 @@ static TinyAIAudioData *recordFromMicrophone(int durationMs)
  * List available keywords in the model
  * @param state Keyword spotting state
  */
-static void listAvailableKeywords(TinyAIKWSState *state)
+static void listAvailableKeywords(HyperionKWSState *state)
 {
     if (!state) {
         return;
     }
 
     /* Get available keywords */
-    char *keywords[TINYAI_KWS_MAX_KEYWORDS];
+    char *keywords[HYPERION_KWS_MAX_KEYWORDS];
     int   numKeywords;
 
-    if (!tinyaiKWSGetAvailableKeywords(state, keywords, TINYAI_KWS_MAX_KEYWORDS, &numKeywords)) {
+    if (!hyperionKWSGetAvailableKeywords(state, keywords, HYPERION_KWS_MAX_KEYWORDS, &numKeywords)) {
         printf("Error: Failed to get available keywords.\n");
         return;
     }
@@ -257,8 +257,8 @@ int main(int argc, char **argv)
     }
 
     /* Initialize KWS configuration */
-    TinyAIKWSConfig config;
-    tinyaiKWSInitConfig(&config);
+    HyperionKWSConfig config;
+    hyperionKWSInitConfig(&config);
 
     /* Override defaults with command-line options */
     if (threshold >= 0.0f) {
@@ -271,7 +271,7 @@ int main(int argc, char **argv)
     config.smoothDetections    = smoothDetections;
 
     /* Show configuration */
-    printf("TinyAI Keyword Spotting\n");
+    printf("Hyperion Keyword Spotting\n");
     printf("Model: %s\n", modelPath);
     printf("Configuration:\n");
     printf("  Detection threshold: %.2f\n", config.detectionThreshold);
@@ -283,7 +283,7 @@ int main(int argc, char **argv)
     printf("\n");
 
     /* Create KWS state */
-    TinyAIKWSState *kwsState = tinyaiKWSCreate(&config, modelPath);
+    HyperionKWSState *kwsState = hyperionKWSCreate(&config, modelPath);
     if (!kwsState) {
         printf("Error: Failed to create KWS state\n");
         return 1;
@@ -292,19 +292,19 @@ int main(int argc, char **argv)
     /* If just listing keywords, show them and exit */
     if (listKeywords) {
         listAvailableKeywords(kwsState);
-        tinyaiKWSFree(kwsState);
+        hyperionKWSFree(kwsState);
         return 0;
     }
 
     /* Add keyword to detect */
-    if (!tinyaiKWSAddKeyword(kwsState, keyword, threshold)) {
+    if (!hyperionKWSAddKeyword(kwsState, keyword, threshold)) {
         printf("Error: Failed to add keyword \"%s\"\n", keyword);
-        tinyaiKWSFree(kwsState);
+        hyperionKWSFree(kwsState);
         return 1;
     }
 
     /* Get audio data */
-    TinyAIAudioData *audio = NULL;
+    HyperionAudioData *audio = NULL;
 
     if (useMic) {
         /* Record from microphone (simulation) */
@@ -314,9 +314,9 @@ int main(int argc, char **argv)
     else {
         /* Load audio file */
         printf("Loading audio file: %s\n", inputFile);
-        audio = (TinyAIAudioData *)malloc(sizeof(TinyAIAudioData));
+        audio = (HyperionAudioData *)malloc(sizeof(HyperionAudioData));
         if (audio) {
-            if (!tinyaiAudioLoadFile(inputFile, (TinyAIAudioFileFormat)(-1), audio)) {
+            if (!hyperionAudioLoadFile(inputFile, (HyperionAudioFileFormat)(-1), audio)) {
                 printf("Error: Failed to load audio file: %s\n", inputFile);
                 free(audio);
                 audio = NULL;
@@ -326,7 +326,7 @@ int main(int argc, char **argv)
 
     if (!audio) {
         printf("Error: Failed to get audio data\n");
-        tinyaiKWSFree(kwsState);
+        hyperionKWSFree(kwsState);
         return 1;
     }
 
@@ -339,13 +339,13 @@ int main(int argc, char **argv)
 
     /* Process audio */
     printf("Detecting keyword \"%s\"...\n", keyword);
-    TinyAIKWSDetection *detections;
+    HyperionKWSDetection *detections;
     int                 numDetections;
 
-    if (!tinyaiKWSProcessAudio(kwsState, audio, &detections, &numDetections)) {
+    if (!hyperionKWSProcessAudio(kwsState, audio, &detections, &numDetections)) {
         printf("Error: Failed to process audio\n");
-        tinyaiAudioDataFree(audio);
-        tinyaiKWSFree(kwsState);
+        hyperionAudioDataFree(audio);
+        hyperionKWSFree(kwsState);
         return 1;
     }
 
@@ -367,15 +367,15 @@ int main(int argc, char **argv)
     /* Visualize results if requested */
     if (visualize && numDetections > 0) {
         printf("\n");
-        tinyaiKWSVisualizeDetections(kwsState, audio, detections, numDetections, visWidth);
+        hyperionKWSVisualizeDetections(kwsState, audio, detections, numDetections, visWidth);
     }
 
     /* Cleanup */
     if (detections) {
         free(detections);
     }
-    tinyaiAudioDataFree(audio);
-    tinyaiKWSFree(kwsState);
+    hyperionAudioDataFree(audio);
+    hyperionKWSFree(kwsState);
 
     return 0;
 }

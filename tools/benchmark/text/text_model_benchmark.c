@@ -22,7 +22,7 @@ typedef struct {
     bool  use_simd;    // Whether to use SIMD acceleration
 } TextGenerationParams;
 
-// TinyAI includes
+// Hyperion includes
 #include "../../../core/config.h"
 #include "../../../models/text/generate.h"
 #include "../../../utils/forward_scheduler.h"
@@ -32,7 +32,7 @@ typedef struct {
 // Default configuration values
 #define DEFAULT_ITERATIONS 5
 #define DEFAULT_WARMUP_ITERATIONS 2
-#define DEFAULT_PROMPT "TinyAI is"
+#define DEFAULT_PROMPT "Hyperion is"
 #define DEFAULT_MAX_TOKENS 50
 #define DEFAULT_TEMPERATURE 0.7
 #define DEFAULT_SIMD_ENABLED 1
@@ -58,7 +58,7 @@ void print_usage(const char *program_name)
 {
     printf("Usage: %s [options]\n\n", program_name);
     printf("Options:\n");
-    printf("  -model <path>           Path to TinyAI model file (default: %s)\n",
+    printf("  -model <path>           Path to Hyperion model file (default: %s)\n",
            DEFAULT_MODEL_PATH);
     printf("  -prompt <text>          Prompt text (default: \"%s\")\n", DEFAULT_PROMPT);
     printf("  -max_tokens <n>         Maximum tokens to generate (default: %d)\n",
@@ -85,7 +85,7 @@ void print_usage(const char *program_name)
 }
 
 // Parse command line arguments and set configuration
-void parse_args(int argc, char **argv, TinyAIBenchmarkConfig *config,
+void parse_args(int argc, char **argv, HyperionBenchmarkConfig *config,
                 TextBenchmarkConfig *text_config)
 {
     for (int i = 1; i < argc; i++) {
@@ -148,12 +148,12 @@ void parse_args(int argc, char **argv, TinyAIBenchmarkConfig *config,
     }
 }
 
-// Function to benchmark TinyAI text model
-void benchmark_tinyai_text(TinyAIBenchmarkConfig *config, TextBenchmarkConfig *text_config,
-                           TinyAIBenchmarkResult *result)
+// Function to benchmark Hyperion text model
+void benchmark_hyperion_text(HyperionBenchmarkConfig *config, TextBenchmarkConfig *text_config,
+                           HyperionBenchmarkResult *result)
 {
     // Initialize result
-    tinyai_init_benchmark_result(result);
+    hyperion_init_benchmark_result(result);
 
     // Set model name
     strncpy(result->model_name, config->model_path, sizeof(result->model_name) - 1);
@@ -170,41 +170,41 @@ void benchmark_tinyai_text(TinyAIBenchmarkConfig *config, TextBenchmarkConfig *t
 
     // Detect SIMD capabilities
     result->simd_used = config->use_simd;
-    strncpy(result->simd_type, tinyai_detect_simd_capabilities(), sizeof(result->simd_type) - 1);
+    strncpy(result->simd_type, hyperion_detect_simd_capabilities(), sizeof(result->simd_type) - 1);
 
     // Set number of threads
     result->threads_used =
-        config->num_threads > 0 ? config->num_threads : tinyai_determine_optimal_threads();
+        config->num_threads > 0 ? config->num_threads : hyperion_determine_optimal_threads();
 
     // Load model
     void                   *model      = NULL;
-    TinyAIMappedModel      *mmap_model = NULL;
-    TinyAIForwardScheduler *scheduler  = NULL;
+    HyperionMappedModel      *mmap_model = NULL;
+    HyperionForwardScheduler *scheduler  = NULL;
 
     if (text_config->use_mmap) {
         // Use memory mapping for model loading
-        TinyAIMmapConfig mmap_config = tinyaiCreateDefaultMmapConfig();
+        HyperionMmapConfig mmap_config = hyperionCreateDefaultMmapConfig();
         mmap_config.maxCacheSize     = config->cache_size_bytes;
         mmap_config.prefetchEnabled  = true;
 
-        mmap_model = tinyaiOpenMappedModel(config->model_path, &mmap_config);
+        mmap_model = hyperionOpenMappedModel(config->model_path, &mmap_config);
         if (!mmap_model) {
             printf("Error: Failed to load memory-mapped model: %s\n", config->model_path);
             exit(EXIT_FAILURE);
         }
 
         // Create forward scheduler
-        scheduler = tinyaiCreateForwardScheduler(mmap_model, TINYAI_EXEC_MEMORY_OPT,
+        scheduler = hyperionCreateForwardScheduler(mmap_model, TINYAI_EXEC_MEMORY_OPT,
                                                  text_config->memory_limit);
         if (!scheduler) {
             printf("Error: Failed to create forward scheduler\n");
-            tinyaiCloseMappedModel(mmap_model);
+            hyperionCloseMappedModel(mmap_model);
             exit(EXIT_FAILURE);
         }
     }
     else {
         // Load model normally
-        model = tinyai_load_model(config->model_path);
+        model = hyperion_load_model(config->model_path);
         if (!model) {
             printf("Error: Failed to load model: %s\n", config->model_path);
             exit(EXIT_FAILURE);
@@ -241,7 +241,7 @@ void benchmark_tinyai_text(TinyAIBenchmarkConfig *config, TextBenchmarkConfig *t
         else {
             // Generate text with regular model
             // In a real implementation, we would call the text generation function here
-            // tinyai_generate_text(model, text_config->prompt, output, sizeof(output), &params);
+            // hyperion_generate_text(model, text_config->prompt, output, sizeof(output), &params);
         }
 
         if (config->verbose) {
@@ -262,10 +262,10 @@ void benchmark_tinyai_text(TinyAIBenchmarkConfig *config, TextBenchmarkConfig *t
         struct timespec start_time;
 
         // Measure memory before generation
-        size_t mem_before = tinyai_measure_current_memory_usage();
+        size_t mem_before = hyperion_measure_current_memory_usage();
 
         // Start timer
-        tinyai_benchmark_start_timer(&start_time);
+        hyperion_benchmark_start_timer(&start_time);
 
         if (text_config->use_mmap) {
             // TODO: Generate text with memory-mapped model and scheduler
@@ -274,14 +274,14 @@ void benchmark_tinyai_text(TinyAIBenchmarkConfig *config, TextBenchmarkConfig *t
         else {
             // Generate text with regular model
             // In a real implementation, we would call the text generation function here
-            // tinyai_generate_text(model, text_config->prompt, output, sizeof(output), &params);
+            // hyperion_generate_text(model, text_config->prompt, output, sizeof(output), &params);
         }
 
         // Stop timer
-        inference_times[i] = tinyai_benchmark_stop_timer(&start_time);
+        inference_times[i] = hyperion_benchmark_stop_timer(&start_time);
 
         // Measure memory after generation
-        size_t mem_after = tinyai_measure_current_memory_usage();
+        size_t mem_after = hyperion_measure_current_memory_usage();
         memory_usages[i] = mem_after > mem_before ? mem_after - mem_before : 0;
 
         // Count tokens generated (in a real implementation this would be the actual token count)
@@ -320,7 +320,7 @@ void benchmark_tinyai_text(TinyAIBenchmarkConfig *config, TextBenchmarkConfig *t
     result->std_dev_time_ms = sqrt(variance);
 
     // Calculate memory statistics
-    result->peak_memory_bytes = tinyai_measure_peak_memory_usage();
+    result->peak_memory_bytes = hyperion_measure_peak_memory_usage();
 
     result->avg_memory_bytes = 0;
     for (int i = 0; i < config->num_iterations; i++) {
@@ -343,20 +343,20 @@ void benchmark_tinyai_text(TinyAIBenchmarkConfig *config, TextBenchmarkConfig *t
 
     if (text_config->use_mmap) {
         if (scheduler)
-            tinyaiDestroyForwardScheduler(scheduler);
+            hyperionDestroyForwardScheduler(scheduler);
         if (mmap_model)
-            tinyaiCloseMappedModel(mmap_model);
+            hyperionCloseMappedModel(mmap_model);
     }
     else {
         if (model) {
             // TODO: Free model in real implementation
-            // tinyai_free_model(model);
+            // hyperion_free_model(model);
         }
     }
 }
 
 // Function to compare with other frameworks
-void compare_with_other_frameworks(const TinyAIBenchmarkResult *tinyai_result,
+void compare_with_other_frameworks(const HyperionBenchmarkResult *hyperion_result,
                                    const char                  *export_path)
 {
     printf("Comparison with other frameworks is not implemented yet.\n");
@@ -369,40 +369,40 @@ void compare_with_other_frameworks(const TinyAIBenchmarkResult *tinyai_result,
     printf("4. Generate comparison charts\n\n");
 
     // Placeholder for framework comparison
-    TinyAIBenchmarkResult other_results[2];
+    HyperionBenchmarkResult other_results[2];
 
     // Simulate TensorFlow Lite results
-    tinyai_init_benchmark_result(&other_results[0]);
+    hyperion_init_benchmark_result(&other_results[0]);
     strcpy(other_results[0].framework_name, "TensorFlow Lite");
     strcpy(other_results[0].framework_version, "2.12.0");
-    strcpy(other_results[0].model_name, tinyai_result->model_name);
-    strcpy(other_results[0].device_name, tinyai_result->device_name);
-    other_results[0].avg_inference_time_ms = tinyai_result->avg_inference_time_ms * 1.5;
-    other_results[0].peak_memory_bytes     = tinyai_result->peak_memory_bytes * 1.8;
-    other_results[0].samples_per_second    = tinyai_result->samples_per_second / 1.5;
+    strcpy(other_results[0].model_name, hyperion_result->model_name);
+    strcpy(other_results[0].device_name, hyperion_result->device_name);
+    other_results[0].avg_inference_time_ms = hyperion_result->avg_inference_time_ms * 1.5;
+    other_results[0].peak_memory_bytes     = hyperion_result->peak_memory_bytes * 1.8;
+    other_results[0].samples_per_second    = hyperion_result->samples_per_second / 1.5;
 
     // Simulate ONNX Runtime results
-    tinyai_init_benchmark_result(&other_results[1]);
+    hyperion_init_benchmark_result(&other_results[1]);
     strcpy(other_results[1].framework_name, "ONNX Runtime");
     strcpy(other_results[1].framework_version, "1.15.1");
-    strcpy(other_results[1].model_name, tinyai_result->model_name);
-    strcpy(other_results[1].device_name, tinyai_result->device_name);
-    other_results[1].avg_inference_time_ms = tinyai_result->avg_inference_time_ms * 1.2;
-    other_results[1].peak_memory_bytes     = tinyai_result->peak_memory_bytes * 1.5;
-    other_results[1].samples_per_second    = tinyai_result->samples_per_second / 1.2;
+    strcpy(other_results[1].model_name, hyperion_result->model_name);
+    strcpy(other_results[1].device_name, hyperion_result->device_name);
+    other_results[1].avg_inference_time_ms = hyperion_result->avg_inference_time_ms * 1.2;
+    other_results[1].peak_memory_bytes     = hyperion_result->peak_memory_bytes * 1.5;
+    other_results[1].samples_per_second    = hyperion_result->samples_per_second / 1.2;
 
     // Print comparison table
-    tinyai_compare_benchmark_results(tinyai_result, other_results, 2);
+    hyperion_compare_benchmark_results(hyperion_result, other_results, 2);
 }
 
 // Main function
 int main(int argc, char **argv)
 {
     // Initialize configuration
-    TinyAIBenchmarkConfig config;
+    HyperionBenchmarkConfig config;
     TextBenchmarkConfig   text_config;
 
-    tinyai_init_benchmark_config(&config);
+    hyperion_init_benchmark_config(&config);
 
     // Set default text generation parameters
     strncpy(text_config.prompt, DEFAULT_PROMPT, sizeof(text_config.prompt) - 1);
@@ -425,7 +425,7 @@ int main(int argc, char **argv)
 #endif
 
     // Print benchmark settings
-    printf("\n===== TinyAI Text Model Benchmark =====\n");
+    printf("\n===== Hyperion Text Model Benchmark =====\n");
     printf("Model: %s\n", config.model_path);
     printf("Prompt: \"%s\"\n", text_config.prompt);
     printf("Max Tokens: %d\n", text_config.max_tokens);
@@ -436,7 +436,7 @@ int main(int argc, char **argv)
     printf("Iterations: %d (%d warmup)\n", config.num_iterations, config.warmup_iterations);
     printf("SIMD: %s\n", config.use_simd ? "Enabled" : "Disabled");
     printf("Threads: %d\n",
-           config.num_threads > 0 ? config.num_threads : tinyai_determine_optimal_threads());
+           config.num_threads > 0 ? config.num_threads : hyperion_determine_optimal_threads());
     printf("Memory Mapping: %s\n", text_config.use_mmap ? "Enabled" : "Disabled");
     printf("Memory Limit: %.2f MB\n", text_config.memory_limit / (1024.0 * 1024.0));
     printf("Export Path: %s\n", config.export_path);
@@ -445,20 +445,20 @@ int main(int argc, char **argv)
     printf("=========================================\n\n");
 
     // Run benchmark
-    printf("Running TinyAI text model benchmark...\n");
+    printf("Running Hyperion text model benchmark...\n");
 
-    TinyAIBenchmarkResult result;
-    benchmark_tinyai_text(&config, &text_config, &result);
+    HyperionBenchmarkResult result;
+    benchmark_hyperion_text(&config, &text_config, &result);
 
     // Print results
-    tinyai_print_benchmark_results(&result);
+    hyperion_print_benchmark_results(&result);
 
     // Export results
     char csv_path[512];
     char json_path[512];
 
-    tinyai_create_timestamped_filename(csv_path, sizeof(csv_path), "tinyai_text_benchmark", "csv");
-    tinyai_create_timestamped_filename(json_path, sizeof(json_path), "tinyai_text_benchmark",
+    hyperion_create_timestamped_filename(csv_path, sizeof(csv_path), "hyperion_text_benchmark", "csv");
+    hyperion_create_timestamped_filename(json_path, sizeof(json_path), "hyperion_text_benchmark",
                                        "json");
 
     char full_csv_path[1024];
@@ -468,14 +468,14 @@ int main(int argc, char **argv)
     snprintf(full_json_path, sizeof(full_json_path), "%s/%s", config.export_path, json_path);
 
     printf("Exporting results...\n");
-    if (tinyai_export_benchmark_csv(&result, full_csv_path)) {
+    if (hyperion_export_benchmark_csv(&result, full_csv_path)) {
         printf("CSV results exported to: %s\n", full_csv_path);
     }
     else {
         printf("Failed to export CSV results\n");
     }
 
-    if (tinyai_export_benchmark_json(&result, full_json_path)) {
+    if (hyperion_export_benchmark_json(&result, full_json_path)) {
         printf("JSON results exported to: %s\n", full_json_path);
     }
     else {

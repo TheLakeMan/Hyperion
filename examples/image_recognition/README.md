@@ -1,6 +1,6 @@
-# TinyAI Image Recognition Example
+# Hyperion Image Recognition Example
 
-This example demonstrates how to implement efficient image recognition on resource-constrained devices using the TinyAI framework. It provides a simple interface for classifying images using pre-trained models optimized for edge deployment.
+This example demonstrates how to implement efficient image recognition on resource-constrained devices using the Hyperion framework. It provides a simple interface for classifying images using pre-trained models optimized for edge deployment.
 
 ## Features
 
@@ -15,7 +15,7 @@ This example demonstrates how to implement efficient image recognition on resour
 
 ## Building the Example
 
-To build the image recognition example, ensure the `BUILD_EXAMPLES` option is set to `ON` when configuring TinyAI:
+To build the image recognition example, ensure the `BUILD_EXAMPLES` option is set to `ON` when configuring Hyperion:
 
 ```bash
 mkdir build && cd build
@@ -91,7 +91,7 @@ The example works with CNN-based image classification models like:
 - EfficientNet-Lite
 - SqueezeNet
 - MNASNet
-- And other models convertible to TinyAI format
+- And other models convertible to Hyperion format
 
 Pre-quantized models are available in the `models/pretrained/` directory.
 
@@ -107,13 +107,13 @@ For optimal performance on resource-constrained devices:
 
 ## Model Format
 
-The example expects models in TinyAI's model format. This includes:
+The example expects models in Hyperion's model format. This includes:
 
 1. A JSON model structure file that defines the network architecture
 2. A binary weights file containing the model parameters
 3. A text file with class labels (one per line)
 
-If you have models in other formats (TensorFlow, PyTorch, ONNX), you can convert them to TinyAI format using the conversion tools in the `tools/` directory.
+If you have models in other formats (TensorFlow, PyTorch, ONNX), you can convert them to Hyperion format using the conversion tools in the `tools/` directory.
 
 ## Sample Output
 

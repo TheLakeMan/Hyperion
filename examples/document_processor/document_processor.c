@@ -1,6 +1,6 @@
 /**
  * @file document_processor.c
- * @brief Implementation of document processor in TinyAI
+ * @brief Implementation of document processor in Hyperion
  */
 
 #include "document_processor.h"
@@ -16,10 +16,10 @@
 /**
  * Document processor structure
  */
-struct TinyAIDocumentProcessor {
-    TinyAIDocumentProcessorMode mode;            /* Processing mode */
-    TinyAIModel                *model;           /* Text generation model */
-    TinyAITokenizer            *tokenizer;       /* Tokenizer */
+struct HyperionDocumentProcessor {
+    HyperionDocumentProcessorMode mode;            /* Processing mode */
+    HyperionModel                *model;           /* Text generation model */
+    HyperionTokenizer            *tokenizer;       /* Tokenizer */
     int                         maxInputLength;  /* Maximum input document length */
     int                         maxOutputLength; /* Maximum output length */
     int                         numClasses;      /* Number of classes for classification */
@@ -30,7 +30,7 @@ struct TinyAIDocumentProcessor {
 /**
  * Create a document processor
  */
-TinyAIDocumentProcessor *tinyaiDocumentProcessorCreate(const TinyAIDocumentProcessorConfig *config)
+HyperionDocumentProcessor *hyperionDocumentProcessorCreate(const HyperionDocumentProcessorConfig *config)
 {
     if (!config || !config->modelPath || !config->weightsPath || !config->tokenizerPath) {
         fprintf(stderr, "Invalid document processor configuration\n");
@@ -38,22 +38,22 @@ TinyAIDocumentProcessor *tinyaiDocumentProcessorCreate(const TinyAIDocumentProce
     }
 
     /* Allocate processor structure */
-    TinyAIDocumentProcessor *processor =
-        (TinyAIDocumentProcessor *)malloc(sizeof(TinyAIDocumentProcessor));
+    HyperionDocumentProcessor *processor =
+        (HyperionDocumentProcessor *)malloc(sizeof(HyperionDocumentProcessor));
     if (!processor) {
         fprintf(stderr, "Failed to allocate document processor\n");
         return NULL;
     }
 
     /* Initialize the processor */
-    memset(processor, 0, sizeof(TinyAIDocumentProcessor));
+    memset(processor, 0, sizeof(HyperionDocumentProcessor));
     processor->mode            = config->mode;
     processor->maxInputLength  = config->maxInputLength;
     processor->maxOutputLength = config->maxOutputLength;
     processor->useSIMD         = config->useSIMD;
 
     /* Load tokenizer */
-    processor->tokenizer = tinyaiTokenizerCreate(config->tokenizerPath);
+    processor->tokenizer = hyperionTokenizerCreate(config->tokenizerPath);
     if (!processor->tokenizer) {
         fprintf(stderr, "Failed to create tokenizer from %s\n", config->tokenizerPath);
         free(processor);
@@ -61,30 +61,31 @@ TinyAIDocumentProcessor *tinyaiDocumentProcessorCreate(const TinyAIDocumentProce
     }
 
     /* Load model */
-    processor->model = tinyaiLoadModel(config->modelPath, config->weightsPath, NULL);
+    processor->model = hyperionLoadModel(config->modelPath, config->weightsPath, NULL);
     if (!processor->model) {
         fprintf(stderr, "Failed to load model from %s and %s\n", config->modelPath,
                 config->weightsPath);
-        tinyaiTokenizerFree(processor->tokenizer);
+        hyperionTokenizerFree(processor->tokenizer);
         free(processor);
         return NULL;
     }
 
     /* If model is quantized and config requests it, quantize the model */
     if (config->useQuantization) {
-        if (tinyaiQuantizeModel(processor->model) != 0) {
+        if (hyperionQuantizeModel(processor->model) != 0) {
             fprintf(stderr, "Warning: Failed to quantize model\n");
+            /* Continue with unquantized model */
         }
     }
 
     /* Set up classification-specific data if needed */
-    if (config->mode == TINYAI_DOC_MODE_CLASSIFY && config->numClasses > 0 && config->classLabels) {
+    if (config->mode == HYPERION_DOC_MODE_CLASSIFY && config->numClasses > 0 && config->classLabels) {
         processor->numClasses  = config->numClasses;
         processor->classLabels = (char **)malloc(config->numClasses * sizeof(char *));
         if (!processor->classLabels) {
             fprintf(stderr, "Failed to allocate class labels\n");
-            tinyaiDestroyModel(processor->model);
-            tinyaiTokenizerFree(processor->tokenizer);
+            hyperionDestroyModel(processor->model);
+            hyperionTokenizerFree(processor->tokenizer);
             free(processor);
             return NULL;
         }
@@ -99,8 +100,8 @@ TinyAIDocumentProcessor *tinyaiDocumentProcessorCreate(const TinyAIDocumentProce
                         free(processor->classLabels[j]);
                     }
                     free(processor->classLabels);
-                    tinyaiDestroyModel(processor->model);
-                    tinyaiTokenizerFree(processor->tokenizer);
+                    hyperionDestroyModel(processor->model);
+                    hyperionTokenizerFree(processor->tokenizer);
                     free(processor);
                     return NULL;
                 }
@@ -117,7 +118,7 @@ TinyAIDocumentProcessor *tinyaiDocumentProcessorCreate(const TinyAIDocumentProce
 /**
  * Free a document processor
  */
-void tinyaiDocumentProcessorFree(TinyAIDocumentProcessor *processor)
+void hyperionDocumentProcessorFree(HyperionDocumentProcessor *processor)
 {
     if (!processor) {
         return;
@@ -133,10 +134,10 @@ void tinyaiDocumentProcessorFree(TinyAIDocumentProcessor *processor)
 
     /* Free model and tokenizer */
     if (processor->model) {
-        tinyaiDestroyModel(processor->model);
+        hyperionDestroyModel(processor->model);
     }
     if (processor->tokenizer) {
-        tinyaiTokenizerFree(processor->tokenizer);
+        hyperionTokenizerFree(processor->tokenizer);
     }
 
     /* Free processor structure */
@@ -178,7 +179,7 @@ static char *readTextFromFile(const char *filePath)
 /**
  * Process a document file
  */
-bool tinyaiDocumentProcessFile(TinyAIDocumentProcessor *processor, const char *filePath,
+bool hyperionDocumentProcessFile(HyperionDocumentProcessor *processor, const char *filePath,
                                char *outputBuffer, int outputSize)
 {
     if (!processor || !filePath || !outputBuffer || outputSize <= 0) {
@@ -192,7 +193,7 @@ bool tinyaiDocumentProcessFile(TinyAIDocumentProcessor *processor, const char *f
     }
 
     /* Process the text */
-    bool result = tinyaiDocumentProcessText(processor, text, outputBuffer, outputSize);
+    bool result = hyperionDocumentProcessText(processor, text, outputBuffer, outputSize);
 
     /* Clean up */
     free(text);
@@ -203,7 +204,7 @@ bool tinyaiDocumentProcessFile(TinyAIDocumentProcessor *processor, const char *f
 /**
  * Process document text
  */
-bool tinyaiDocumentProcessText(TinyAIDocumentProcessor *processor, const char *text,
+bool hyperionDocumentProcessText(HyperionDocumentProcessor *processor, const char *text,
                                char *outputBuffer, int outputSize)
 {
     if (!processor || !text || !outputBuffer || outputSize <= 0) {
@@ -212,10 +213,10 @@ bool tinyaiDocumentProcessText(TinyAIDocumentProcessor *processor, const char *t
 
     /* Call the appropriate function based on the mode */
     switch (processor->mode) {
-    case TINYAI_DOC_MODE_CLASSIFY: {
+    case HYPERION_DOC_MODE_CLASSIFY: {
         /* Classify the document and format the result */
-        TinyAIDocumentClassResult results[10]; /* Assuming max 10 top results */
-        int                       numResults = tinyaiDocumentClassify(processor, text, results, 10);
+        HyperionDocumentClassResult results[10]; /* Assuming max 10 top results */
+        int                       numResults = hyperionDocumentClassify(processor, text, results, 10);
         if (numResults <= 0) {
             return false;
         }
@@ -232,14 +233,14 @@ bool tinyaiDocumentProcessText(TinyAIDocumentProcessor *processor, const char *t
         return true;
     }
 
-    case TINYAI_DOC_MODE_SUMMARIZE:
-        return tinyaiDocumentSummarize(processor, text, outputBuffer, outputSize);
+    case HYPERION_DOC_MODE_SUMMARIZE:
+        return hyperionDocumentSummarize(processor, text, outputBuffer, outputSize);
 
-    case TINYAI_DOC_MODE_EXTRACT_INFO:
+    case HYPERION_DOC_MODE_EXTRACT_INFO:
         /* For extraction mode, we need an additional prompt, so this doesn't work
-           directly. The user should call tinyaiDocumentExtractInfo instead. */
+           directly. The user should call hyperionDocumentExtractInfo instead. */
         snprintf(outputBuffer, outputSize,
-                 "Error: For information extraction, call tinyaiDocumentExtractInfo instead.");
+                 "Error: For information extraction, call hyperionDocumentExtractInfo instead.");
         return false;
 
     default:
@@ -251,8 +252,8 @@ bool tinyaiDocumentProcessText(TinyAIDocumentProcessor *processor, const char *t
 /**
  * Classify a document
  */
-int tinyaiDocumentClassify(TinyAIDocumentProcessor *processor, const char *text,
-                           TinyAIDocumentClassResult *results, int maxResults)
+int hyperionDocumentClassify(HyperionDocumentProcessor *processor, const char *text,
+                           HyperionDocumentClassResult *results, int maxResults)
 {
     if (!processor || !text || !results || maxResults <= 0) {
         return -1;
@@ -266,7 +267,7 @@ int tinyaiDocumentClassify(TinyAIDocumentProcessor *processor, const char *text,
 
     /* Tokenize input */
     int  textLength = 0;
-    int *tokens     = tinyaiTokenizerEncodeText(processor->tokenizer, text, &textLength);
+    int *tokens     = hyperionTokenizerEncodeText(processor->tokenizer, text, &textLength);
     if (!tokens || textLength == 0) {
         fprintf(stderr, "Failed to tokenize input text\n");
         return -1;
@@ -278,7 +279,7 @@ int tinyaiDocumentClassify(TinyAIDocumentProcessor *processor, const char *text,
     }
 
     /* Allocate buffer for output logits */
-    int    vocabSize    = tinyaiTokenizerGetVocabSize(processor->tokenizer);
+    int    vocabSize    = hyperionTokenizerGetVocabSize(processor->tokenizer);
     float *outputLogits = (float *)malloc(vocabSize * sizeof(float));
     if (!outputLogits) {
         fprintf(stderr, "Failed to allocate output logits buffer\n");
@@ -287,7 +288,7 @@ int tinyaiDocumentClassify(TinyAIDocumentProcessor *processor, const char *text,
     }
 
     /* Run the model */
-    if (tinyaiModelForward(processor->model, tokens, textLength, outputLogits) != 0) {
+    if (hyperionModelForward(processor->model, tokens, textLength, outputLogits) != 0) {
         fprintf(stderr, "Failed to run model forward pass\n");
         free(outputLogits);
         free(tokens);
@@ -351,7 +352,7 @@ int tinyaiDocumentClassify(TinyAIDocumentProcessor *processor, const char *text,
 /**
  * Summarize a document
  */
-bool tinyaiDocumentSummarize(TinyAIDocumentProcessor *processor, const char *text, char *summary,
+bool hyperionDocumentSummarize(HyperionDocumentProcessor *processor, const char *text, char *summary,
                              int maxLength)
 {
     if (!processor || !text || !summary || maxLength <= 0) {
@@ -376,7 +377,7 @@ bool tinyaiDocumentSummarize(TinyAIDocumentProcessor *processor, const char *tex
 
     /* Tokenize input */
     int  promptLength = 0;
-    int *promptTokens = tinyaiTokenizerEncodeText(processor->tokenizer, fullPrompt, &promptLength);
+    int *promptTokens = hyperionTokenizerEncodeText(processor->tokenizer, fullPrompt, &promptLength);
     free(fullPrompt);
 
     if (!promptTokens || promptLength == 0) {
@@ -390,10 +391,10 @@ bool tinyaiDocumentSummarize(TinyAIDocumentProcessor *processor, const char *tex
     }
 
     /* Set up generation parameters */
-    TinyAIGenerationParams genParams;
-    memset(&genParams, 0, sizeof(TinyAIGenerationParams));
+    HyperionGenerationParams genParams;
+    memset(&genParams, 0, sizeof(HyperionGenerationParams));
     genParams.maxTokens      = processor->maxOutputLength;
-    genParams.samplingMethod = TINYAI_SAMPLING_TOP_P;
+    genParams.samplingMethod = HYPERION_SAMPLING_TOP_P;
     genParams.temperature    = 0.7f;
     genParams.topP           = 0.9f;
     genParams.promptTokens   = promptTokens;
@@ -409,7 +410,7 @@ bool tinyaiDocumentSummarize(TinyAIDocumentProcessor *processor, const char *tex
 
     /* Generate summary */
     int numTokens =
-        tinyaiGenerateText(processor->model, &genParams, outputTokens, processor->maxOutputLength);
+        hyperionGenerateText(processor->model, &genParams, outputTokens, processor->maxOutputLength);
 
     free(promptTokens);
 
@@ -420,7 +421,7 @@ bool tinyaiDocumentSummarize(TinyAIDocumentProcessor *processor, const char *tex
     }
 
     /* Decode output tokens */
-    char *summaryText = tinyaiTokenizerDecode(processor->tokenizer, outputTokens, numTokens);
+    char *summaryText = hyperionTokenizerDecode(processor->tokenizer, outputTokens, numTokens);
     free(outputTokens);
 
     if (!summaryText) {
@@ -439,7 +440,7 @@ bool tinyaiDocumentSummarize(TinyAIDocumentProcessor *processor, const char *tex
 /**
  * Extract information from a document
  */
-bool tinyaiDocumentExtractInfo(TinyAIDocumentProcessor *processor, const char *text,
+bool hyperionDocumentExtractInfo(HyperionDocumentProcessor *processor, const char *text,
                                const char *prompt, char *result, int maxLength)
 {
     if (!processor || !text || !prompt || !result || maxLength <= 0) {
@@ -467,7 +468,7 @@ bool tinyaiDocumentExtractInfo(TinyAIDocumentProcessor *processor, const char *t
 
     /* Tokenize input */
     int  promptLength = 0;
-    int *promptTokens = tinyaiTokenizerEncodeText(processor->tokenizer, fullPrompt, &promptLength);
+    int *promptTokens = hyperionTokenizerEncodeText(processor->tokenizer, fullPrompt, &promptLength);
     free(fullPrompt);
 
     if (!promptTokens || promptLength == 0) {
@@ -481,10 +482,10 @@ bool tinyaiDocumentExtractInfo(TinyAIDocumentProcessor *processor, const char *t
     }
 
     /* Set up generation parameters */
-    TinyAIGenerationParams genParams;
-    memset(&genParams, 0, sizeof(TinyAIGenerationParams));
+    HyperionGenerationParams genParams;
+    memset(&genParams, 0, sizeof(HyperionGenerationParams));
     genParams.maxTokens      = processor->maxOutputLength;
-    genParams.samplingMethod = TINYAI_SAMPLING_TOP_P;
+    genParams.samplingMethod = HYPERION_SAMPLING_TOP_P;
     genParams.temperature    = 0.7f;
     genParams.topP           = 0.9f;
     genParams.promptTokens   = promptTokens;
@@ -500,7 +501,7 @@ bool tinyaiDocumentExtractInfo(TinyAIDocumentProcessor *processor, const char *t
 
     /* Generate extraction */
     int numTokens =
-        tinyaiGenerateText(processor->model, &genParams, outputTokens, processor->maxOutputLength);
+        hyperionGenerateText(processor->model, &genParams, outputTokens, processor->maxOutputLength);
 
     free(promptTokens);
 
@@ -511,7 +512,7 @@ bool tinyaiDocumentExtractInfo(TinyAIDocumentProcessor *processor, const char *t
     }
 
     /* Decode output tokens */
-    char *extractedText = tinyaiTokenizerDecode(processor->tokenizer, outputTokens, numTokens);
+    char *extractedText = hyperionTokenizerDecode(processor->tokenizer, outputTokens, numTokens);
     free(outputTokens);
 
     if (!extractedText) {
@@ -530,7 +531,7 @@ bool tinyaiDocumentExtractInfo(TinyAIDocumentProcessor *processor, const char *t
 /**
  * Get memory usage statistics
  */
-bool tinyaiDocumentProcessorGetMemoryUsage(const TinyAIDocumentProcessor *processor,
+bool hyperionDocumentProcessorGetMemoryUsage(const HyperionDocumentProcessor *processor,
                                            size_t *weightMemory, size_t *activationMemory)
 {
     if (!processor || !weightMemory || !activationMemory) {
@@ -539,8 +540,8 @@ bool tinyaiDocumentProcessorGetMemoryUsage(const TinyAIDocumentProcessor *proces
 
     /* For now, we just estimate memory usage based on the model size */
     /* In a real implementation, we would query the model for actual usage */
-    *weightMemory     = processor->model ? tinyaiGetModelWeightMemory(processor->model) : 0;
-    *activationMemory = processor->model ? tinyaiGetModelActivationMemory(processor->model) : 0;
+    *weightMemory     = processor->model ? hyperionGetModelWeightMemory(processor->model) : 0;
+    *activationMemory = processor->model ? hyperionGetModelActivationMemory(processor->model) : 0;
 
     return true;
 }
@@ -548,7 +549,7 @@ bool tinyaiDocumentProcessorGetMemoryUsage(const TinyAIDocumentProcessor *proces
 /**
  * Enable or disable SIMD acceleration
  */
-bool tinyaiDocumentProcessorEnableSIMD(TinyAIDocumentProcessor *processor, bool enable)
+bool hyperionDocumentProcessorEnableSIMD(HyperionDocumentProcessor *processor, bool enable)
 {
     if (!processor) {
         return false;

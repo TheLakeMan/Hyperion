@@ -1,13 +1,13 @@
 /**
  * @file mmap_loader.h
- * @brief Memory-mapped model loading utilities for TinyAI
+ * @brief Memory-mapped model loading utilities for Hyperion
  *
  * This header provides utilities for memory-mapped access to model weights,
  * allowing models to be used directly from storage without fully loading into RAM.
  */
 
-#ifndef TINYAI_MMAP_LOADER_H
-#define TINYAI_MMAP_LOADER_H
+#ifndef HYPERION_MMAP_LOADER_H
+#define HYPERION_MMAP_LOADER_H
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -20,7 +20,7 @@ extern "C" {
 /**
  * Structure representing a memory-mapped model file
  */
-typedef struct TinyAIMappedModel TinyAIMappedModel;
+typedef struct HyperionMappedModel HyperionMappedModel;
 
 /**
  * Layer access descriptor for memory-mapped models
@@ -35,7 +35,7 @@ typedef struct {
     float    priority;      /* Priority for cache retention (higher = more likely to keep) */
     uint64_t lastAccessed;  /* Timestamp of last access */
     uint64_t accessCount;   /* Number of times this layer has been accessed */
-} TinyAILayerDescriptor;
+} HyperionLayerDescriptor;
 
 /**
  * Memory-mapped model configuration
@@ -46,7 +46,7 @@ typedef struct {
     int    prefetchThreads;   /* Number of threads to use for prefetching */
     bool   adaptiveCaching;   /* Whether to use adaptive caching based on access patterns */
     size_t minLayerCacheSize; /* Minimum cache size per layer in bytes */
-} TinyAIMmapConfig;
+} HyperionMmapConfig;
 
 /**
  * Open a memory-mapped model file
@@ -55,14 +55,14 @@ typedef struct {
  * @param config Memory-mapped loading configuration
  * @return Pointer to the memory-mapped model structure, or NULL on failure
  */
-TinyAIMappedModel *tinyaiOpenMappedModel(const char *filepath, const TinyAIMmapConfig *config);
+HyperionMappedModel *hyperionOpenMappedModel(const char *filepath, const HyperionMmapConfig *config);
 
 /**
  * Close a memory-mapped model and release resources
  *
  * @param model Pointer to the memory-mapped model to close
  */
-void tinyaiCloseMappedModel(TinyAIMappedModel *model);
+void hyperionCloseMappedModel(HyperionMappedModel *model);
 
 /**
  * Get the number of layers in a memory-mapped model
@@ -70,7 +70,7 @@ void tinyaiCloseMappedModel(TinyAIMappedModel *model);
  * @param model Pointer to the memory-mapped model
  * @return Number of layers, or -1 on error
  */
-int tinyaiGetMappedLayerCount(const TinyAIMappedModel *model);
+int hyperionGetMappedLayerCount(const HyperionMappedModel *model);
 
 /**
  * Get descriptor for a specific layer in the model
@@ -79,7 +79,7 @@ int tinyaiGetMappedLayerCount(const TinyAIMappedModel *model);
  * @param layerIndex Index of the layer to get
  * @return Layer descriptor, or NULL on error
  */
-const TinyAILayerDescriptor *tinyaiGetLayerDescriptor(const TinyAIMappedModel *model,
+const HyperionLayerDescriptor *hyperionGetLayerDescriptor(const HyperionMappedModel *model,
                                                       int                      layerIndex);
 
 /**
@@ -89,16 +89,16 @@ const TinyAILayerDescriptor *tinyaiGetLayerDescriptor(const TinyAIMappedModel *m
  * @param layerIndex Index of the layer to load
  * @return Pointer to the layer weights, or NULL on error
  */
-void *tinyaiGetLayerWeights(TinyAIMappedModel *model, int layerIndex);
+void *hyperionGetLayerWeights(HyperionMappedModel *model, int layerIndex);
 
 /**
  * Prefetch a layer's weights into memory in anticipation of use
  *
- * @param model Pointer to the memory-mapped model
+ * @param model Pointer to the
  * @param layerIndex Index of the layer to prefetch
  * @return true if prefetching was successful, false otherwise
  */
-bool tinyaiPrefetchLayerWeights(TinyAIMappedModel *model, int layerIndex);
+bool hyperionPrefetchLayerWeights(HyperionMappedModel *model, int layerIndex);
 
 /**
  * Release a layer's weights from memory to free up space
@@ -106,14 +106,14 @@ bool tinyaiPrefetchLayerWeights(TinyAIMappedModel *model, int layerIndex);
  * @param model Pointer to the memory-mapped model
  * @param layerIndex Index of the layer to unload
  */
-void tinyaiReleaseLayerWeights(TinyAIMappedModel *model, int layerIndex);
+void hyperionReleaseLayerWeights(HyperionMappedModel *model, int layerIndex);
 
 /**
  * Create a default memory-mapped model configuration
  *
  * @return Default configuration
  */
-TinyAIMmapConfig tinyaiCreateDefaultMmapConfig(void);
+HyperionMmapConfig hyperionCreateDefaultMmapConfig(void);
 
 /**
  * Get current memory usage of the mapped model cache
@@ -121,7 +121,7 @@ TinyAIMmapConfig tinyaiCreateDefaultMmapConfig(void);
  * @param model Pointer to the memory-mapped model
  * @return Memory usage in bytes
  */
-size_t tinyaiGetMappedModelMemoryUsage(const TinyAIMappedModel *model);
+size_t hyperionGetMappedModelMemoryUsage(const HyperionMappedModel *model);
 
 /**
  * Set layer access priority for caching
@@ -130,17 +130,17 @@ size_t tinyaiGetMappedModelMemoryUsage(const TinyAIMappedModel *model);
  * @param layerIndex Index of the layer to set priority for
  * @param priority Priority value (higher = more likely to keep in cache)
  */
-void tinyaiSetLayerPriority(TinyAIMappedModel *model, int layerIndex, float priority);
+void hyperionSetLayerPriority(HyperionMappedModel *model, int layerIndex, float priority);
 
 /**
  * Reset all layer cache priorities to default values
  *
  * @param model Pointer to the memory-mapped model
  */
-void tinyaiResetLayerPriorities(TinyAIMappedModel *model);
+void hyperionResetLayerPriorities(HyperionMappedModel *model);
 
 #ifdef __cplusplus
-}
+} /* extern "C" */
 #endif
 
-#endif /* TINYAI_MMAP_LOADER_H */
+#endif /* HYPERION_MMAP_LOADER_H */

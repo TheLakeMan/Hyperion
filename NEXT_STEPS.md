@@ -1,4 +1,4 @@
-# TinyAI Next Steps
+# Hyperion Next Steps
 
 ## Completed Tasks
 - [x] SIMD acceleration optimization

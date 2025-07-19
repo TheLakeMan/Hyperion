@@ -1,6 +1,6 @@
 /**
  * @file benchmark.c
- * @brief Benchmarking utilities for TinyAI to compare model performance
+ * @brief Benchmarking utilities for Hyperion to compare model performance
  */
 
 #include "../core/memory.h"
@@ -23,22 +23,22 @@
  * Enumeration for different types of operations to benchmark
  */
 typedef enum {
-    TINYAI_BENCHMARK_MATMUL,         /* Matrix multiplication */
-    TINYAI_BENCHMARK_CONV,           /* 2D Convolution */
-    TINYAI_BENCHMARK_DEPTHWISE_CONV, /* Depthwise convolution */
-    TINYAI_BENCHMARK_ACTIVATION,     /* Activation functions */
-    TINYAI_BENCHMARK_POOLING,        /* Pooling operations */
-    TINYAI_BENCHMARK_ATTENTION,      /* Attention mechanism */
-    TINYAI_BENCHMARK_QUANTIZE,       /* Quantization */
-    TINYAI_BENCHMARK_CUSTOM          /* Custom operation */
-} TinyAIBenchmarkType;
+    HYPERION_BENCHMARK_MATMUL,         /* Matrix multiplication */
+    HYPERION_BENCHMARK_CONV,           /* 2D Convolution */
+    HYPERION_BENCHMARK_DEPTHWISE_CONV, /* Depthwise convolution */
+    HYPERION_BENCHMARK_ACTIVATION,     /* Activation functions */
+    HYPERION_BENCHMARK_POOLING,        /* Pooling operations */
+    HYPERION_BENCHMARK_ATTENTION,      /* Attention mechanism */
+    HYPERION_BENCHMARK_QUANTIZE,       /* Quantization */
+    HYPERION_BENCHMARK_CUSTOM          /* Custom operation */
+} HyperionBenchmarkType;
 
 /**
  * Structure for SIMD benchmark results
  */
 typedef struct {
     const char         *operationName; /* Name of the operation */
-    TinyAIBenchmarkType type;          /* Type of operation */
+    HyperionBenchmarkType type;          /* Type of operation */
     double              simdTime;      /* Time taken with SIMD (milliseconds) */
     double              nonSimdTime;   /* Time taken without SIMD (milliseconds) */
     double              speedup;       /* SIMD speedup factor */
@@ -47,7 +47,7 @@ typedef struct {
     const char         *simdType;      /* Type of SIMD used (AVX2, AVX, SSE2, etc.) */
     double              cacheOptTime;  /* Time with cache optimization (milliseconds) */
     double              cacheSpeedup;  /* Cache optimization speedup factor */
-} TinyAISimdBenchmarkResult;
+} HyperionSimdBenchmarkResult;
 
 /**
  * Structure to hold benchmark results
@@ -97,7 +97,7 @@ static double getCurrentTimeMs()
  * @param numIterations Number of iterations to run for each image (for averaging)
  * @return BenchmarkResult structure with benchmark results
  */
-BenchmarkResult benchmarkImageModel(TinyAIImageModel *model, TinyAIImage **images, int *labels,
+BenchmarkResult benchmarkImageModel(HyperionImageModel *model, HyperionImage **images, int *labels,
                                     int numImages, int numIterations)
 {
     BenchmarkResult result;
@@ -108,10 +108,10 @@ BenchmarkResult benchmarkImageModel(TinyAIImageModel *model, TinyAIImage **image
     result.numIterations = numIterations;
 
     /* Get model size and activation memory information */
-    tinyaiImageModelGetMemoryUsage(model, &result.modelSize, &result.activationSize);
+    hyperionImageModelGetMemoryUsage(model, &result.modelSize, &result.activationSize);
 
     /* Prepare for inference */
-    TinyAIImageClassResult classResults[5]; /* Top 5 results for each inference */
+    HyperionImageClassResult classResults[5]; /* Top 5 results for each inference */
     double                 startTime, endTime;
     int                    totalCorrect = 0;
 
@@ -121,7 +121,7 @@ BenchmarkResult benchmarkImageModel(TinyAIImageModel *model, TinyAIImage **image
     for (int i = 0; i < numImages; i++) {
         for (int j = 0; j < numIterations; j++) {
             /* Run inference */
-            tinyaiImageModelClassify(model, images[i], 5, classResults);
+            hyperionImageModelClassify(model, images[i], 5, classResults);
 
             /* Check if top prediction matches ground truth (for first iteration only) */
             if (j == 0 && classResults[0].classId == labels[i]) {
@@ -168,8 +168,8 @@ void printBenchmarkResult(const BenchmarkResult *result)
  * @param numImages Number of images
  * @param numIterations Number of iterations for each model
  */
-void compareModels(TinyAIImageModel *quantizedModel, TinyAIImageModel *fullModel,
-                   TinyAIImage **images, int *labels, int numImages, int numIterations)
+void compareModels(HyperionImageModel *quantizedModel, HyperionImageModel *fullModel,
+                   HyperionImage **images, int *labels, int numImages, int numIterations)
 {
     /* Run benchmarks */
     BenchmarkResult quantizedResult =
@@ -209,8 +209,8 @@ void compareModels(TinyAIImageModel *quantizedModel, TinyAIImageModel *fullModel
  * @param numIterations Number of iterations for each model
  * @return Array of benchmark results
  */
-BenchmarkResult *benchmarkMultipleModels(TinyAIImageModel **models, const char **modelNames,
-                                         int numModels, TinyAIImage **images, int *labels,
+BenchmarkResult *benchmarkMultipleModels(HyperionImageModel **models, const char **modelNames,
+                                         int numModels, HyperionImage **images, int *labels,
                                          int numImages, int numIterations)
 {
     BenchmarkResult *results = (BenchmarkResult *)malloc(numModels * sizeof(BenchmarkResult));
@@ -335,14 +335,14 @@ static float calculateAccuracy(const float *a, const float *b, int size)
  * @param numIterations Number of iterations for benchmark
  * @return Benchmark result
  */
-TinyAISimdBenchmarkResult benchmarkMatrixMultiply(int rows, int inner, int cols, int numIterations)
+HyperionSimdBenchmarkResult benchmarkMatrixMultiply(int rows, int inner, int cols, int numIterations)
 {
-    TinyAISimdBenchmarkResult result;
-    memset(&result, 0, sizeof(TinyAISimdBenchmarkResult));
+    HyperionSimdBenchmarkResult result;
+    memset(&result, 0, sizeof(HyperionSimdBenchmarkResult));
 
     /* Set operation name and type */
     result.operationName = "Matrix Multiplication";
-    result.type          = TINYAI_BENCHMARK_MATMUL;
+    result.type          = HYPERION_BENCHMARK_MATMUL;
 
     /* Store dimensions */
     result.dimensions[0] = rows;
@@ -350,7 +350,7 @@ TinyAISimdBenchmarkResult benchmarkMatrixMultiply(int rows, int inner, int cols,
     result.dimensions[2] = cols;
 
     /* Detect available SIMD capabilities */
-    int simdCaps = tinyai_simd_detect_capabilities();
+    int simdCaps = hyperion_simd_detect_capabilities();
     if (simdCaps >= 3) {
         result.simdType = "AVX2";
     }
@@ -397,7 +397,7 @@ TinyAISimdBenchmarkResult benchmarkMatrixMultiply(int rows, int inner, int cols,
         memset(c_simd, 0, rows * cols * sizeof(float));
 
         /* Use SIMD matrix multiplication */
-        tinyai_simd_matmul_f32(a, b, c_simd, rows, inner, cols);
+        hyperion_simd_matmul_f32(a, b, c_simd, rows, inner, cols);
     }
     double end      = getCurrentTimeMs();
     result.simdTime = (end - start) / numIterations;
@@ -423,8 +423,8 @@ TinyAISimdBenchmarkResult benchmarkMatrixMultiply(int rows, int inner, int cols,
     result.nonSimdTime = (end - start) / numIterations;
 
     /* Benchmark cache-optimized implementation */
-    TinyAICacheOptConfig config = tinyai_cache_opt_init_default();
-    tinyai_cache_opt_matrix_multiply(rows, cols, inner, &config);
+    HyperionCacheOptConfig config = hyperion_cache_opt_init_default();
+    hyperion_cache_opt_matrix_multiply(rows, cols, inner, &config);
 
     start = getCurrentTimeMs();
     for (int iter = 0; iter < numIterations; iter++) {
@@ -433,7 +433,7 @@ TinyAISimdBenchmarkResult benchmarkMatrixMultiply(int rows, int inner, int cols,
 
         /* Cache-optimized matrix multiplication with blocking */
         size_t i, j, k;
-        TINYAI_LOOP_TILING_2D(i, 0, rows, k, 0, inner, config.blockSizeX, config.blockSizeY, {
+        HYPERION_LOOP_TILING_2D(i, 0, rows, k, 0, inner, config.blockSizeX, config.blockSizeY, {
             for (j = 0; j < cols; j++) {
                 c_cache[i * cols + j] += a[i * inner + k] * b[k * cols + j];
             }
@@ -466,10 +466,10 @@ TinyAISimdBenchmarkResult benchmarkMatrixMultiply(int rows, int inner, int cols,
  * @param numIterations Number of iterations for benchmark
  * @return Benchmark result
  */
-TinyAISimdBenchmarkResult benchmarkActivation(int size, int activationType, int numIterations)
+HyperionSimdBenchmarkResult benchmarkActivation(int size, int activationType, int numIterations)
 {
-    TinyAISimdBenchmarkResult result;
-    memset(&result, 0, sizeof(TinyAISimdBenchmarkResult));
+    HyperionSimdBenchmarkResult result;
+    memset(&result, 0, sizeof(HyperionSimdBenchmarkResult));
 
     /* Set operation name and type */
     const char *actNames[] = {"ReLU", "GELU", "Sigmoid"};
@@ -478,13 +478,13 @@ TinyAISimdBenchmarkResult benchmarkActivation(int size, int activationType, int 
              (activationType >= 0 && activationType <= 2) ? actNames[activationType] : "Unknown");
 
     result.operationName = _strdup(nameBuf);
-    result.type          = TINYAI_BENCHMARK_ACTIVATION;
+    result.type          = HYPERION_BENCHMARK_ACTIVATION;
 
     /* Store dimensions */
     result.dimensions[0] = size;
 
     /* Detect available SIMD capabilities */
-    int simdCaps = tinyai_simd_detect_capabilities();
+    int simdCaps = hyperion_simd_detect_capabilities();
     if (simdCaps >= 3) {
         result.simdType = "AVX2";
     }
@@ -525,7 +525,7 @@ TinyAISimdBenchmarkResult benchmarkActivation(int size, int activationType, int 
         memcpy(data_simd, data, size * sizeof(float));
 
         /* Apply activation function using SIMD */
-        tinyaiSimdActivate(data_simd, size, activationType);
+        hyperionSimdActivate(data_simd, size, activationType);
     }
     double end      = getCurrentTimeMs();
     result.simdTime = (end - start) / numIterations;
@@ -578,19 +578,19 @@ TinyAISimdBenchmarkResult benchmarkActivation(int size, int activationType, int 
  * Print detailed SIMD benchmark result
  * @param result Benchmark result to print
  */
-void printSimdBenchmarkResult(const TinyAISimdBenchmarkResult *result)
+void printSimdBenchmarkResult(const HyperionSimdBenchmarkResult *result)
 {
     printf("\n=== %s Benchmark ===\n", result->operationName);
 
     /* Print dimensions based on operation type */
     switch (result->type) {
-    case TINYAI_BENCHMARK_MATMUL:
+    case HYPERION_BENCHMARK_MATMUL:
         printf("Dimensions: %d x %d x %d\n", result->dimensions[0], result->dimensions[1],
                result->dimensions[2]);
         break;
 
-    case TINYAI_BENCHMARK_CONV:
-    case TINYAI_BENCHMARK_DEPTHWISE_CONV:
+    case HYPERION_BENCHMARK_CONV:
+    case HYPERION_BENCHMARK_DEPTHWISE_CONV:
         printf("Input: %dx%dx%d, Kernel: %dx%d\n", result->dimensions[0], result->dimensions[1],
                result->dimensions[2], result->dimensions[3], result->dimensions[3]);
         break;
@@ -660,7 +660,7 @@ void printSimdBenchmarkResult(const TinyAISimdBenchmarkResult *result)
  * @param filepath Path to save CSV file
  * @return true on success, false on failure
  */
-bool createSimdBenchmarkReport(const TinyAISimdBenchmarkResult *results, int numResults,
+bool createSimdBenchmarkReport(const HyperionSimdBenchmarkResult *results, int numResults,
                                const char *filepath)
 {
     FILE *file = fopen(filepath, "w");
@@ -674,7 +674,7 @@ bool createSimdBenchmarkReport(const TinyAISimdBenchmarkResult *results, int num
 
     /* Write each result */
     for (int i = 0; i < numResults; i++) {
-        const TinyAISimdBenchmarkResult *result = &results[i];
+        const HyperionSimdBenchmarkResult *result = &results[i];
         fprintf(file, "%s,%s,%.4f,%.4f,%.2f,%.4f,%.2f,%.6f\n", result->operationName,
                 result->simdType, result->nonSimdTime, result->simdTime, result->speedup,
                 result->cacheOptTime, result->cacheSpeedup, result->accuracy);
@@ -697,7 +697,7 @@ int runComprehensiveBenchmarkSuite(const char *outputFilepath)
 
 /* Array to store results */
 #define MAX_BENCHMARK_RESULTS 20
-    TinyAISimdBenchmarkResult results[MAX_BENCHMARK_RESULTS];
+    HyperionSimdBenchmarkResult results[MAX_BENCHMARK_RESULTS];
     int                       resultCount = 0;
 
     printf("Running comprehensive SIMD and cache optimization benchmark suite...\n");

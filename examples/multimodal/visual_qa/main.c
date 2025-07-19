@@ -2,7 +2,7 @@
  * @file main.c
  * @brief Main program for visual question answering example
  *
- * This example demonstrates how to use TinyAI's multimodal capabilities
+ * This example demonstrates how to use Hyperion's multimodal capabilities
  * to answer questions about images using natural language.
  */
 
@@ -35,7 +35,7 @@ void print_usage(const char *progname)
 }
 
 /* Process a single image and question */
-bool process_query(TinyAIVisualQA *vqa, const char *imagePath, const char *question,
+bool process_query(HyperionVisualQA *vqa, const char *imagePath, const char *question,
                    const char *outputPath, bool append)
 {
     char answer[MAX_ANSWER_LENGTH];
@@ -47,7 +47,7 @@ bool process_query(TinyAIVisualQA *vqa, const char *imagePath, const char *quest
     clock_t start_time = clock();
 
     bool success =
-        tinyaiVisualQAAnswerQuestion(vqa, imagePath, question, answer, MAX_ANSWER_LENGTH);
+        hyperionVisualQAAnswerQuestion(vqa, imagePath, question, answer, MAX_ANSWER_LENGTH);
 
     clock_t end_time   = clock();
     double  time_taken = ((double)(end_time - start_time)) / CLOCKS_PER_SEC;
@@ -78,7 +78,7 @@ bool process_query(TinyAIVisualQA *vqa, const char *imagePath, const char *quest
 }
 
 /* Process a batch file containing image paths and questions */
-bool process_batch_file(TinyAIVisualQA *vqa, const char *batchFilePath, const char *outputPath)
+bool process_batch_file(HyperionVisualQA *vqa, const char *batchFilePath, const char *outputPath)
 {
     FILE *batchFile = fopen(batchFilePath, "r");
     if (!batchFile) {
@@ -149,7 +149,7 @@ int main(int argc, char *argv[])
     const char       *output_path      = NULL;
     const char       *batch_file       = NULL;
     const char       *custom_template  = NULL;
-    TinyAIAnswerStyle style            = TINYAI_ANSWER_STYLE_CONCISE;
+    HyperionAnswerStyle style            = HYPERION_ANSWER_STYLE_CONCISE;
     int               max_tokens       = 100;
     bool              use_quantization = false;
     bool              use_simd         = false;
@@ -172,16 +172,16 @@ int main(int argc, char *argv[])
         else if (strcmp(argv[i], "--style") == 0 && i + 1 < argc) {
             i++;
             if (strcmp(argv[i], "concise") == 0) {
-                style = TINYAI_ANSWER_STYLE_CONCISE;
+                style = HYPERION_ANSWER_STYLE_CONCISE;
             }
             else if (strcmp(argv[i], "detailed") == 0) {
-                style = TINYAI_ANSWER_STYLE_DETAILED;
+                style = HYPERION_ANSWER_STYLE_DETAILED;
             }
             else if (strcmp(argv[i], "factual") == 0) {
-                style = TINYAI_ANSWER_STYLE_FACTUAL;
+                style = HYPERION_ANSWER_STYLE_FACTUAL;
             }
             else if (strcmp(argv[i], "casual") == 0) {
-                style = TINYAI_ANSWER_STYLE_CASUAL;
+                style = HYPERION_ANSWER_STYLE_CASUAL;
             }
             else {
                 fprintf(stderr, "Error: Unknown answer style: %s\n", argv[i]);
@@ -190,7 +190,7 @@ int main(int argc, char *argv[])
         }
         else if (strcmp(argv[i], "--custom-template") == 0 && i + 1 < argc) {
             custom_template = argv[++i];
-            style           = TINYAI_ANSWER_STYLE_CUSTOM;
+            style           = HYPERION_ANSWER_STYLE_CUSTOM;
         }
         else if (strcmp(argv[i], "--max-tokens") == 0 && i + 1 < argc) {
             max_tokens = atoi(argv[++i]);
@@ -250,8 +250,8 @@ int main(int argc, char *argv[])
     }
 
     /* Create visual QA configuration */
-    TinyAIVisualQAConfig config;
-    memset(&config, 0, sizeof(TinyAIVisualQAConfig));
+    HyperionVisualQAConfig config;
+    memset(&config, 0, sizeof(HyperionVisualQAConfig));
     config.modelPath       = model_path;
     config.weightsPath     = weights_path;
     config.tokenizerPath   = tokenizer_path;
@@ -265,7 +265,7 @@ int main(int argc, char *argv[])
     printf("Initializing visual QA system...\n");
     clock_t start_time = clock();
 
-    TinyAIVisualQA *vqa = tinyaiVisualQACreate(&config);
+    HyperionVisualQA *vqa = hyperionVisualQACreate(&config);
     if (!vqa) {
         fprintf(stderr, "Error: Failed to create visual QA system\n");
         return 1;
@@ -277,7 +277,7 @@ int main(int argc, char *argv[])
 
     /* Get memory usage statistics */
     size_t weightMemory, activationMemory;
-    if (tinyaiVisualQAGetMemoryUsage(vqa, &weightMemory, &activationMemory)) {
+    if (hyperionVisualQAGetMemoryUsage(vqa, &weightMemory, &activationMemory)) {
         printf("Memory usage:\n");
         printf("  Weights: %.2f MB\n", weightMemory / (1024.0 * 1024.0));
         printf("  Activations: %.2f MB\n", activationMemory / (1024.0 * 1024.0));
@@ -302,7 +302,7 @@ int main(int argc, char *argv[])
            (double)(end_time - start_time) / CLOCKS_PER_SEC);
 
     /* Clean up */
-    tinyaiVisualQAFree(vqa);
+    hyperionVisualQAFree(vqa);
 
     return success ? 0 : 1;
 }
