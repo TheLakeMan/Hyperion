@@ -222,6 +222,18 @@ int hyperionCLIParseArgs(HyperionCLIContext *context, int argc, char **argv)
         else if (strcmp(argv[i], "--maxlen") == 0 && i + 1 < argc) {
             context->params.maxTokens = atoi(argv[++i]); // Use maxTokens
         }
+        else if (strcmp(argv[i], "--style") == 0 && i + 1 < argc) {
+            const char *styleStr = argv[++i];
+            if (strcmp(styleStr, "neutral") == 0) context->params.style = HYPERION_STYLE_NEUTRAL;
+            else if (strcmp(styleStr, "formal") == 0) context->params.style = HYPERION_STYLE_FORMAL;
+            else if (strcmp(styleStr, "creative") == 0) context->params.style = HYPERION_STYLE_CREATIVE;
+            else if (strcmp(styleStr, "concise") == 0) context->params.style = HYPERION_STYLE_CONCISE;
+            else if (strcmp(styleStr, "descriptive") == 0) context->params.style = HYPERION_STYLE_DESCRIPTIVE;
+            else {
+                fprintf(stderr, "Error: Unknown style '%s'. Using neutral.\n", styleStr);
+                context->params.style = HYPERION_STYLE_NEUTRAL;
+            }
+        }
         else if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
             hyperionCLIPrintHelp(context, NULL);
             return HYPERION_CLI_EXIT_QUIT; // Exit after showing help
@@ -498,8 +510,9 @@ int hyperionCommandGenerate(int argc, char **argv, void *context)
     }
 
     printf("Generating text for prompt: \"%s\"\n", prompt);
-    printf("Parameters: max_tokens=%d, temp=%.2f, top_k=%d, top_p=%.2f, sampling=%d\n",
-           params.maxTokens, params.temperature, params.topK, params.topP, params.samplingMethod);
+    printf("Parameters: max_tokens=%d, temp=%.2f, top_k=%d, top_p=%.2f, sampling=%d, style=%d
+",
+           params.maxTokens, params.temperature, params.topK, params.topP, params.samplingMethod, params.style);
 
     // Tokenize prompt
     int promptTokens[1024]; // Buffer for prompt tokens
@@ -892,6 +905,7 @@ int hyperionCommandConfig(int argc, char **argv, void *context)
         printf("  temperature  = %.2f\n", ctx->params.temperature);
         printf("  topK         = %d\n", ctx->params.topK);
         printf("  topP         = %.2f\n", ctx->params.topP);
+        printf("  style        = %d\n", ctx->params.style);
         printf("Verbosity: %d\n", ctx->verbose);
         // Add other relevant config from context
     }
@@ -914,6 +928,18 @@ int hyperionCommandConfig(int argc, char **argv, void *context)
         else if (strcmp(param, "topP") == 0) {
             ctx->params.topP = (float)atof(value);
             printf("Set topP = %.2f\n", ctx->params.topP);
+        }
+        else if (strcmp(param, "style") == 0) {
+            if (strcmp(value, "neutral") == 0) ctx->params.style = HYPERION_STYLE_NEUTRAL;
+            else if (strcmp(value, "formal") == 0) ctx->params.style = HYPERION_STYLE_FORMAL;
+            else if (strcmp(value, "creative") == 0) ctx->params.style = HYPERION_STYLE_CREATIVE;
+            else if (strcmp(value, "concise") == 0) ctx->params.style = HYPERION_STYLE_CONCISE;
+            else if (strcmp(value, "descriptive") == 0) ctx->params.style = HYPERION_STYLE_DESCRIPTIVE;
+            else {
+                fprintf(stderr, "Error: Unknown style '%s'. Using neutral.\n", value);
+                return HYPERION_CLI_EXIT_ERROR;
+            }
+            printf("Set style = %s\n", value);
         }
         else if (strcmp(param, "verbose") == 0) {
             ctx->verbose = atoi(value);

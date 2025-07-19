@@ -10,6 +10,8 @@
 
 /* ----------------- Configuration Value Types ----------------- */
 
+#include "../models/text/generate.h" // For HyperionGenerationStyle
+
 /**
  * Configuration value type enumeration
  */
@@ -17,7 +19,8 @@ typedef enum {
     HYPERION_CONFIG_INTEGER,    /* Integer value */
     HYPERION_CONFIG_FLOAT,      /* Float value */
     HYPERION_CONFIG_STRING,     /* String value */
-    HYPERION_CONFIG_BOOLEAN     /* Boolean value */
+    HYPERION_CONFIG_BOOLEAN,    /* Boolean value */
+    HYPERION_CONFIG_STYLE       /* Generation style value */
 } HyperionConfigType;
 
 /**
@@ -30,6 +33,7 @@ typedef struct {
         float floatValue;     /* Float value */
         char *stringValue;    /* String value */
         int boolValue;        /* Boolean value */
+        HyperionGenerationStyle styleValue; /* Generation style value */
     } value;
 } HyperionConfigValue;
 

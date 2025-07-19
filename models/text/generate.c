@@ -35,6 +35,41 @@ static unsigned int randState = 1;
 /* ----------------- Helper Functions ----------------- */
 
 /**
+ * Apply generation style adjustments to parameters
+ */
+static void applyGenerationStyle(HyperionGenerationParams *params, HyperionGenerationStyle style)
+{
+    switch (style) {
+    case HYPERION_STYLE_FORMAL:
+        params->temperature = 0.5f; // Less creative
+        params->topK        = 1;    // More deterministic
+        params->topP        = 0.0f; // Greedy
+        break;
+    case HYPERION_STYLE_CREATIVE:
+        params->temperature = 1.2f; // More creative
+        params->topK        = 50;   // Wider range
+        params->topP        = 0.95f; // More diverse
+        break;
+    case HYPERION_STYLE_CONCISE:
+        params->maxTokens = params->maxTokens > 20 ? 20 : params->maxTokens; // Shorter output
+        params->temperature = 0.6f;
+        params->topK = 5;
+        params->topP = 0.8f;
+        break;
+    case HYPERION_STYLE_DESCRIPTIVE:
+        params->maxTokens = params->maxTokens < 100 ? 100 : params->maxTokens; // Longer output
+        params->temperature = 0.9f;
+        params->topK = 0; // Use topP
+        params->topP = 0.9f;
+        break;
+    case HYPERION_STYLE_NEUTRAL:
+    default:
+        // Default values (already set or remain as is)
+        break;
+    }
+}
+
+/**
  * Initialize random number generator
  */
 static void seedRandom(uint32_t seed) { randState = (seed == 0) ? (unsigned int)time(NULL) : seed; }
@@ -996,9 +1031,9 @@ int hyperionModelForward(HyperionModel *model, const int *input, int inputLength
 /**
  * Sample the next token from output probabilities
  */
-int hyperionSampleToken(const float *output, int vocabSize, const HyperionGenerationParams *params)
+int hyperionSampleToken(const float *output, int vocabSize, const HyperionGenerationParams *actualParams)
 {
-    if (!output || !params) {
+    if (!output || !actualParams) {
         return 0; /* Default to first token on error */
     }
 
@@ -1010,7 +1045,7 @@ int hyperionSampleToken(const float *output, int vocabSize, const HyperionGenera
 
     /* Copy and apply temperature */
     memcpy(probs, output, vocabSize * sizeof(float));
-    applyTemperature(probs, vocabSize, params->temperature);
+    applyTemperature(probs, vocabSize, actualParams->temperature);
 
     /* Convert to probabilities using softmax */
     softmax(probs, vocabSize);
@@ -1018,7 +1053,7 @@ int hyperionSampleToken(const float *output, int vocabSize, const HyperionGenera
     /* Sample token based on method */
     int token;
 
-    switch (params->samplingMethod) {
+    switch (actualParams->samplingMethod) {
     case HYPERION_SAMPLING_GREEDY:
         /* Choose highest probability token */
         token = 0;
@@ -1030,11 +1065,11 @@ int hyperionSampleToken(const float *output, int vocabSize, const HyperionGenera
         break;
 
     case HYPERION_SAMPLING_TOP_K:
-        token = sampleTopK(probs, vocabSize, params->topK);
+        token = sampleTopK(probs, vocabSize, actualParams->topK);
         break;
 
     case HYPERION_SAMPLING_TOP_P:
-        token = sampleTopP(probs, vocabSize, params->topP);
+        token = sampleTopP(probs, vocabSize, actualParams->topP);
         break;
 
     case HYPERION_SAMPLING_TEMPERATURE:
@@ -1075,8 +1110,8 @@ int hyperionSampleToken(const float *output, int vocabSize, const HyperionGenera
 /**
  * Generate text from a model
  */
-int hyperionGenerateText(HyperionModel *model, const HyperionGenerationParams *params, int *outputTokens,
-                       int maxOutputTokens)
+int hyperionGenerateText(HyperionModel *model, const HyperionGenerationParams *params,
+                       int *outputTokens, int maxOutputTokens)
 {
     if (!model || !params || !outputTokens || maxOutputTokens <= 0) {
         return 0;
@@ -1085,15 +1120,19 @@ int hyperionGenerateText(HyperionModel *model, const HyperionGenerationParams *p
     /* Initialize random number generator */
     seedRandom(params->seed);
 
+    /* Apply generation style adjustments */
+    HyperionGenerationParams actualParams = *params; // Create a mutable copy
+    applyGenerationStyle(&actualParams, params->style);
+
     /* Check if prompt is provided */
-    if (!params->promptTokens || params->promptLength == 0) {
+    if (!actualParams.promptTokens || actualParams.promptLength == 0) {
         /* Start with BOS token */
         outputTokens[0] = HYPERION_TOKEN_BOS;
 
         int numTokens = 1;
 
         /* Generate tokens */
-        while (numTokens < maxOutputTokens && numTokens < params->maxTokens) {
+        while (numTokens < maxOutputTokens && numTokens < actualParams.maxTokens) {
             /* Forward pass */
             float *logits = (float *)HYPERION_MALLOC(model->tokenizer->tokenCount * sizeof(float));
             if (!logits) {
@@ -1109,7 +1148,7 @@ int hyperionGenerateText(HyperionModel *model, const HyperionGenerationParams *p
             }
 
             /* Sample next token */
-            int nextToken = hyperionSampleToken(logits, model->tokenizer->tokenCount, params);
+            int nextToken = hyperionSampleToken(logits, model->tokenizer->tokenCount, &actualParams);
             HYPERION_FREE(logits);
 
             /* Check for EOS token */
@@ -1125,17 +1164,17 @@ int hyperionGenerateText(HyperionModel *model, const HyperionGenerationParams *p
     }
     else {
         /* Start with prompt */
-        if (params->promptLength > maxOutputTokens) {
+        if (actualParams.promptLength > maxOutputTokens) {
             /* Prompt too long */
             return 0;
         }
 
         /* Copy prompt */
-        memcpy(outputTokens, params->promptTokens, params->promptLength * sizeof(int));
-        int numTokens = params->promptLength;
+        memcpy(outputTokens, actualParams.promptTokens, actualParams.promptLength * sizeof(int));
+        int numTokens = actualParams.promptLength;
 
         /* Generate tokens */
-        while (numTokens < maxOutputTokens && numTokens < params->maxTokens) {
+        while (numTokens < maxOutputTokens && numTokens < actualParams.maxTokens) {
             /* Forward pass */
             float *logits = (float *)HYPERION_MALLOC(model->tokenizer->tokenCount * sizeof(float));
             if (!logits) {
@@ -1157,7 +1196,7 @@ int hyperionGenerateText(HyperionModel *model, const HyperionGenerationParams *p
             }
 
             /* Sample next token */
-            int nextToken = hyperionSampleToken(logits, model->tokenizer->tokenCount, params);
+            int nextToken = hyperionSampleToken(logits, model->tokenizer->tokenCount, &actualParams);
             HYPERION_FREE(logits);
 
             /* Check for EOS token */

@@ -78,6 +78,17 @@ typedef struct {
 } HyperionModel;
 
 /**
+ * Generation style enumeration
+ */
+typedef enum {
+    HYPERION_STYLE_NEUTRAL = 0,
+    HYPERION_STYLE_FORMAL,
+    HYPERION_STYLE_CREATIVE,
+    HYPERION_STYLE_CONCISE,
+    HYPERION_STYLE_DESCRIPTIVE
+} HyperionGenerationStyle;
+
+/**
  * Generation parameters structure
  */
 typedef struct {
@@ -89,6 +100,7 @@ typedef struct {
     uint32_t seed;                 /* Random seed (0 for random) */
     int *promptTokens;             /* Prompt tokens (can be NULL) */
     int promptLength;              /* Prompt length */
+    HyperionGenerationStyle style; /* Generation style */
 } HyperionGenerationParams;
 
 /* ----------------- API Functions ----------------- */

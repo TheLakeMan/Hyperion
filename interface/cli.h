@@ -67,6 +67,7 @@ typedef struct {
     int                    interactive; /* Whether in interactive mode */
     int                    verbose;     /* Verbosity level */
     HyperionGenerationParams params;      /* Current generation parameters */
+    HyperionGenerationStyle style;       /* Current generation style */
 } HyperionCLIContext;
 
 /* ----------------- API Functions ----------------- */
