@@ -1,11 +1,12 @@
 /**
- * Hyperion Text Generation Tests
+ * @file test_generate.c
+ * @brief Unit tests for the text generation functionality.
  */
 
-#include "../core/memory.h"           // For memory functions
-#include "../models/text/generate.h"  // Include the generation module being tested
-#include "../models/text/tokenizer.h" // For tokenization
-#include "../utils/quantize.h"        // For matrix quantization helpers
+#include "../core/memory.h"
+#include "../models/text/generate.h"
+#include "../models/text/tokenizer.h"
+#include "../utils/quantize.h"
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -42,16 +43,16 @@ HyperionTokenizer *create_test_tokenizer()
 // Helper to create a mock matrix
 HyperionMatrixFP32 *create_mock_matrix(int rows, int cols)
 {
-    HyperionMatrixFP32 *matrix = (HyperionMatrixFP32 *)TINYAI_MALLOC(sizeof(HyperionMatrixFP32));
+    HyperionMatrixFP32 *matrix = (HyperionMatrixFP32 *)HYPERION_MALLOC(sizeof(HyperionMatrixFP32));
     if (!matrix)
         return NULL;
 
     matrix->rows = rows;
     matrix->cols = cols;
-    matrix->data = (float *)TINYAI_MALLOC(rows * cols * sizeof(float));
+    matrix->data = (float *)HYPERION_MALLOC(rows * cols * sizeof(float));
 
     if (!matrix->data) {
-        TINYAI_FREE(matrix);
+        HYPERION_FREE(matrix);
         return NULL;
     }
 
@@ -68,9 +69,9 @@ void free_mock_matrix(HyperionMatrixFP32 *matrix)
 {
     if (matrix) {
         if (matrix->data) {
-            TINYAI_FREE(matrix->data);
+            HYPERION_FREE(matrix->data);
         }
-        TINYAI_FREE(matrix);
+        HYPERION_FREE(matrix);
     }
 }
 
@@ -86,7 +87,7 @@ void test_model_create_destroy()
     uint32_t     hiddenSize  = 64;
     uint32_t     contextSize = 128;
     HyperionModel *model =
-        hyperionCreateModel(TINYAI_MODEL_TYPE_RNN, hiddenSize, contextSize, tokenizer);
+        hyperionCreateModel(HYPERION_MODEL_TYPE_RNN, hiddenSize, contextSize, tokenizer);
     ASSERT(model != NULL, "hyperionCreateModel() should return non-NULL");
     ASSERT(model->hiddenSize == hiddenSize, "Model should have correct hidden size");
     ASSERT(model->contextSize == contextSize, "Model should have correct context size");
@@ -96,7 +97,7 @@ void test_model_create_destroy()
     hyperionDestroyModel(model);
 
     // Test that tokenizer is still valid
-    const char *unknownStr = hyperionGetTokenString(tokenizer, TINYAI_TOKEN_UNKNOWN);
+    const char *unknownStr = hyperionGetTokenString(tokenizer, HYPERION_TOKEN_UNKNOWN);
     ASSERT(unknownStr != NULL, "Tokenizer should still be valid after model destruction");
 
     hyperionDestroyTokenizer(tokenizer);
@@ -109,31 +110,31 @@ void test_add_layers()
     printf("  Testing adding layers to model...\n");
 
     HyperionTokenizer *tokenizer = create_test_tokenizer();
-    HyperionModel     *model     = hyperionCreateModel(TINYAI_MODEL_TYPE_RNN, 64, 128, tokenizer);
+    HyperionModel     *model     = hyperionCreateModel(HYPERION_MODEL_TYPE_RNN, 64, 128, tokenizer);
 
     // Add embedding layer
-    int result1 = hyperionAddLayer(model, TINYAI_LAYER_EMBEDDING, tokenizer->tokenCount, 64,
-                                 TINYAI_ACTIVATION_NONE);
+    int result1 = hyperionAddLayer(model, HYPERION_LAYER_EMBEDDING, tokenizer->tokenCount, 64,
+                                 HYPERION_ACTIVATION_NONE);
     ASSERT(result1 == 0, "Adding embedding layer should succeed");
     ASSERT(model->layerCount == 1, "Model should have 1 layer after adding embedding layer");
 
     // Add hidden layer
-    int result2 = hyperionAddLayer(model, TINYAI_LAYER_DENSE, 64, 64, TINYAI_ACTIVATION_RELU);
+    int result2 = hyperionAddLayer(model, HYPERION_LAYER_DENSE, 64, 64, HYPERION_ACTIVATION_RELU);
     ASSERT(result2 == 0, "Adding hidden layer should succeed");
     ASSERT(model->layerCount == 2, "Model should have 2 layers after adding hidden layer");
 
     // Add output layer
-    int result3 = hyperionAddLayer(model, TINYAI_LAYER_OUTPUT, 64, tokenizer->tokenCount,
-                                 TINYAI_ACTIVATION_NONE);
+    int result3 = hyperionAddLayer(model, HYPERION_LAYER_OUTPUT, 64, tokenizer->tokenCount,
+                                 HYPERION_ACTIVATION_NONE);
     ASSERT(result3 == 0, "Adding output layer should succeed");
     ASSERT(model->layerCount == 3, "Model should have 3 layers after adding output layer");
 
     // Check layer properties
-    ASSERT(model->layers[0].type == TINYAI_LAYER_EMBEDDING, "Layer 0 should be embedding layer");
-    ASSERT(model->layers[1].type == TINYAI_LAYER_DENSE, "Layer 1 should be dense layer");
-    ASSERT(model->layers[2].type == TINYAI_LAYER_OUTPUT, "Layer 2 should be output layer");
+    ASSERT(model->layers[0].type == HYPERION_LAYER_EMBEDDING, "Layer 0 should be embedding layer");
+    ASSERT(model->layers[1].type == HYPERION_LAYER_DENSE, "Layer 1 should be dense layer");
+    ASSERT(model->layers[2].type == HYPERION_LAYER_OUTPUT, "Layer 2 should be output layer");
 
-    ASSERT(model->layers[1].activation == TINYAI_ACTIVATION_RELU,
+    ASSERT(model->layers[1].activation == HYPERION_ACTIVATION_RELU,
            "Layer 1 should have ReLU activation");
 
     hyperionDestroyModel(model);
@@ -150,13 +151,13 @@ void test_model_forward_simple()
     uint32_t         hiddenSize  = 4; // Small for testing
     uint32_t         contextSize = 8; // Small for testing
     HyperionModel     *model =
-        hyperionCreateModel(TINYAI_MODEL_TYPE_RNN, hiddenSize, contextSize, tokenizer);
+        hyperionCreateModel(HYPERION_MODEL_TYPE_RNN, hiddenSize, contextSize, tokenizer);
 
     // Add layers (minimal for testing)
-    hyperionAddLayer(model, TINYAI_LAYER_EMBEDDING, tokenizer->tokenCount, hiddenSize,
-                   TINYAI_ACTIVATION_NONE);
-    hyperionAddLayer(model, TINYAI_LAYER_OUTPUT, hiddenSize, tokenizer->tokenCount,
-                   TINYAI_ACTIVATION_NONE);
+    hyperionAddLayer(model, HYPERION_LAYER_EMBEDDING, tokenizer->tokenCount, hiddenSize,
+                   HYPERION_ACTIVATION_NONE);
+    hyperionAddLayer(model, HYPERION_LAYER_OUTPUT, hiddenSize, tokenizer->tokenCount,
+                   HYPERION_ACTIVATION_NONE);
 
     // Create some dummy weights for embedding layer
     HyperionMatrixFP32 *embedMatrix = create_mock_matrix(tokenizer->tokenCount, hiddenSize);
@@ -181,8 +182,8 @@ void test_model_forward_simple()
     model->layers[1].weights = *quantizedOutput; // Copy the struct
 
     // Now test forward pass
-    int    inputTokens[3] = {TINYAI_TOKEN_BOS, 5, 7}; // Some token IDs
-    float *outputLogits   = (float *)TINYAI_MALLOC(tokenizer->tokenCount * sizeof(float));
+    int    inputTokens[3] = {HYPERION_TOKEN_BOS, 5, 7}; // Some token IDs
+    float *outputLogits   = (float *)HYPERION_MALLOC(tokenizer->tokenCount * sizeof(float));
     ASSERT(outputLogits != NULL, "Should allocate output logits");
 
     int result = hyperionModelForward(model, inputTokens, 3, outputLogits);
@@ -199,9 +200,9 @@ void test_model_forward_simple()
     ASSERT(nonZeroFound, "Forward pass should produce non-zero outputs");
 
     // Clean up
-    TINYAI_FREE(outputLogits);
-    TINYAI_FREE(quantized);       // Free the struct but not the data (owned by model now)
-    TINYAI_FREE(quantizedOutput); // Free the struct but not the data (owned by model now)
+    HYPERION_FREE(outputLogits);
+    HYPERION_FREE(quantized);       // Free the struct but not the data (owned by model now)
+    HYPERION_FREE(quantizedOutput); // Free the struct but not the data (owned by model now)
     free_mock_matrix(embedMatrix);
     free_mock_matrix(outputMatrix);
     hyperionDestroyModel(model);
@@ -221,7 +222,7 @@ void test_softmax_temperature()
     // Test various temperatures using the sampleToken function
     HyperionGenerationParams params;
     params.maxTokens      = 10;
-    params.samplingMethod = TINYAI_SAMPLING_TEMPERATURE;
+    params.samplingMethod = HYPERION_SAMPLING_TEMPERATURE;
     params.seed           = 42; // Fixed for reproducibility
 
     // Test with high temperature (more random)
@@ -256,7 +257,7 @@ void test_top_k_sampling()
 
     HyperionGenerationParams params;
     params.maxTokens      = 10;
-    params.samplingMethod = TINYAI_SAMPLING_TOP_K;
+    params.samplingMethod = HYPERION_SAMPLING_TOP_K;
     params.seed           = 42; // Fixed for reproducibility
     params.temperature    = 1.0f;
 
@@ -292,7 +293,7 @@ void test_top_p_sampling()
 
     HyperionGenerationParams params;
     params.maxTokens      = 10;
-    params.samplingMethod = TINYAI_SAMPLING_TOP_P;
+    params.samplingMethod = HYPERION_SAMPLING_TOP_P;
     params.seed           = 42; // Fixed for reproducibility
     params.temperature    = 1.0f;
 
@@ -328,7 +329,7 @@ void test_greedy_sampling()
 
     HyperionGenerationParams params;
     params.maxTokens      = 10;
-    params.samplingMethod = TINYAI_SAMPLING_GREEDY;
+    params.samplingMethod = HYPERION_SAMPLING_GREEDY;
     params.seed           = 42;   // Not used for greedy
     params.temperature    = 1.0f; // Not used for greedy
 
@@ -349,13 +350,13 @@ void test_text_generation()
     uint32_t         hiddenSize  = 4; // Small for testing
     uint32_t         contextSize = 8; // Small for testing
     HyperionModel     *model =
-        hyperionCreateModel(TINYAI_MODEL_TYPE_RNN, hiddenSize, contextSize, tokenizer);
+        hyperionCreateModel(HYPERION_MODEL_TYPE_RNN, hiddenSize, contextSize, tokenizer);
 
     // Add layers (minimal for testing)
-    hyperionAddLayer(model, TINYAI_LAYER_EMBEDDING, tokenizer->tokenCount, hiddenSize,
-                   TINYAI_ACTIVATION_NONE);
-    hyperionAddLayer(model, TINYAI_LAYER_OUTPUT, hiddenSize, tokenizer->tokenCount,
-                   TINYAI_ACTIVATION_NONE);
+    hyperionAddLayer(model, HYPERION_LAYER_EMBEDDING, tokenizer->tokenCount, hiddenSize,
+                   HYPERION_ACTIVATION_NONE);
+    hyperionAddLayer(model, HYPERION_LAYER_OUTPUT, hiddenSize, tokenizer->tokenCount,
+                   HYPERION_ACTIVATION_NONE);
 
     // Create some dummy weights for embedding layer
     HyperionMatrixFP32 *embedMatrix = create_mock_matrix(tokenizer->tokenCount, hiddenSize);
@@ -372,7 +373,7 @@ void test_text_generation()
     params.maxTokens      = 5;    // Generate up to 5 tokens
     params.promptTokens   = NULL; // No prompt - will start with BOS token
     params.promptLength   = 0;
-    params.samplingMethod = TINYAI_SAMPLING_GREEDY; // Deterministic for testing
+    params.samplingMethod = HYPERION_SAMPLING_GREEDY; // Deterministic for testing
     params.temperature    = 1.0f;
     params.topK           = 0;
     params.topP           = 0.0f;
@@ -389,7 +390,55 @@ void test_text_generation()
            "Text generation should respect maxTokens parameter");
 
     // Check first token is BOS when no prompt
-    ASSERT(outputTokens[0] == TINYAI_TOKEN_BOS, "First token should be BOS with no prompt");
+    ASSERT(outputTokens[0] == HYPERION_TOKEN_BOS, "First token should be BOS with no prompt");
+
+    // Test generation with different styles
+    printf("  Testing text generation with different styles...\n");
+
+    // Test Formal style
+    HyperionGenerationParams formalParams = params;
+    formalParams.style = HYPERION_STYLE_FORMAL;
+    formalParams.promptTokens = NULL;
+    formalParams.promptLength = 0;
+    formalParams.maxTokens = 20; // Keep it short for formal
+    memset(outputTokens, 0, sizeof(outputTokens));
+    outputLength = hyperionGenerateText(model, &formalParams, outputTokens, 10);
+    ASSERT(outputLength > 0, "Formal generation should produce tokens");
+    printf("    Formal style generated %d tokens.\n", outputLength);
+
+    // Test Creative style
+    HyperionGenerationParams creativeParams = params;
+    creativeParams.style = HYPERION_STYLE_CREATIVE;
+    creativeParams.promptTokens = NULL;
+    creativeParams.promptLength = 0;
+    creativeParams.maxTokens = 50; // Allow more tokens for creative
+    memset(outputTokens, 0, sizeof(outputTokens));
+    outputLength = hyperionGenerateText(model, &creativeParams, outputTokens, 20);
+    ASSERT(outputLength > 0, "Creative generation should produce tokens");
+    printf("    Creative style generated %d tokens.\n", outputLength);
+
+    // Test Concise style
+    HyperionGenerationParams conciseParams = params;
+    conciseParams.style = HYPERION_STYLE_CONCISE;
+    conciseParams.promptTokens = NULL;
+    conciseParams.promptLength = 0;
+    conciseParams.maxTokens = 15; // Force shorter output
+    memset(outputTokens, 0, sizeof(outputTokens));
+    outputLength = hyperionGenerateText(model, &conciseParams, outputTokens, 10);
+    ASSERT(outputLength > 0, "Concise generation should produce tokens");
+    ASSERT(outputLength <= 15, "Concise generation should respect maxTokens");
+    printf("    Concise style generated %d tokens.\n", outputLength);
+
+    // Test Descriptive style
+    HyperionGenerationParams descriptiveParams = params;
+    descriptiveParams.style = HYPERION_STYLE_DESCRIPTIVE;
+    descriptiveParams.promptTokens = NULL;
+    descriptiveParams.promptLength = 0;
+    descriptiveParams.maxTokens = 150; // Allow more tokens for descriptive
+    memset(outputTokens, 0, sizeof(outputTokens));
+    outputLength = hyperionGenerateText(model, &descriptiveParams, outputTokens, 20);
+    ASSERT(outputLength > 0, "Descriptive generation should produce tokens");
+    printf("    Descriptive style generated %d tokens.\n", outputLength);
 
     // Now test with a prompt
     int promptTokens[3] = {1, 2, 3}; // Some arbitrary token IDs
@@ -410,8 +459,8 @@ void test_text_generation()
     ASSERT(outputTokens[2] == promptTokens[2], "Prompt tokens should be preserved in output");
 
     // Clean up
-    TINYAI_FREE(quantized);       // Free the struct but not the data (owned by model now)
-    TINYAI_FREE(quantizedOutput); // Free the struct but not the data (owned by model now)
+    HYPERION_FREE(quantized);       // Free the struct but not the data (owned by model now)
+    HYPERION_FREE(quantizedOutput); // Free the struct but not the data (owned by model now)
     free_mock_matrix(embedMatrix);
     free_mock_matrix(outputMatrix);
     hyperionDestroyModel(model);
