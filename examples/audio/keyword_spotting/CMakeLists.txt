@@ -6,16 +6,27 @@ set(KEYWORD_SPOTTING_SOURCES
     kws.c
 )
 
-# Include directories
-include_directories(
-    ${CMAKE_SOURCE_DIR}
-)
-
 # Create executable
 add_executable(hyperion_kws ${KEYWORD_SPOTTING_SOURCES})
 
-# Link against TinyAI library
-target_link_libraries(hyperion_kws hyperion)
+# Include directories
+target_include_directories(hyperion_kws PRIVATE
+    ${CMAKE_SOURCE_DIR}
+)
+
+# Link libraries
+target_link_libraries(hyperion_kws PRIVATE
+    hyperion_core
+    hyperion_models
+    hyperion_utils
+)
+
+# Set optimization flags
+if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(hyperion_kws PRIVATE -O2)
+elseif(MSVC)
+    target_compile_options(hyperion_kws PRIVATE /O2)
+endif()
 
 # Install executable
 install(TARGETS hyperion_kws DESTINATION bin)

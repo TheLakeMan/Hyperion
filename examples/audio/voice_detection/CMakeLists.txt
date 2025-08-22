@@ -6,16 +6,27 @@ set(VOICE_DETECTION_SOURCES
     vad.c
 )
 
-# Include directories
-include_directories(
-    ${CMAKE_SOURCE_DIR}
-)
-
 # Create executable
 add_executable(hyperion_vad ${VOICE_DETECTION_SOURCES})
 
-# Link against TinyAI library
-target_link_libraries(hyperion_vad hyperion)
+# Include directories
+target_include_directories(hyperion_vad PRIVATE
+    ${CMAKE_SOURCE_DIR}
+)
+
+# Link libraries
+target_link_libraries(hyperion_vad PRIVATE
+    hyperion_core
+    hyperion_models
+    hyperion_utils
+)
+
+# Set optimization flags
+if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(hyperion_vad PRIVATE -O2)
+elseif(MSVC)
+    target_compile_options(hyperion_vad PRIVATE /O2)
+endif()
 
 # Install executable
 install(TARGETS hyperion_vad DESTINATION bin)

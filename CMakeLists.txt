@@ -58,15 +58,37 @@ add_compile_definitions(MCP_ENABLED)
 # Define the HYPERION_BUILD preprocessor symbol to exclude main() from picol.c
 add_compile_definitions(HYPERION_BUILD)
 
+# Create library targets for use by examples and tests
+add_library(hyperion_core STATIC
+    ${HYPERION_CORE_SOURCES}
+)
+
+add_library(hyperion_models STATIC
+    ${HYPERION_MODELS_SOURCES}
+)
+
+add_library(hyperion_utils STATIC
+    ${HYPERION_UTILS_SOURCES}
+)
+
+# Link math library to libraries if needed (Unix/Linux)
+if(UNIX)
+    target_link_libraries(hyperion_core PRIVATE m)
+    target_link_libraries(hyperion_models PRIVATE m)
+    target_link_libraries(hyperion_utils PRIVATE m)
+endif()
 
 # Main executable
 add_executable(hyperion
     main.c # Add main.c back explicitly
-    ${HYPERION_CORE_SOURCES} # Now including picol.c with HYPERION_BUILD defined
-    ${HYPERION_UTILS_SOURCES}
-    ${HYPERION_MODELS_SOURCES}
     ${HYPERION_MAIN_INTERFACE_SOURCES} # Use the explicit list
-    vendor/mongoose/mongoose.c # Add Mongoose source
+)
+
+# Link the libraries to the main executable
+target_link_libraries(hyperion PRIVATE
+    hyperion_core
+    hyperion_models
+    hyperion_utils
 )
 
 # Check if math library is needed (Unix/Linux)

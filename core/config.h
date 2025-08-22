@@ -189,4 +189,32 @@ int hyperionConfigOverride(const char *key, const char *value);
  */
 int hyperionConfigApplyCommandLine(int argc, char **argv);
 
+/**
+ * Set a style configuration value
+ * 
+ * @param key Configuration key
+ * @param value Style value
+ * @return 0 on success, non-zero on error
+ */
+int hyperionConfigSetStyle(const char *key, HyperionGenerationStyle value);
+
+/**
+ * Get a style configuration value
+ * 
+ * @param key Configuration key
+ * @param defaultValue Default value if key not found
+ * @return Configuration value or default value
+ */
+HyperionGenerationStyle hyperionConfigGetStyle(const char *key, HyperionGenerationStyle defaultValue);
+
+/**
+ * Get a configuration value with hierarchy (environment > config > default)
+ * This is a convenience function equivalent to hyperionConfigGetString
+ * 
+ * @param key Configuration key
+ * @param defaultValue Default value if key not found
+ * @return Configuration value or default value
+ */
+const char* hyperionConfigGet(const char *key, const char *defaultValue);
+
 #endif /* HYPERION_CONFIG_H */

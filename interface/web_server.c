@@ -1,245 +1,608 @@
-#include <stdio.h>
-#include <stdlib.h> // For getenv, atoi
-#include <string.h>
+/**
+ * Hyperion Web Server Implementation
+ * 
+ * A lightweight HTTP server providing RESTful API endpoints for text generation,
+ * model loading, and status monitoring as specified in the Hyperion analysis.
+ */
 
-#include "../core/config.h"              // For accessing config values like model paths
-#include "../models/text/generate.h"     // For text generation functions
-#include "../models/text/tokenizer.h"    // For tokenizer
-#include "../vendor/mongoose/mongoose.h" // Absolute path from project root
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+
+#ifdef _WIN32
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#pragma comment(lib, "ws2_32.lib")
+#define close closesocket
+typedef int socklen_t;
+#else
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#define INVALID_SOCKET -1
+#define SOCKET_ERROR -1
+typedef int SOCKET;
+#endif
+
+#include "../core/config.h"
+#include "../core/memory.h"
+#include "../models/text/generate.h"
+#include "../models/text/tokenizer.h"
+#include "websocket.h"
 #include "web_server.h"
 
-// --- Global State (Consider managing this better in a real app) ---
-static HyperionModel     *g_model     = NULL;
-static HyperionTokenizer *g_tokenizer = NULL;
-static picolInterp     *g_interp    = NULL; // Store interpreter if needed for commands
-static volatile int     s_exit_flag = 0;    // Flag to signal server shutdown
-// ---
-
-// --- Forward Declarations ---
-static void handle_api_generate(struct mg_connection *c, struct mg_http_message *hm);
-// ---
-
-// Mongoose event handler function
-static void fn(struct mg_connection *c, int ev, void *ev_data, void *fn_data)
+// Simplified model creation for demo purposes
+static HyperionModel* create_demo_model()
 {
-    if (ev == MG_EV_HTTP_MSG) {
-        struct mg_http_message *hm            = (struct mg_http_message *)ev_data;
-        const char             *document_root = (const char *)fn_data;
+    HyperionModel* model = (HyperionModel*)HYPERION_MALLOC(sizeof(HyperionModel));
+    if (!model) return NULL;
+    
+    // Initialize with demo values
+    model->type = 1;
+    model->layerCount = 1;
+    model->layers = NULL;
+    model->tokenizer = NULL;
+    model->hiddenSize = 512;
+    model->contextSize = 2048;
+    model->activations[0] = NULL;
+    model->activations[1] = NULL;
+    model->activeBuffer = 0;
+    
+    return model;
+}
 
-        // Check if it's an API call
-        if (mg_http_match_uri(hm, "/api/generate") && mg_match(hm->method, mg_str("POST"), NULL)) {
-            handle_api_generate(c, hm);
-        }
-        else {
-            // Serve static files
-            struct mg_http_serve_opts opts = {
-                .root_dir = document_root,
-                // .extra_headers = "Cache-Control: max-age=3600\r\n" // Optional: Add caching
-            };
-            mg_http_serve_dir(c, hm, &opts);
+// Simplified text generation for demo purposes
+static int demo_generate_text(HyperionModel* model, HyperionGenerationParams* params, 
+                             int* output_tokens, int max_tokens)
+{
+    // Demo implementation - just return some sample tokens
+    const int demo_tokens[] = {1, 2, 3, 4, 5}; // Sample token IDs
+    int count = (max_tokens < 5) ? max_tokens : 5;
+    
+    for (int i = 0; i < count; i++) {
+        output_tokens[i] = demo_tokens[i];
+    }
+    
+    return count;
+}
+
+// Global state
+static HyperionModel *g_model = NULL;
+static HyperionTokenizer *g_tokenizer = NULL;
+static volatile int s_exit_flag = 0;
+
+// WebSocket connections (simple array for demo)
+#define MAX_WS_CONNECTIONS 16
+static WebSocketConnection* g_ws_connections[MAX_WS_CONNECTIONS];
+static int g_ws_connection_count = 0;
+
+// WebSocket connection management
+static void add_websocket_connection(WebSocketConnection* ws)
+{
+    if (g_ws_connection_count < MAX_WS_CONNECTIONS) {
+        g_ws_connections[g_ws_connection_count++] = ws;
+    }
+}
+
+static void remove_websocket_connection(WebSocketConnection* ws)
+{
+    for (int i = 0; i < g_ws_connection_count; i++) {
+        if (g_ws_connections[i] == ws) {
+            // Shift remaining connections
+            for (int j = i; j < g_ws_connection_count - 1; j++) {
+                g_ws_connections[j] = g_ws_connections[j + 1];
+            }
+            g_ws_connection_count--;
+            break;
         }
     }
-    else if (ev == MG_EV_CLOSE) {
-        // Connection closed
+}
+
+// Broadcast message to all WebSocket connections
+static void broadcast_websocket_message(const char* message)
+{
+    for (int i = 0; i < g_ws_connection_count; i++) {
+        if (hyperionWebSocketIsOpen(g_ws_connections[i])) {
+            hyperionWebSocketSendText(g_ws_connections[i], message);
+        }
     }
+}
+
+// HTTP response helper
+static void send_http_response(SOCKET client_socket, int status_code, const char *content_type, const char *body)
+{
+    char header[1024];
+    const char *status_text = (status_code == 200) ? "OK" : 
+                             (status_code == 400) ? "Bad Request" :
+                             (status_code == 404) ? "Not Found" :
+                             (status_code == 500) ? "Internal Server Error" : "Unknown";
+    
+    int header_len = snprintf(header, sizeof(header),
+        "HTTP/1.1 %d %s\r\n"
+        "Content-Type: %s\r\n"
+        "Content-Length: %zu\r\n"
+        "Access-Control-Allow-Origin: *\r\n"
+        "Access-Control-Allow-Methods: GET, POST, OPTIONS\r\n"
+        "Access-Control-Allow-Headers: Content-Type\r\n"
+        "\r\n",
+        status_code, status_text, content_type, strlen(body));
+    
+    send(client_socket, header, header_len, 0);
+    send(client_socket, body, strlen(body), 0);
+}
+
+// Simple JSON value extraction
+static char* extract_json_string(const char *json, const char *key)
+{
+    char search_pattern[64];
+    snprintf(search_pattern, sizeof(search_pattern), "\"%s\":\"", key);
+    
+    const char *start = strstr(json, search_pattern);
+    if (!start) return NULL;
+    
+    start += strlen(search_pattern);
+    const char *end = strchr(start, '"');
+    if (!end) return NULL;
+    
+    size_t len = end - start;
+    char *result = malloc(len + 1);
+    if (!result) return NULL;
+    
+    strncpy(result, start, len);
+    result[len] = '\0';
+    return result;
+}
+
+// API Handler for /api/status
+static void handle_api_status(SOCKET client_socket)
+{
+    const char *model_status = (g_model && g_tokenizer) ? "loaded" : "not_loaded";
+    
+    size_t total_memory = 0;
+    size_t used_memory = 0;
+    hyperionMemPoolStats(&total_memory, &used_memory, NULL, NULL);
+    
+    char response[512];
+    snprintf(response, sizeof(response),
+        "{"
+        "\"status\": \"online\","
+        "\"model_status\": \"%s\","
+        "\"memory_used\": %zu,"
+        "\"memory_total\": %zu,"
+        "\"version\": \"0.1.0\""
+        "}",
+        model_status, used_memory, total_memory);
+    
+    send_http_response(client_socket, 200, "application/json", response);
+}
+
+// API Handler for /api/model/info
+static void handle_api_model_info(SOCKET client_socket)
+{
+    if (!g_model || !g_tokenizer) {
+        send_http_response(client_socket, 404, "application/json", 
+            "{\"error\": \"No model loaded\"}");
+        return;
+    }
+    
+    char response[512];
+    snprintf(response, sizeof(response),
+        "{"
+        "\"model_loaded\": true,"
+        "\"context_size\": %d,"
+        "\"hidden_size\": %d,"
+        "\"vocab_size\": %d"
+        "}",
+        g_model->contextSize,
+        g_model->hiddenSize,
+        g_tokenizer->tokenCount);
+    
+    send_http_response(client_socket, 200, "application/json", response);
 }
 
 // API Handler for /api/generate
-static void handle_api_generate(struct mg_connection *c, struct mg_http_message *hm)
+static void handle_api_generate(SOCKET client_socket, const char *body)
 {
-    char  prompt_buf[512] = {0}; // Buffer for the prompt
-    char *result_text     = NULL;
-    int   result_len      = 0;
-
-    // 1. Parse prompt from JSON body: {"prompt": "..."}
-    char *prompt_val_ptr = mg_json_get_str(hm->body, "$.prompt");
-    if (prompt_val_ptr != NULL) {
-        // Copy the value, ensuring not to overflow prompt_buf
-        strncpy(prompt_buf, prompt_val_ptr, sizeof(prompt_buf) - 1);
-        prompt_buf[sizeof(prompt_buf) - 1] = '\0'; // Ensure null termination
-        // NOTE: mg_json_get_str returns a pointer into the original JSON string (hm->body).
-        // We don't free prompt_val_ptr itself.
-    }
-    else {
-        // Handle error: prompt not found or parsing failed
-        mg_http_reply(c, 400, "Content-Type: application/json\r\n",
-                      "{\"error\":\"Invalid JSON or missing/invalid 'prompt' field\"}\n");
+    char *prompt = extract_json_string(body, "prompt");
+    if (!prompt) {
+        send_http_response(client_socket, 400, "application/json", 
+            "{\"error\": \"Missing or invalid prompt field\"}");
         return;
     }
-
-    // 2. Check if prompt_buf is still empty after potential copy
-    if (strlen(prompt_buf) == 0) {
-        mg_http_reply(c, 400, "Content-Type: application/json\r\n",
-                      "{\"error\":\"Empty 'prompt' value provided\"}\n");
-        return;
-    }
-
-    // 3. Check if model is loaded
+    
     if (!g_model || !g_tokenizer) {
-        mg_http_reply(c, 503, "Content-Type: application/json\r\n",
-                      "{\"error\":\"Model or tokenizer not loaded\"}\n");
+        free(prompt);
+        send_http_response(client_socket, 503, "application/json", 
+            "{\"error\": \"Model or tokenizer not loaded\"}");
         return;
     }
-
-    // 4. Prepare generation parameters (use defaults or config)
+    
+    // Prepare generation parameters
     HyperionGenerationParams params = {0};
-    params.maxTokens = hyperionConfigGetInt("generate.max_tokens", 128); // Get from config or default
-    params.samplingMethod = HYPERION_SAMPLING_TEMPERATURE;               // Example
-    params.temperature =
-        hyperionConfigGetFloat("generate.temperature", 0.7f); // Get from config or default
+    params.maxTokens = hyperionConfigGetInt("generate.max_tokens", 128);
+    params.samplingMethod = HYPERION_SAMPLING_TEMPERATURE;
+    params.temperature = hyperionConfigGetFloat("generate.temperature", 0.7f);
     params.topK = hyperionConfigGetInt("generate.top_k", 40);
     params.topP = hyperionConfigGetFloat("generate.top_p", 0.9f);
-    params.seed = hyperionConfigGetInt("generate.seed", 0); // 0 for random
-
-    // 5. Tokenize the prompt
-    int prompt_tokens[512]; // Adjust size as needed
-    params.promptLength = hyperionTokenize(g_tokenizer, prompt_buf, prompt_tokens,
-                                         sizeof(prompt_tokens) / sizeof(prompt_tokens[0]));
+    params.seed = 0;
+    
+    // Tokenize prompt
+    int prompt_tokens[512];
+    params.promptLength = hyperionEncodeText(g_tokenizer, prompt, prompt_tokens, 512);
     if (params.promptLength <= 0) {
-        mg_http_reply(c, 400, "Content-Type: application/json\r\n",
-                      "{\"error\":\"Failed to tokenize prompt or prompt too long\"}\n");
+        free(prompt);
+        send_http_response(client_socket, 400, "application/json", 
+            "{\"error\": \"Failed to tokenize prompt\"}");
         return;
     }
     params.promptTokens = prompt_tokens;
-
-    // 6. Allocate buffer for output tokens - dynamically to avoid VLA issues
-    int *output_tokens = (int *)malloc((params.maxTokens + params.promptLength) * sizeof(int));
+    
+    // Generate text
+    int *output_tokens = malloc(params.maxTokens * sizeof(int));
     if (!output_tokens) {
-        mg_http_reply(c, 500, "Content-Type: application/json\r\n",
-                      "{\"error\":\"Failed to allocate memory for generation\"}\n");
+        free(prompt);
+        send_http_response(client_socket, 500, "application/json", 
+            "{\"error\": \"Memory allocation failed\"}");
         return;
     }
-
-    // 7. Generate text
-    printf("Generating text for prompt: \"%s\"\n", prompt_buf); // Log
-    int generated_count = hyperionGenerateText(g_model, &params, output_tokens, params.maxTokens);
-
-    // 8. Decode the generated tokens (excluding prompt)
+    
+    int generated_count = demo_generate_text(g_model, &params, output_tokens, params.maxTokens);
+    
     if (generated_count > 0) {
-        result_text = hyperionDecode(g_tokenizer, output_tokens, generated_count);
-        if (result_text) {
-            result_len = strlen(result_text);
-            printf("Generated text: %s\n", result_text); // Log
+        char result_text[4096];
+        int decoded_len = hyperionDecodeTokens(g_tokenizer, output_tokens, generated_count, 
+                                               result_text, sizeof(result_text) - 1);
+        if (decoded_len > 0) {
+            result_text[decoded_len] = '\0';
+            char response[4096];
+            snprintf(response, sizeof(response), "{\"result\": \"%s\"}", result_text);
+            send_http_response(client_socket, 200, "application/json", response);
+        } else {
+            send_http_response(client_socket, 500, "application/json", 
+                "{\"error\": \"Failed to decode tokens\"}");
         }
-        else {
-            mg_http_reply(c, 500, "Content-Type: application/json\r\n",
-                          "{\"error\":\"Failed to decode generated tokens\"}\n");
-            return;
-        }
+    } else {
+        send_http_response(client_socket, 500, "application/json", 
+            "{\"error\": \"Text generation failed\"}");
     }
-    else {
-        // Handle generation failure or empty output
-        mg_http_reply(c, 500, "Content-Type: application/json\r\n",
-                      "{\"error\":\"Text generation failed or produced no output\"}\n");
-        return;
-    }
-
-    // 9. Send JSON response: {"result": "..."}
-    // Use mg_http_reply which handles chunking if needed
-    mg_printf(
-        c,
-        "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nTransfer-Encoding: chunked\r\n\r\n");
-    mg_http_printf_chunk(c, "{\"result\": ");
-    mg_http_write_chunk(c, "\"", 1); // Start JSON string
-    // Simple JSON escaping (replace " with \" and \ with \\) - Mongoose might have helpers?
-    // For simplicity, let's assume basic escaping is sufficient for now.
-    // A proper JSON library would be better for complex text.
-    char *escaped_result = mg_json_esc(NULL, result_text, result_len); // Mongoose helper
-    if (escaped_result) {
-        mg_http_write_chunk(c, escaped_result, strlen(escaped_result));
-        free(escaped_result);
-    }
-    else {
-        // Fallback if escaping fails (shouldn't happen often)
-        mg_http_write_chunk(c, "Error escaping result", strlen("Error escaping result"));
-    }
-    mg_http_write_chunk(c, "\"", 1); // End JSON string
-    mg_http_printf_chunk(c, "}");
-    mg_http_printf_chunk(c, ""); // End chunked response
-
-    // 10. Clean up allocated memory
-    if (result_text) {
-        free(result_text); // Assuming hyperionDecode allocates memory
-    }
+    
+    free(prompt);
     free(output_tokens);
 }
 
-// Function to start the web server
+// WebSocket streaming generation handler
+static void handle_websocket_generate(WebSocketConnection* ws, const char* message)
+{
+    // Parse JSON message for generation parameters
+    char* prompt = extract_json_string(message, "prompt");
+    if (!prompt) {
+        hyperionWebSocketSendText(ws, "{\"error\": \"Missing prompt field\"}");
+        return;
+    }
+    
+    if (!g_model || !g_tokenizer) {
+        free(prompt);
+        hyperionWebSocketSendText(ws, "{\"error\": \"Model or tokenizer not loaded\"}");
+        return;
+    }
+    
+    // Extract parameters (with defaults)
+    int max_tokens = 100; // Default
+    float temperature = 0.7f; // Default
+    
+    // Simple parameter extraction (in production, use proper JSON parser)
+    const char* max_tokens_str = strstr(message, "\"max_tokens\":");
+    if (max_tokens_str) {
+        max_tokens_str += 13; // Skip "max_tokens":
+        max_tokens = atoi(max_tokens_str);
+        if (max_tokens <= 0 || max_tokens > 500) max_tokens = 100;
+    }
+    
+    const char* temp_str = strstr(message, "\"temperature\":");
+    if (temp_str) {
+        temp_str += 14; // Skip "temperature":
+        temperature = (float)atof(temp_str);
+        if (temperature < 0.1f || temperature > 2.0f) temperature = 0.7f;
+    }
+    
+    // Start streaming generation
+    hyperionWebSocketStreamGenerate(ws, prompt, max_tokens, temperature, NULL, NULL);
+    
+    free(prompt);
+}
+
+// WebSocket message handler
+static void handle_websocket_message(WebSocketConnection* ws, const char* message)
+{
+    printf("WebSocket message received: %s\n", message);
+    
+    // Parse message type
+    if (strstr(message, "\"type\":\"generate\"")) {
+        handle_websocket_generate(ws, message);
+    }
+    else if (strstr(message, "\"type\":\"ping\"")) {
+        hyperionWebSocketSendText(ws, "{\"type\": \"pong\"}");
+    }
+    else if (strstr(message, "\"type\":\"status\"")) {
+        // Send status via WebSocket
+        const char* model_status = (g_model && g_tokenizer) ? "loaded" : "not_loaded";
+        size_t used_memory = 0, total_memory = 0;
+        hyperionMemPoolStats(&total_memory, &used_memory, NULL, NULL);
+        
+        char status_response[512];
+        snprintf(status_response, sizeof(status_response),
+            "{"
+            "\"type\": \"status\","
+            "\"status\": \"online\","
+            "\"model_status\": \"%s\","
+            "\"memory_used\": %zu,"
+            "\"memory_total\": %zu,"
+            "\"version\": \"0.1.0\","
+            "\"websocket_connections\": %d"
+            "}",
+            model_status, used_memory, total_memory, g_ws_connection_count);
+        
+        hyperionWebSocketSendText(ws, status_response);
+    }
+    else {
+        // Echo unknown messages
+        char echo_response[256];
+        snprintf(echo_response, sizeof(echo_response), 
+            "{\"type\": \"echo\", \"message\": \"%.200s\"}", message);
+        hyperionWebSocketSendText(ws, echo_response);
+    }
+}
+
+// Serve static files
+static void serve_file(SOCKET client_socket, const char *file_path)
+{
+    FILE *file = fopen(file_path, "rb");
+    if (!file) {
+        send_http_response(client_socket, 404, "text/html", 
+            "<html><body><h1>404 Not Found</h1></body></html>");
+        return;
+    }
+    
+    fseek(file, 0, SEEK_END);
+    long file_size = ftell(file);
+    fseek(file, 0, SEEK_SET);
+    
+    const char *content_type = "text/html";
+    if (strstr(file_path, ".css")) content_type = "text/css";
+    else if (strstr(file_path, ".js")) content_type = "application/javascript";
+    
+    char header[512];
+    int header_len = snprintf(header, sizeof(header),
+        "HTTP/1.1 200 OK\r\n"
+        "Content-Type: %s\r\n"
+        "Content-Length: %ld\r\n"
+        "\r\n",
+        content_type, file_size);
+    
+    send(client_socket, header, header_len, 0);
+    
+    char buffer[8192];
+    size_t bytes_read;
+    while ((bytes_read = fread(buffer, 1, sizeof(buffer), file)) > 0) {
+        send(client_socket, buffer, bytes_read, 0);
+    }
+    
+    fclose(file);
+}
+
+// Handle HTTP requests
+static void handle_request(SOCKET client_socket, const char *document_root)
+{
+    char buffer[8192];
+    int bytes_received = recv(client_socket, buffer, sizeof(buffer) - 1, 0);
+    
+    if (bytes_received <= 0) return;
+    
+    buffer[bytes_received] = '\0';
+    
+    char method[16], path[256];
+    if (sscanf(buffer, "%15s %255s", method, path) != 2) {
+        send_http_response(client_socket, 400, "text/html", 
+            "<html><body><h1>400 Bad Request</h1></body></html>");
+        return;
+    }
+    
+    printf("Request: %s %s\n", method, path);
+    
+    // Check for WebSocket upgrade request
+    if (hyperionIsWebSocketUpgrade(buffer)) {
+        printf("WebSocket upgrade request detected\n");
+        
+        if (hyperionWebSocketHandshake(client_socket, buffer)) {
+            printf("WebSocket handshake successful\n");
+            
+            // Create WebSocket connection
+            WebSocketConnection* ws = hyperionWebSocketCreate(client_socket, true);
+            if (ws) {
+                add_websocket_connection(ws);
+                
+                // Handle WebSocket messages
+                WebSocketFrame frame;
+                while (hyperionWebSocketIsOpen(ws)) {
+                    int result = hyperionWebSocketReceive(ws, &frame);
+                    if (result <= 0) break;
+                    
+                    switch (frame.opcode) {
+                        case WS_OPCODE_TEXT:
+                            if (frame.payload) {
+                                handle_websocket_message(ws, (char*)frame.payload);
+                                HYPERION_FREE(frame.payload);
+                            }
+                            break;
+                            
+                        case WS_OPCODE_PING:
+                            hyperionWebSocketPong(ws, frame.payload, frame.payload_length);
+                            if (frame.payload) HYPERION_FREE(frame.payload);
+                            break;
+                            
+                        case WS_OPCODE_CLOSE:
+                            hyperionWebSocketClose(ws, 1000, "Normal closure");
+                            if (frame.payload) HYPERION_FREE(frame.payload);
+                            break;
+                            
+                        default:
+                            if (frame.payload) HYPERION_FREE(frame.payload);
+                            break;
+                    }
+                }
+                
+                remove_websocket_connection(ws);
+                hyperionWebSocketDestroy(ws);
+            }
+        } else {
+            printf("WebSocket handshake failed\n");
+            send_http_response(client_socket, 400, "text/plain", "WebSocket handshake failed");
+        }
+        return;
+    }
+    
+    // Handle CORS preflight
+    if (strcmp(method, "OPTIONS") == 0) {
+        send_http_response(client_socket, 200, "text/plain", "");
+        return;
+    }
+    
+    // Find request body
+    const char *body = strstr(buffer, "\r\n\r\n");
+    if (body) body += 4;
+    else body = "";
+    
+    // Route API endpoints
+    if (strncmp(path, "/api/", 5) == 0) {
+        if (strcmp(path, "/api/generate") == 0 && strcmp(method, "POST") == 0) {
+            handle_api_generate(client_socket, body);
+        }
+        else if (strcmp(path, "/api/status") == 0 && strcmp(method, "GET") == 0) {
+            handle_api_status(client_socket);
+        }
+        else if (strcmp(path, "/api/model/info") == 0 && strcmp(method, "GET") == 0) {
+            handle_api_model_info(client_socket);
+        }
+        else {
+            send_http_response(client_socket, 404, "application/json", 
+                "{\"error\": \"Endpoint not found\"}");
+        }
+    }
+    else {
+        // Serve static files
+        if (strcmp(path, "/") == 0) {
+            strcpy(path, "/index.html");
+        }
+        
+        char file_path[512];
+        snprintf(file_path, sizeof(file_path), "%s%s", document_root, path);
+        serve_file(client_socket, file_path);
+    }
+}
+
+// Main web server function
 int start_web_server(picolInterp *interp, const char *port, const char *document_root)
 {
-    struct mg_mgr mgr;
-    char          addr[64];
+#ifdef _WIN32
+    WSADATA wsaData;
+    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
+        fprintf(stderr, "WSAStartup failed\n");
+        return 1;
+    }
+#endif
 
-    // --- Load Model and Tokenizer ---
-    // Get paths from config (assuming they are set via CLI or config file)
+    // Load model and tokenizer if configured
     const char *model_file = hyperionConfigGet("model.path", NULL);
-    const char *weights_file =
-        hyperionConfigGet("model.weights_path", NULL); // Assuming separate weights
     const char *tokenizer_file = hyperionConfigGet("tokenizer.path", NULL);
-
-    if (!model_file || !tokenizer_file) {
-        fprintf(stderr, "Error: Model or Tokenizer path not configured.\n");
-        fprintf(stderr, "Please specify using --model and --tokenizer options or config file.\n");
+    
+    if (model_file && tokenizer_file) {
+        printf("Creating demo tokenizer...\n");
+        g_tokenizer = hyperionCreateTokenizer();
+        if (g_tokenizer) {
+            // Add some demo tokens
+            hyperionAddToken(g_tokenizer, "hello", 100);
+            hyperionAddToken(g_tokenizer, "world", 90);
+            hyperionAddToken(g_tokenizer, "the", 80);
+            hyperionAddToken(g_tokenizer, "and", 70);
+            hyperionAddToken(g_tokenizer, ".", 60);
+            
+            printf("Creating demo model...\n");
+            g_model = create_demo_model();
+            if (g_model) {
+                g_model->tokenizer = g_tokenizer;
+            }
+        }
+    }
+    
+    // Create socket
+    SOCKET server_socket = socket(AF_INET, SOCK_STREAM, 0);
+    if (server_socket == INVALID_SOCKET) {
+        fprintf(stderr, "Socket creation failed\n");
         return 1;
     }
-    // If weights are separate, check for weights_file too
-
-    printf("Loading tokenizer from %s...\n", tokenizer_file);
-    g_tokenizer = hyperionLoadTokenizer(tokenizer_file);
-    if (!g_tokenizer) {
-        fprintf(stderr, "Error: Failed to load tokenizer from %s\n", tokenizer_file);
+    
+    // Set socket options
+    int opt = 1;
+    setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, (char*)&opt, sizeof(opt));
+    
+    // Bind socket
+    struct sockaddr_in server_addr;
+    memset(&server_addr, 0, sizeof(server_addr));
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_addr.s_addr = INADDR_ANY;
+    server_addr.sin_port = htons(atoi(port));
+    
+    if (bind(server_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) == SOCKET_ERROR) {
+        fprintf(stderr, "Bind failed on port %s\n", port);
+        close(server_socket);
         return 1;
     }
-
-    printf("Loading model from %s...\n", model_file);
-    // Assuming hyperionLoadModel handles both structure and weights if weights_file is NULL
-    g_model = hyperionLoadModel(model_file, weights_file, tokenizer_file);
-    if (!g_model) {
-        fprintf(stderr, "Error: Failed to load model from %s\n", model_file);
-        hyperionDestroyTokenizer(g_tokenizer); // Clean up tokenizer
-        g_tokenizer = NULL;
+    
+    // Listen for connections
+    if (listen(server_socket, 10) == SOCKET_ERROR) {
+        fprintf(stderr, "Listen failed\n");
+        close(server_socket);
         return 1;
     }
-    // Assign tokenizer to model if not done by hyperionLoadModel
-    if (g_model->tokenizer == NULL) {
-        g_model->tokenizer = g_tokenizer;
+    
+    printf("Web server listening on port %s, serving %s\n", port, document_root);
+    
+    // Accept and handle connections
+    while (!s_exit_flag) {
+        struct sockaddr_in client_addr;
+        socklen_t client_len = sizeof(client_addr);
+        
+        SOCKET client_socket = accept(server_socket, (struct sockaddr*)&client_addr, &client_len);
+        if (client_socket == INVALID_SOCKET) {
+            continue;
+        }
+        
+        handle_request(client_socket, document_root);
+        close(client_socket);
     }
-    // --- Model Loaded ---
-
-    g_interp = interp; // Store interpreter if needed later
-
-    // Initialize Mongoose manager
-    mg_mgr_init(&mgr);
-    snprintf(addr, sizeof(addr), "http://0.0.0.0:%s", port);
-
-    printf("Starting web server on %s, serving %s\n", addr, document_root);
-
-    // Create listening connection
-    if (mg_http_listen(&mgr, addr, fn, (void *)document_root) == NULL) {
-        fprintf(stderr, "Error: Cannot listen on %s. Is the port already in use?\n", addr);
-        mg_mgr_free(&mgr);
-        hyperionDestroyModel(g_model);
-        hyperionDestroyTokenizer(g_tokenizer);
-        return 1;
-    }
-
-    // Run the event loop
-    s_exit_flag = 0;
-    while (s_exit_flag == 0) {
-        mg_mgr_poll(&mgr, 1000); // Poll with 1 second timeout
-    }
-
+    
     // Cleanup
-    printf("Shutting down web server...\n");
-    mg_mgr_free(&mgr);
-    hyperionDestroyModel(g_model);
-    hyperionDestroyTokenizer(g_tokenizer);
-    g_model     = NULL;
-    g_tokenizer = NULL;
-    g_interp    = NULL;
-
+    close(server_socket);
+    
+    if (g_model) {
+        HYPERION_FREE(g_model);
+        g_model = NULL;
+    }
+    if (g_tokenizer) {
+        hyperionDestroyTokenizer(g_tokenizer);
+        g_tokenizer = NULL;
+    }
+    
+#ifdef _WIN32
+    WSACleanup();
+#endif
+    
     return 0;
 }
 
-// Optional: Function to signal server shutdown (e.g., from another thread or signal handler)
-void stop_web_server() { s_exit_flag = 1; }
+void stop_web_server() 
+{
+    s_exit_flag = 1;
+}

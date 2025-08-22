@@ -12,6 +12,12 @@
 #include "memory.h"
 #include "io.h"
 
+#ifdef _WIN32
+#define HYPERION_ENV_PREFIX "HYPERION_"
+#else
+#define HYPERION_ENV_PREFIX "HYPERION_"
+#endif
+
 /* ----------------- Configuration Storage ----------------- */
 
 #define MAX_CONFIG_ENTRIES 256
@@ -102,6 +108,33 @@ static int createConfigEntry(const char *key, HyperionConfigType type) {
     }
     
     return index;
+}
+
+/**
+ * Convert a config key to environment variable name
+ * Example: "model.path" -> "HYPERION_MODEL_PATH"
+ */
+static void keyToEnvVar(const char *key, char *envVar, size_t envVarSize) {
+    snprintf(envVar, envVarSize, "%s", HYPERION_ENV_PREFIX);
+    size_t prefixLen = strlen(HYPERION_ENV_PREFIX);
+    
+    for (size_t i = 0; i < strlen(key) && (prefixLen + i) < (envVarSize - 1); i++) {
+        if (key[i] == '.') {
+            envVar[prefixLen + i] = '_';
+        } else {
+            envVar[prefixLen + i] = toupper(key[i]);
+        }
+    }
+    envVar[prefixLen + strlen(key)] = '\0';
+}
+
+/**
+ * Get value from environment variable
+ */
+static const char* getFromEnvironment(const char *key) {
+    char envVar[128];
+    keyToEnvVar(key, envVar, sizeof(envVar));
+    return getenv(envVar);
 }
 
 /**
@@ -360,6 +393,13 @@ int hyperionConfigSetInt(const char *key, int value) {
  * Get a configuration integer value
  */
 int hyperionConfigGetInt(const char *key, int defaultValue) {
+    // Check environment variable first (highest priority)
+    const char *envValue = getFromEnvironment(key);
+    if (envValue) {
+        return atoi(envValue);
+    }
+    
+    // Check config file value
     if (!configInitialized) {
         return defaultValue;
     }
@@ -415,6 +455,13 @@ int hyperionConfigSetFloat(const char *key, float value) {
  * Get a configuration float value
  */
 float hyperionConfigGetFloat(const char *key, float defaultValue) {
+    // Check environment variable first
+    const char *envValue = getFromEnvironment(key);
+    if (envValue) {
+        return (float)atof(envValue);
+    }
+    
+    // Check config file value
     if (!configInitialized) {
         return defaultValue;
     }
@@ -436,7 +483,7 @@ float hyperionConfigGetFloat(const char *key, float defaultValue) {
         
         case HYPERION_CONFIG_STRING:
             if (configEntries[index].value.value.stringValue) {
-                return atof(configEntries[index].value.value.stringValue);
+                return (float)atof(configEntries[index].value.value.stringValue);
             }
             break;
         case HYPERION_CONFIG_STYLE:
@@ -480,9 +527,18 @@ int hyperionConfigSetString(const char *key, const char *value) {
 }
 
 /**
- * Get a configuration string value
+ * Get a configuration value (convenience function)
  */
-const char* hyperionConfigGetString(const char *key, const char *defaultValue) {
+const char* hyperionConfigGet(const char *key, const char *defaultValue) {
+    return hyperionConfigGetString(key, defaultValue);
+}
+    // Check environment variable first
+    const char *envValue = getFromEnvironment(key);
+    if (envValue) {
+        return envValue;
+    }
+    
+    // Check config file value
     if (!configInitialized) {
         return defaultValue;
     }
@@ -809,4 +865,12 @@ int hyperionConfigApplyCommandLine(int argc, char **argv) {
     }
     
     return 0;
+}
+
+/**
+ * Get a configuration value with proper hierarchy (environment > config > default)
+ * This is a convenience function equivalent to hyperionConfigGetString
+ */
+const char* hyperionConfigGet(const char *key, const char *defaultValue) {
+    return hyperionConfigGetString(key, defaultValue);
 }
