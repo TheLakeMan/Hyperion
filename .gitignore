@@ -12,6 +12,7 @@ out/
 # IDE files
 .vs/
 .vscode/
+.qoder/
 *.code-workspace
 *.sln
 *.vcxproj
