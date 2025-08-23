@@ -166,7 +166,7 @@ hyperionCreateProgressiveLoaderFromMapped(HyperionMappedModel             *mappe
     }
 
     /* Allocate layer information structures */
-    loader->layers = (HyperionLayerInfo *)malloc(loader->layer_count * sizeof(HyperionLayerInfo));
+    loader->layers = (HyperionInternalLayerInfo *)malloc(loader->layer_count * sizeof(HyperionInternalLayerInfo));
     if (!loader->layers) {
         free(loader);
         return NULL;

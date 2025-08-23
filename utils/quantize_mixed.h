@@ -10,7 +10,7 @@
 #ifndef HYPERION_QUANTIZE_MIXED_H
 #define HYPERION_QUANTIZE_MIXED_H
 
-#include "image_model.h"
+#include "../models/image/image_model.h"
 #include "quantize.h"
 #include <stdbool.h>
 #include <stddef.h>

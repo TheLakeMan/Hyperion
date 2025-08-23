@@ -9,7 +9,7 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 
 # Add compiler flags
 if(MSVC)
-    add_compile_options(/W4)
+    add_compile_options(/W4 /FS)  # /FS flag fixes PDB file conflicts
     # Enable SIMD instructions for MSVC
     add_compile_options(/arch:SSE2)
     option(ENABLE_AVX "Enable AVX instructions" ON)

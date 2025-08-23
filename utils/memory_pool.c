@@ -482,12 +482,12 @@ void hyperionMemoryPoolGetStats(HyperionMemoryPool *pool, HyperionMemoryPoolStat
         /* Consider both the number of free blocks and the largest block size */
         float blockFrag = 0.0f;
         if (stats->totalBlocks > 1) {
-            blockFrag = (float)stats->freeBlocks / (float)stats.totalBlocks;
+            blockFrag = (float)stats->freeBlocks / (float)stats->totalBlocks;
         }
 
         float sizeFrag = 0.0f;
         if (stats->totalWasted > 0) {
-            sizeFrag = 1.0f - ((float)stats.largestBlock / (float)stats.totalWasted);
+            sizeFrag = 1.0f - ((float)stats->largestBlock / (float)stats->totalWasted);
         }
 
         /* Combine the metrics (higher means more fragmented) */

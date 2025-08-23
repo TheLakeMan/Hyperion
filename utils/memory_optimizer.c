@@ -38,7 +38,7 @@ struct HyperionMemoryOptimizer *hyperionCreateMemoryOptimizer(void)
     optimizer->stats.tensors_reused = 0;
     optimizer->stats.memory_saved   = 0;
     optimizer->stats.allocations    = 0;
-    optimizer->stats.deallocations  = 0;
+    optimizer->stats.free_count = 0;
 
     // Create memory pool
     optimizer->memory_pool = hyperionCreateMemoryPool(1024 * 1024 * 1024); // 1GB default
@@ -160,7 +160,7 @@ bool hyperionExecuteWithTensorReuse(struct HyperionMemoryOptimizer *optimizer,
     }
     else {
         hyperionFreeTensor(reusable_tensor);
-        optimizer->stats.deallocations++;
+        optimizer->stats.free_count++;
     }
 
     // Update memory usage
@@ -193,7 +193,7 @@ bool hyperionOptimizeMemoryUsage(struct HyperionMemoryOptimizer *optimizer, size
             hyperionFreeTensor(optimizer->reusable_tensors[last_index]);
             optimizer->reusable_tensors[last_index] = NULL;
             memory_to_free = memory_to_free > tensor_size ? memory_to_free - tensor_size : 0;
-            optimizer->stats.deallocations++;
+            optimizer->stats.free_count++;
         }
     }
 

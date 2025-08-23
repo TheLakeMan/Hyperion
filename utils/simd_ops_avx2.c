@@ -29,6 +29,9 @@
 
 #if defined(HAS_AVX2_SUPPORT)
 
+/* Forward declarations */
+__m256 exp256_ps(__m256 x);
+
 /**
  * Optimized 4-bit matrix-vector multiplication using AVX2 instructions
  *
@@ -85,9 +88,9 @@ void matMul4BitAVX2(float *out, const uint8_t *weights, const float *input, int 
             odd_values         = _mm256_and_si256(odd_values, lower_mask);
 
             /* Combine even and odd values by shuffling */
-            __m256i values_mask =
-                _mm256_setr_epi8(0, 8, 1, 9, 2, 10, 3, 11, 4, 12, 5, 13, 6, 14, 7, 15, 0, 8, 1, 9,
-                                 2, 10, 3, 11, 4, 12, 5, 13, 6, 14, 7, 15);
+            static const int8_t mask_data[32] = {0, 8, 1, 9, 2, 10, 3, 11, 4, 12, 5, 13, 6, 14, 7, 15, 
+                                                0, 8, 1, 9, 2, 10, 3, 11, 4, 12, 5, 13, 6, 14, 7, 15};
+            __m256i values_mask = _mm256_loadu_si256((const __m256i*)mask_data);
             __m256i values_combined = _mm256_shuffle_epi8(odd_values, values_mask);
 
             /* Convert from 4-bit unsigned (0-15) to signed (-8 to 7) range */
@@ -287,11 +290,12 @@ void quantize4BitAVX2(uint8_t *out, const float *in, int size, float *scaleFacto
                 _mm_storeu_si32(out + outOffset, packed_bytes);
             }
             else {
-                /* Store individual bytes */
+                /* Store individual bytes using MSVC-compatible approach */
+                uint8_t temp_bytes[16];
+                _mm_storeu_si128((__m128i*)temp_bytes, packed_bytes);
                 for (int b = 0; b < toCopy; b++) {
-                    out[outOffset + b] = (uint8_t)_mm_extract_epi8(packed_bytes, b);
+                    out[outOffset + b] = temp_bytes[b];
                 }
-            }
         }
 
         /* Process remaining elements */

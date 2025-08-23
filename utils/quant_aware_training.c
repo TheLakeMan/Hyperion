@@ -102,7 +102,7 @@ bool hyperionTrainWithQuantAwareness(const char *modelPath, const char *outputMo
 }
 
 float hyperionStraightThroughEstimator(float realValue, float quantizedValue,
-                                     HyperionMixedPrecType precision)
+                                     HyperionPrecision precision)
 {
     /* Implements the straight-through estimator (STE) for backpropagation through
      * non-differentiable quantization operations.
@@ -123,7 +123,7 @@ float hyperionStraightThroughEstimator(float realValue, float quantizedValue,
     }
 }
 
-bool hyperionSimulateQuantizationNoise(float *weights, int numElements, HyperionMixedPrecType precision,
+bool hyperionSimulateQuantizationNoise(float *weights, int numElements, HyperionPrecision precision,
                                      float strength)
 {
     /* Add controlled noise to simulate quantization effects during training */
@@ -144,7 +144,7 @@ bool hyperionSimulateQuantizationNoise(float *weights, int numElements, Hyperion
     return true;
 }
 
-bool hyperionQuantizeForForwardPass(float *weights, int numElements, HyperionMixedPrecType precision,
+bool hyperionQuantizeForForwardPass(float *weights, int numElements, HyperionPrecision precision,
                                   float *outQuantized)
 {
     /* Simulate quantization during the forward pass */
@@ -153,7 +153,7 @@ bool hyperionQuantizeForForwardPass(float *weights, int numElements, HyperionMix
     }
 
     /* For high precision, just copy the weights */
-    if (precision == HYPERION_MIXED_PREC_FP32) {
+    if (precision == HYPERION_PRECISION_FP32) {
         memcpy(outQuantized, weights, numElements * sizeof(float));
         return true;
     }
@@ -161,21 +161,17 @@ bool hyperionQuantizeForForwardPass(float *weights, int numElements, HyperionMix
     /* Get quantization parameters for the precision */
     float min, max;
     switch (precision) {
-    case HYPERION_MIXED_PREC_FP16:
+    case HYPERION_PRECISION_FP32:
         min = -65504.0f;
         max = 65504.0f;
         break;
-    case HYPERION_MIXED_PREC_INT8:
+    case HYPERION_PRECISION_INT8:
         min = -128.0f;
         max = 127.0f;
         break;
-    case HYPERION_MIXED_PREC_INT4:
+    case HYPERION_PRECISION_INT4:
         min = -8.0f;
         max = 7.0f;
-        break;
-    case HYPERION_MIXED_PREC_INT2:
-        min = -2.0f;
-        max = 1.0f;
         break;
     default:
         return false;
@@ -250,8 +246,8 @@ HyperionQuantAwareTrainingConfig *hyperionCreateDefaultQuantAwareTrainingConfig(
     }
 
     /* Initialize with reasonable default values */
-    config->weightPrecision                = HYPERION_MIXED_PREC_INT8;
-    config->activationPrecision            = HYPERION_MIXED_PREC_INT8;
+    config->weightPrecision                = HYPERION_PRECISION_INT8;
+    config->activationPrecision            = HYPERION_PRECISION_INT8;
     config->useSymmetricQuantization       = true;
     config->usePerChannelQuantization      = true;
     config->learningRate                   = 1e-4f;

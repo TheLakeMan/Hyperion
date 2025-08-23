@@ -10,17 +10,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-/* Forward declarations for types */
-#ifndef HYPERION_IMAGE_MODEL_H
 #include "image_model.h"
-#else
-
-/* Forward declarations if image_model.h is already included */
-typedef enum HyperionImageFormat             HyperionImageFormat;
-typedef struct HyperionImage                 HyperionImage;
-typedef struct HyperionImagePreprocessParams HyperionImagePreprocessParams;
-
-#endif
 
 #ifdef __cplusplus
 extern "C" {

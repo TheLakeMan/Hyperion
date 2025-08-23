@@ -9,6 +9,7 @@
 #include "../models/image/image_model.h"
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -102,6 +103,10 @@ typedef struct {
 // Benchmark an operation
 HyperionBenchmarkResult hyperionBenchmarkOperation(const char *name, size_t iterations,
                                                HyperionBenchmarkOperation operation);
+
+// Simple timing functions for tests
+uint64_t benchmark_start(void);
+double benchmark_end(uint64_t start_time);
 
 #ifdef __cplusplus
 }

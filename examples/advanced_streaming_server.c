@@ -25,7 +25,6 @@
 #include "../core/logging.h"
 #include "../models/text/generate.h"
 #include "../models/text/tokenizer.h"
-#include "../interface/web_server.h"
 #include "../utils/simd_benchmark.h"
 #include "../core/enhanced_errors.h"
 #include <stdio.h>

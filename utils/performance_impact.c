@@ -3,7 +3,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef _WIN32
+#include <windows.h>
+#else
 #include <time.h>
+#endif
 
 // Default configuration
 static const HyperionPerformanceConfig DEFAULT_CONFIG = {.track_execution_time  = true,
@@ -17,9 +22,16 @@ static const HyperionPerformanceConfig DEFAULT_CONFIG = {.track_execution_time  
 // Get current timestamp in milliseconds
 static uint64_t get_timestamp_ms()
 {
+#ifdef _WIN32
+    LARGE_INTEGER frequency, counter;
+    QueryPerformanceFrequency(&frequency);
+    QueryPerformanceCounter(&counter);
+    return (uint64_t)((counter.QuadPart * 1000) / frequency.QuadPart);
+#else
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
     return (uint64_t)ts.tv_sec * 1000 + (uint64_t)ts.tv_nsec / 1000000;
+#endif
 }
 
 // Create performance analysis context

@@ -1,6 +1,4 @@
-.
-
-'ef'f'f//**
+/**
  * Hyperion - SIMD-accelerated Attention Mechanism Tests
  *
  * This file contains tests for the SIMD-accelerated attention mechanism

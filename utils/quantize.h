@@ -9,7 +9,7 @@
 #define HYPERION_QUANTIZE_H
 
 #include <stddef.h>
-#include <stdint.h
+#include <stdint.h>
 
 /* ----------------- Quantization Types ----------------- */
 

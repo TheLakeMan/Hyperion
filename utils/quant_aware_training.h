@@ -23,8 +23,8 @@ extern "C" {
  * Configuration for quantization-aware training
  */
 typedef struct {
-    HyperionPrecisionType weightPrecision;           /* Precision for weights during training */
-    HyperionPrecisionType activationPrecision;       /* Precision for activations during training */
+    HyperionPrecision weightPrecision;           /* Precision for weights during training */
+    HyperionPrecision activationPrecision;       /* Precision for activations during training */
     bool                useSymmetricQuantization;  /* Whether to use symmetric quantization */
     bool                usePerChannelQuantization; /* Whether to use per-channel quantization */
     float               learningRate;              /* Learning rate for training */
@@ -68,7 +68,7 @@ bool hyperionTrainWithQuantAwareness(const char *modelPath, const char *outputMo
  * @return Gradient for backpropagation
  */
 float hyperionStraightThroughEstimator(float realValue, float quantizedValue,
-                                     HyperionPrecisionType precision);
+                                     HyperionPrecision precision);
 
 /**
  * Simulate quantization effects during training by adding controlled noise
@@ -79,7 +79,7 @@ float hyperionStraightThroughEstimator(float realValue, float quantizedValue,
  * @param strength Noise strength (0.0-1.0)
  * @return true on success, false on failure
  */
-bool hyperionSimulateQuantizationNoise(float *weights, int numElements, HyperionPrecisionType precision,
+bool hyperionSimulateQuantizationNoise(float *weights, int numElements, HyperionPrecision precision,
                                      float strength);
 
 /**
@@ -91,7 +91,7 @@ bool hyperionSimulateQuantizationNoise(float *weights, int numElements, Hyperion
  * @param outQuantized Output buffer for quantized weights (can be same as weights)
  * @return true on success, false on failure
  */
-bool hyperionQuantizeForForwardPass(float *weights, int numElements, HyperionPrecisionType precision,
+bool hyperionQuantizeForForwardPass(float *weights, int numElements, HyperionPrecision precision,
                                   float *outQuantized);
 
 /**

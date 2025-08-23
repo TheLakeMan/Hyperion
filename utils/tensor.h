@@ -140,15 +140,15 @@ bool hyperionMultiplyTensors(const struct HyperionTensor *a, const struct Hyperi
                             struct HyperionTensor *result);
 
 /**
- * Matrix multiplication: result = a * b
+ * Tensor matrix multiplication: result = a * b
  *
  * @param a First input matrix (2D tensor)
  * @param b Second input matrix (2D tensor)
  * @param result Output matrix (2D tensor)
  * @return true on success, false on failure
  */
-bool hyperionMatrixMultiply(const struct HyperionTensor *a, const struct HyperionTensor *b,
-                           struct HyperionTensor *result);
+bool hyperionTensorMatrixMultiply(const struct HyperionTensor *a, const struct HyperionTensor *b,
+                                 struct HyperionTensor *result);
 
 /**
  * Apply activation function to tensor

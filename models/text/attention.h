@@ -171,4 +171,20 @@ int hyperionSimdOutputProjection(const float *context, const HyperionMatrix4bit 
                                const float *outputBias, float *output, uint32_t seqLength,
                                uint32_t hiddenDim);
 
+/* Legacy function names for compatibility with benchmark tests */
+int attention_compute_scores_simd(const float *query, const float *key, float *scores, 
+                                int batchSize, int seqLength, int headDim);
+int attention_softmax_simd(const float *scores, float *probs, int batchSize, int seqLength);
+int attention_weighted_sum_simd(const float *probs, const float *value, float *output,
+                              int batchSize, int seqLength, int headDim);
+int attention_forward_simd(const float *query, const float *key, const float *value, float *output,
+                         int batchSize, int seqLength, int headDim);
+int attention_compute_scores_reference(const float *query, const float *key, float *scores,
+                                     int batchSize, int seqLength, int headDim);
+int attention_softmax_reference(const float *scores, float *probs, int batchSize, int seqLength);
+int attention_weighted_sum_reference(const float *probs, const float *value, float *output,
+                                   int batchSize, int seqLength, int headDim);
+int attention_forward_reference(const float *query, const float *key, const float *value, float *output,
+                              int batchSize, int seqLength, int headDim);
+
 #endif /* HYPERION_ATTENTION_H */
