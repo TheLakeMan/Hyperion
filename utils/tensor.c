@@ -16,6 +16,8 @@ struct HyperionTensor {
 };
 
 // Create a new tensor
+struct HyperionTensor *hyperionCreateTensor(const int *shape, int num_dims, HyperionTensorDataType dtype)
+{
     struct HyperionTensor *tensor = (struct HyperionTensor *)malloc(sizeof(struct HyperionTensor));
     if (!tensor)
         return NULL;
@@ -52,6 +54,8 @@ struct HyperionTensor {
 }
 
 // Create a tensor using a memory pool
+struct HyperionTensor *hyperionCreateTensorFromPool(const int *shape, int num_dims, HyperionTensorDataType dtype, struct HyperionMemoryPool *pool)
+{
     struct HyperionTensor *tensor = (struct HyperionTensor *)malloc(sizeof(struct HyperionTensor));
     if (!tensor)
         return NULL;
@@ -146,6 +150,7 @@ void hyperionFillTensor(struct HyperionTensor *tensor, float value)
 }
 
 // Add tensors
+bool hyperionAddTensors(const struct HyperionTensor *a, const struct HyperionTensor *b,
                       struct HyperionTensor *result)
 {
     if (!a || !b || !result || a->size != b->size || a->size != result->size) {
@@ -160,6 +165,7 @@ void hyperionFillTensor(struct HyperionTensor *tensor, float value)
 }
 
 // Multiply tensors
+bool hyperionMultiplyTensors(const struct HyperionTensor *a, const struct HyperionTensor *b,
                            struct HyperionTensor *result)
 {
     if (!a || !b || !result || a->size != b->size || a->size != result->size) {
@@ -174,6 +180,7 @@ void hyperionFillTensor(struct HyperionTensor *tensor, float value)
 }
 
 // Matrix multiplication
+bool hyperionMatrixMultiply(const struct HyperionTensor *a, const struct HyperionTensor *b,
                           struct HyperionTensor *result)
 {
     if (!a || !b || !result)
