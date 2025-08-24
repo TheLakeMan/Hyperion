@@ -296,6 +296,7 @@ void quantize4BitAVX2(uint8_t *out, const float *in, int size, float *scaleFacto
                 for (int b = 0; b < toCopy; b++) {
                     out[outOffset + b] = temp_bytes[b];
                 }
+            }
         }
 
         /* Process remaining elements */

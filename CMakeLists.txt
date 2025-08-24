@@ -45,6 +45,14 @@ include_directories(
 file(GLOB_RECURSE HYPERION_CORE_SOURCES "core/*.c")
 file(GLOB_RECURSE HYPERION_UTILS_SOURCES "utils/*.c")
 file(GLOB_RECURSE HYPERION_MODELS_SOURCES "models/*.c")
+
+# Rules Engine sources (part of core)
+set(HYPERION_RULES_ENGINE_SOURCES
+    core/rules_engine.c
+    core/memory_optimization_validator.c
+    core/platform_compatibility_validator.c
+)
+
 # Explicitly list interface sources for the main executable (excluding interface/main.c)
 set(HYPERION_MAIN_INTERFACE_SOURCES
     interface/cli.c
@@ -57,6 +65,31 @@ add_compile_definitions(MCP_ENABLED)
 
 # Define the HYPERION_BUILD preprocessor symbol to exclude main() from picol.c
 add_compile_definitions(HYPERION_BUILD)
+
+# Define HYPERION_RULES_ENGINE_ENABLED for GODMODE enhancement features
+add_compile_definitions(HYPERION_RULES_ENGINE_ENABLED)
+
+# Options for enhanced validation
+option(ENABLE_MEMORY_VALIDATION "Enable enhanced memory validation" ON)
+option(ENABLE_PLATFORM_VALIDATION "Enable platform compatibility validation" ON)
+option(ENABLE_QUEST_VALIDATION "Enable quest completion validation" ON)
+option(ENABLE_SIMD_VALIDATION "Enable SIMD optimization validation" ON)
+
+if(ENABLE_MEMORY_VALIDATION)
+    add_compile_definitions(HYPERION_MEMORY_VALIDATION_ENABLED)
+endif()
+
+if(ENABLE_PLATFORM_VALIDATION)
+    add_compile_definitions(HYPERION_PLATFORM_VALIDATION_ENABLED)
+endif()
+
+if(ENABLE_QUEST_VALIDATION)
+    add_compile_definitions(HYPERION_QUEST_VALIDATION_ENABLED)
+endif()
+
+if(ENABLE_SIMD_VALIDATION)
+    add_compile_definitions(HYPERION_SIMD_VALIDATION_ENABLED)
+endif()
 
 # Create library targets for use by examples and tests
 add_library(hyperion_core STATIC
@@ -125,6 +158,9 @@ enable_testing()
 
 # Collect test source files (excluding main)
 file(GLOB HYPERION_TEST_SOURCES "tests/test_*.c")
+
+# Add our new memory optimization validator test
+list(APPEND HYPERION_TEST_SOURCES "tests/test_memory_optimization_validator.c")
 
 # Test executable
 add_executable(hyperion_tests

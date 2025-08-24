@@ -1,0 +1,251 @@
+{
+    "version": 3,
+    "configurePresets": [
+        {
+            "name": "windows-debug",
+            "displayName": "Windows Debug (MSVC)",
+            "description": "Debug build for Windows using Visual Studio",
+            "generator": "Visual Studio 17 2022",
+            "binaryDir": "${sourceDir}/build/windows-debug",
+            "architecture": {
+                "value": "x64",
+                "strategy": "external"
+            },
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/windows-debug",
+                "HYPERION_BUILD_TESTS": "ON",
+                "HYPERION_BUILD_EXAMPLES": "ON",
+                "HYPERION_ENABLE_PROFILING": "ON"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            }
+        },
+        {
+            "name": "windows-release",
+            "displayName": "Windows Release (MSVC)",
+            "description": "Optimized release build for Windows",
+            "generator": "Visual Studio 17 2022",
+            "binaryDir": "${sourceDir}/build/windows-release",
+            "architecture": {
+                "value": "x64",
+                "strategy": "external"
+            },
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/windows-release",
+                "HYPERION_BUILD_TESTS": "ON",
+                "HYPERION_BUILD_EXAMPLES": "ON",
+                "HYPERION_ENABLE_SIMD": "ON",
+                "HYPERION_ENABLE_LTO": "ON"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            }
+        },
+        {
+            "name": "linux-debug",
+            "displayName": "Linux Debug (GCC)",
+            "description": "Debug build for Linux using GCC",
+            "generator": "Unix Makefiles",
+            "binaryDir": "${sourceDir}/build/linux-debug",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/linux-debug",
+                "CMAKE_C_COMPILER": "gcc",
+                "HYPERION_BUILD_TESTS": "ON",
+                "HYPERION_BUILD_EXAMPLES": "ON",
+                "HYPERION_ENABLE_PROFILING": "ON",
+                "HYPERION_ENABLE_ASAN": "ON"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Linux"
+            }
+        },
+        {
+            "name": "linux-release",
+            "displayName": "Linux Release (GCC)",
+            "description": "Optimized release build for Linux",
+            "generator": "Unix Makefiles",
+            "binaryDir": "${sourceDir}/build/linux-release",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/linux-release",
+                "CMAKE_C_COMPILER": "gcc",
+                "HYPERION_BUILD_TESTS": "ON",
+                "HYPERION_BUILD_EXAMPLES": "ON",
+                "HYPERION_ENABLE_SIMD": "ON",
+                "HYPERION_ENABLE_LTO": "ON"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Linux"
+            }
+        },
+        {
+            "name": "macos-debug",
+            "displayName": "macOS Debug (Clang)",
+            "description": "Debug build for macOS using Clang",
+            "generator": "Unix Makefiles",
+            "binaryDir": "${sourceDir}/build/macos-debug",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/macos-debug",
+                "CMAKE_C_COMPILER": "clang",
+                "HYPERION_BUILD_TESTS": "ON",
+                "HYPERION_BUILD_EXAMPLES": "ON",
+                "HYPERION_ENABLE_PROFILING": "ON"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Darwin"
+            }
+        },
+        {
+            "name": "macos-release",
+            "displayName": "macOS Release (Clang)",
+            "description": "Optimized release build for macOS",
+            "generator": "Unix Makefiles",
+            "binaryDir": "${sourceDir}/build/macos-release",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/macos-release",
+                "CMAKE_C_COMPILER": "clang",
+                "HYPERION_BUILD_TESTS": "ON",
+                "HYPERION_BUILD_EXAMPLES": "ON",
+                "HYPERION_ENABLE_SIMD": "ON",
+                "HYPERION_ENABLE_LTO": "ON"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Darwin"
+            }
+        },
+        {
+            "name": "embedded-release",
+            "displayName": "Embedded Release (Size Optimized)",
+            "description": "Ultra-lightweight build for embedded systems",
+            "generator": "Unix Makefiles",
+            "binaryDir": "${sourceDir}/build/embedded-release",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "MinSizeRel",
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/embedded-release",
+                "HYPERION_EMBEDDED": "ON",
+                "HYPERION_BUILD_TESTS": "OFF",
+                "HYPERION_BUILD_EXAMPLES": "ON",
+                "HYPERION_MINIMAL_FEATURES": "ON",
+                "HYPERION_NO_AUDIO": "ON",
+                "HYPERION_NO_IMAGE": "ON"
+            }
+        },
+        {
+            "name": "wasm-release",
+            "displayName": "WebAssembly Release",
+            "description": "WebAssembly build for browser deployment",
+            "generator": "Unix Makefiles",
+            "binaryDir": "${sourceDir}/build/wasm-release",
+            "toolchainFile": "$env{EMSCRIPTEN}/cmake/Modules/Platform/Emscripten.cmake",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/wasm-release",
+                "HYPERION_WASM": "ON",
+                "HYPERION_BUILD_TESTS": "OFF",
+                "HYPERION_BUILD_EXAMPLES": "ON"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "windows-debug",
+            "configurePreset": "windows-debug",
+            "displayName": "Build Windows Debug",
+            "configuration": "Debug"
+        },
+        {
+            "name": "windows-release",
+            "configurePreset": "windows-release",
+            "displayName": "Build Windows Release",
+            "configuration": "Release"
+        },
+        {
+            "name": "linux-debug",
+            "configurePreset": "linux-debug",
+            "displayName": "Build Linux Debug"
+        },
+        {
+            "name": "linux-release",
+            "configurePreset": "linux-release",
+            "displayName": "Build Linux Release"
+        },
+        {
+            "name": "macos-debug",
+            "configurePreset": "macos-debug",
+            "displayName": "Build macOS Debug"
+        },
+        {
+            "name": "macos-release",
+            "configurePreset": "macos-release",
+            "displayName": "Build macOS Release"
+        },
+        {
+            "name": "embedded-release",
+            "configurePreset": "embedded-release",
+            "displayName": "Build Embedded Release"
+        },
+        {
+            "name": "wasm-release",
+            "configurePreset": "wasm-release",
+            "displayName": "Build WebAssembly Release"
+        }
+    ],
+    "testPresets": [
+        {
+            "name": "windows-debug",
+            "configurePreset": "windows-debug",
+            "displayName": "Test Windows Debug",
+            "configuration": "Debug",
+            "output": {"outputOnFailure": true}
+        },
+        {
+            "name": "windows-release",
+            "configurePreset": "windows-release",
+            "displayName": "Test Windows Release",
+            "configuration": "Release",
+            "output": {"outputOnFailure": true}
+        },
+        {
+            "name": "linux-debug",
+            "configurePreset": "linux-debug",
+            "displayName": "Test Linux Debug",
+            "output": {"outputOnFailure": true}
+        },
+        {
+            "name": "linux-release",
+            "configurePreset": "linux-release",
+            "displayName": "Test Linux Release",
+            "output": {"outputOnFailure": true}
+        },
+        {
+            "name": "macos-debug",
+            "configurePreset": "macos-debug",
+            "displayName": "Test macOS Debug",
+            "output": {"outputOnFailure": true}
+        },
+        {
+            "name": "macos-release",
+            "configurePreset": "macos-release",
+            "displayName": "Test macOS Release",
+            "output": {"outputOnFailure": true}
+        }
+    ]
+}
