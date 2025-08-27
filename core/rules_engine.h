@@ -18,6 +18,7 @@ typedef enum {
     HYPERION_RULE_MCP_INTEGRATION,
     HYPERION_RULE_SIMD_OPTIMIZATION,
     HYPERION_RULE_STREAMING_COMPATIBILITY,
+    HYPERION_RULE_CROSS_PLATFORM,
     HYPERION_RULE_MAX
 } HyperionRuleType;
 
@@ -97,11 +98,22 @@ HyperionRuleResult hyperionValidatePlatformCompatibility(const HyperionRuleConte
 HyperionRuleResult hyperionValidateQuestCompletion(const HyperionRuleContext* context,
                                                    char* errorMessage,
                                                    size_t errorMessageSize);
+HyperionRuleResult hyperionValidateQuestCompletionEnhanced(const HyperionRuleContext* context,
+                                                         char* errorMessage,
+                                                         size_t errorMessageSize);
 
 // SIMD optimization rule validators
 HyperionRuleResult hyperionValidateSIMDOptimization(const HyperionRuleContext* context,
                                                    char* errorMessage,
                                                    size_t errorMessageSize);
+HyperionRuleResult hyperionValidateSIMDOptimizationEnhanced(const HyperionRuleContext* context,
+                                                          char* errorMessage,
+                                                          size_t errorMessageSize);
+
+// Cross-platform validation rule validators
+HyperionRuleResult hyperionValidateCrossPlatformCompatibilityRule(const HyperionRuleContext* context,
+                                                                char* errorMessage,
+                                                                size_t errorMessageSize);
 
 // Utility functions for rule checking
 bool hyperionRulesEngineCheckMemoryTarget(size_t memoryUsage, bool isEmbedded);

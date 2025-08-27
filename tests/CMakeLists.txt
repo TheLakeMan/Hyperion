@@ -22,6 +22,25 @@ add_executable(memory_validation_suite
     ../models/text/tokenizer.c
 )
 
+# Rules engine test
+add_executable(test_rules_engine
+    test_rules_engine.c
+    ../core/rules_engine.c
+    ../core/memory.c
+    ../core/config.c
+    ../core/enhanced_errors.c
+    ../core/quest_completion_validator.c
+    ../core/simd_optimizer.c
+    ../core/cross_platform_validator.c
+)
+
+# Gemini integration test
+add_executable(test_gemini
+    test_gemini.c
+    ../core/config.c
+    ../interface/gemini_cli.c
+)
+
 target_include_directories(memory_validation_suite PRIVATE 
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/core
@@ -30,6 +49,31 @@ target_include_directories(memory_validation_suite PRIVATE
 )
 
 target_link_libraries(memory_validation_suite 
+    Threads::Threads
+    ${CMAKE_DL_LIBS}
+)
+
+# Rules engine test configuration
+target_include_directories(test_rules_engine PRIVATE 
+    ${CMAKE_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/core
+    ${CMAKE_SOURCE_DIR}/models
+    ${CMAKE_SOURCE_DIR}/interface
+)
+
+target_link_libraries(test_rules_engine 
+    Threads::Threads
+    ${CMAKE_DL_LIBS}
+)
+
+# Gemini test configuration
+target_include_directories(test_gemini PRIVATE 
+    ${CMAKE_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/core
+    ${CMAKE_SOURCE_DIR}/interface
+)
+
+target_link_libraries(test_gemini 
     Threads::Threads
     ${CMAKE_DL_LIBS}
 )
@@ -72,10 +116,14 @@ if(CMAKE_C_COMPILER_ID STREQUAL "GNU" OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
     target_compile_options(performance_benchmark_suite PRIVATE 
         -Wall -Wextra -Wno-unused-parameter -std=c99
     )
+    target_compile_options(test_rules_engine PRIVATE 
+        -Wall -Wextra -Wno-unused-parameter -std=c99
+    )
     
     if(CMAKE_BUILD_TYPE STREQUAL "Debug")
         target_compile_options(memory_validation_suite PRIVATE -g -O0)
         target_compile_options(performance_benchmark_suite PRIVATE -g -O0)
+        target_compile_options(test_rules_engine PRIVATE -g -O0)
     endif()
 endif()
 
@@ -91,6 +139,14 @@ add_test(NAME PerformanceBenchmark
          COMMAND performance_benchmark_suite
          WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/tests)
 
+add_test(NAME RulesEngine 
+         COMMAND test_rules_engine
+         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/tests)
+
+add_test(NAME GeminiIntegration
+         COMMAND test_gemini
+         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/tests)
+
 # Set test properties
 set_tests_properties(MemoryValidation PROPERTIES
     TIMEOUT 300
@@ -100,6 +156,16 @@ set_tests_properties(MemoryValidation PROPERTIES
 set_tests_properties(PerformanceBenchmark PROPERTIES
     TIMEOUT 600
     LABELS "performance;benchmark;optimization"
+)
+
+set_tests_properties(RulesEngine PROPERTIES
+    TIMEOUT 300
+    LABELS "validation;rules;core"
+)
+
+set_tests_properties(GeminiIntegration PROPERTIES
+    TIMEOUT 300
+    LABELS "integration;gemini;cli"
 )
 
 # Custom test targets
@@ -115,9 +181,21 @@ add_custom_target(test-performance
     COMMENT "Running performance benchmark tests"
 )
 
+add_custom_target(test-rules
+    COMMAND ${CMAKE_CTEST_COMMAND} -L rules --output-on-failure
+    DEPENDS test_rules_engine
+    COMMENT "Running rules engine tests"
+)
+
+add_custom_target(test-gemini
+    COMMAND ${CMAKE_CTEST_COMMAND} -L gemini --output-on-failure
+    DEPENDS test_gemini
+    COMMENT "Running Gemini integration tests"
+)
+
 add_custom_target(test-all
     COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
-    DEPENDS memory_validation_suite performance_benchmark_suite
+    DEPENDS memory_validation_suite performance_benchmark_suite test_rules_engine test_gemini
     COMMENT "Running all tests"
 )
 

@@ -30,7 +30,7 @@ if errorlevel 1 (
 
 REM Create build directory
 echo Creating build directory...
-if exist "build\" rmdir /s /q "build\"
+if exist "build" ren "build" "build_old"
 mkdir "build"
 cd "build"
 

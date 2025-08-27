@@ -51,6 +51,8 @@ set(HYPERION_RULES_ENGINE_SOURCES
     core/rules_engine.c
     core/memory_optimization_validator.c
     core/platform_compatibility_validator.c
+    core/simd_optimizer.c
+    core/cross_platform_validator.c
 )
 
 # Explicitly list interface sources for the main executable (excluding interface/main.c)
@@ -161,6 +163,19 @@ file(GLOB HYPERION_TEST_SOURCES "tests/test_*.c")
 
 # Add our new memory optimization validator test
 list(APPEND HYPERION_TEST_SOURCES "tests/test_memory_optimization_validator.c")
+
+# Add our new configuration test
+list(APPEND HYPERION_TEST_SOURCES "tests/test_config.c")
+
+# Add our new integration tests
+list(APPEND HYPERION_TEST_SOURCES "tests/test_integration.c")
+list(APPEND HYPERION_TEST_SOURCES "tests/test_mcp_integration.c")
+list(APPEND HYPERION_TEST_SOURCES "tests/test_cross_platform.c")
+list(APPEND HYPERION_TEST_SOURCES "tests/test_performance.c")
+list(APPEND HYPERION_TEST_SOURCES "tests/test_stress.c")
+list(APPEND HYPERION_TEST_SOURCES "tests/test_concurrency.c")
+list(APPEND HYPERION_TEST_SOURCES "tests/test_rules_engine.c")
+list(APPEND HYPERION_TEST_SOURCES "tests/test_phase_verification.c")
 
 # Test executable
 add_executable(hyperion_tests
@@ -319,7 +334,20 @@ if(UNIX)
 endif()
 
 # Add a specific test for out-of-memory handling
-add_test(NAME OutOfMemoryHandlingTest COMMAND oom_handling_test)
+add_test(NAME OutOfMemoryHandlingTest COMMAND oom_handling_test
+
+# Rules Engine Verification executable
+add_executable(verify_rules_engine
+    verify_rules_engine.c
+    ${HYPERION_CORE_SOURCES}
+    ${HYPERION_UTILS_SOURCES}
+    ${HYPERION_MODELS_SOURCES}
+)
+
+# Link math library for rules engine verification if needed
+if(UNIX)
+    target_link_libraries(verify_rules_engine m)
+endif())
 
 # Add examples
 add_subdirectory(examples)

@@ -7,18 +7,18 @@ REM Remove build directory
 if exist build\ (
     echo Removing build directory...
     rmdir /s /q build
-    echo [92m✓ build directory removed[0m
+    echo Build directory removed
 ) else (
-    echo [92m✓ build directory not found (already clean)[0m
+    echo Build directory not found (already clean)
 )
 
 REM Remove VS2022 directory
 if exist vs2022\ (
     echo Removing vs2022 directory...
     rmdir /s /q vs2022
-    echo [92m✓ vs2022 directory removed[0m
+    echo VS2022 directory removed
 ) else (
-    echo [92m✓ vs2022 directory not found (already clean)[0m
+    echo VS2022 directory not found (already clean)
 )
 
 REM NOTE: The batch file version has limited functionality compared to the PowerShell script

@@ -74,12 +74,14 @@ ctest
 - **Repository Migration:** Completed from original TinyAI codebase
 
 ### Documentation Structure
-Main documentation files in project root:- **README.md:** Main project overview and quick start guide
+Main documentation files in project root:
+- **README.md:** Main project overview and quick start guide
 - **CONTRIBUTING.md:** Development guidelines and contribution process
 - **ARCHITECTURE_ROADMAP.md:** System architecture and future plans
 - **BUILD_STATUS.md:** Current build status and compatibility
 - **IMPLEMENTATION_STATUS.md:** Feature implementation progress
 - **TECHNICAL_DOCUMENTATION.md:** Detailed technical specifications
+- **DEVELOPMENT_RECOMMENDATIONS.md:** Key development recommendations and best practices
 
 ### Useful Commands
 ```bash
@@ -104,6 +106,7 @@ Main documentation files in project root:- **README.md:** Main project overview 
 - **Performance:** SIMD optimizations (SSE2, AVX, AVX2) enabled by default
 - **Testing:** Comprehensive test suite covering all major components
 - **Cross-platform:** Windows, Linux, macOS support with minimal dependencies
+- **Best Practices:** See [DEVELOPMENT_RECOMMENDATIONS.md](DEVELOPMENT_RECOMMENDATIONS.md) for detailed development guidelines
 
 ### Git Workflow
 For complex conflicts or diverged history:

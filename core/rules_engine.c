@@ -1,6 +1,9 @@
 #include "rules_engine.h"
 #include "memory.h"
 #include "logging.h"
+#include "quest_completion_validator.h"
+#include "simd_optimizer.h"
+#include "cross_platform_validator.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -361,6 +364,48 @@ HyperionRuleResult hyperionValidateSIMDOptimization(const HyperionRuleContext* c
     return HYPERION_RULE_RESULT_PASS;
 }
 
+// Cross-platform compatibility validator
+HyperionRuleResult hyperionValidateCrossPlatformCompatibilityRule(const HyperionRuleContext* context,
+                                                                char* errorMessage,
+                                                                size_t errorMessageSize) {
+    if (!context || !context->filePath) {
+        snprintf(errorMessage, errorMessageSize, "Invalid context or file path");
+        return HYPERION_RULE_RESULT_ERROR;
+    }
+    
+    // Initialize cross-platform validator if not already done
+    static bool initialized = false;
+    if (!initialized) {
+        hyperionCrossPlatformValidatorInit();
+        initialized = true;
+    }
+    
+    // Validate cross-platform compatibility
+    HyperionCrossPlatformValidationResult result = {0};
+    if (!hyperionValidateCrossPlatformCompatibility(context->filePath, &result)) {
+        snprintf(errorMessage, errorMessageSize, "Failed to validate cross-platform compatibility");
+        return HYPERION_RULE_RESULT_ERROR;
+    }
+    
+    // Check compatibility score
+    if (result.compatibilityScore < 0.8) {  // Less than 80% compatibility
+        snprintf(errorMessage, errorMessageSize, 
+                "Cross-platform compatibility score is low: %.2f%%", 
+                result.compatibilityScore * 100.0);
+        return HYPERION_RULE_RESULT_WARNING;
+    }
+    
+    // Check for critical issues
+    if (result.numIssues > 5) {  // More than 5 issues
+        snprintf(errorMessage, errorMessageSize, 
+                "Too many cross-platform compatibility issues: %d found", 
+                result.numIssues);
+        return HYPERION_RULE_RESULT_WARNING;
+    }
+    
+    return HYPERION_RULE_RESULT_PASS;
+}
+
 // Utility functions
 bool hyperionRulesEngineCheckMemoryTarget(size_t memoryUsage, bool isEmbedded) {
     size_t target = isEmbedded ? EMBEDDED_MEMORY_TARGET : MAIN_MEMORY_TARGET;
@@ -472,10 +517,10 @@ static void initializeDefaultRules(void) {
     HyperionRule questRule = {
         .type = HYPERION_RULE_QUEST_VERIFICATION,
         .name = "Quest Completion Verification",
-        .description = "Verifies quest completion with file existence and content validation",
+        .description = "Verifies quest completion with file existence, content validation, and compilation testing",
         .triggers = {HYPERION_TRIGGER_PHASE_COMPLETE, HYPERION_TRIGGER_QUEST_COMPLETE},
         .numTriggers = 2,
-        .validator = hyperionValidateQuestCompletion,
+        .validator = hyperionValidateQuestCompletionEnhanced,
         .enabled = true,
         .priority = 1
     };
@@ -484,12 +529,24 @@ static void initializeDefaultRules(void) {
     HyperionRule simdRule = {
         .type = HYPERION_RULE_SIMD_OPTIMIZATION,
         .name = "SIMD Optimization",
-        .description = "Ensures matrix operations use SIMD when possible",
+        .description = "Ensures matrix operations use SIMD when possible with code analysis",
         .triggers = {HYPERION_TRIGGER_SIMD_CODE, HYPERION_TRIGGER_CODE_MODIFICATION},
         .numTriggers = 2,
-        .validator = hyperionValidateSIMDOptimization,
+        .validator = hyperionValidateSIMDOptimizationEnhanced,
         .enabled = true,
         .priority = 3
+    };
+    
+    // Cross-platform compatibility rule
+    HyperionRule crossPlatformRule = {
+        .type = HYPERION_RULE_CROSS_PLATFORM,
+        .name = "Cross-Platform Compatibility",
+        .description = "Validates cross-platform compatibility of code",
+        .triggers = {HYPERION_TRIGGER_CODE_MODIFICATION, HYPERION_TRIGGER_NEW_FEATURE},
+        .numTriggers = 2,
+        .validator = hyperionValidateCrossPlatformCompatibilityRule,
+        .enabled = true,
+        .priority = 2
     };
     
     // Add default rules
@@ -497,6 +554,7 @@ static void initializeDefaultRules(void) {
     hyperionRulesEngineAddRule(&platformRule);
     hyperionRulesEngineAddRule(&questRule);
     hyperionRulesEngineAddRule(&simdRule);
+    hyperionRulesEngineAddRule(&crossPlatformRule);
 }
 
 // Helper functions
@@ -510,6 +568,7 @@ static const char* ruleTypeToString(HyperionRuleType type) {
         case HYPERION_RULE_MCP_INTEGRATION: return "MCP Integration";
         case HYPERION_RULE_SIMD_OPTIMIZATION: return "SIMD Optimization";
         case HYPERION_RULE_STREAMING_COMPATIBILITY: return "Streaming Compatibility";
+        case HYPERION_RULE_CROSS_PLATFORM: return "Cross-Platform Compatibility";
         default: return "Unknown";
     }
 }

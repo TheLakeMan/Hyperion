@@ -9,7 +9,6 @@
 #include <string.h>
 #include <ctype.h>
 #include "config.h"
-#include "memory.h"
 #include "io.h"
 
 #ifdef _WIN32
@@ -532,6 +531,15 @@ int hyperionConfigSetString(const char *key, const char *value) {
 const char* hyperionConfigGet(const char *key, const char *defaultValue) {
     return hyperionConfigGetString(key, defaultValue);
 }
+
+/**
+ * Get a configuration string value
+ * 
+ * @param key Configuration key
+ * @param defaultValue Default value if key not found
+ * @return Configuration value or default value
+ */
+const char* hyperionConfigGetString(const char *key, const char *defaultValue) {
     // Check environment variable first
     const char *envValue = getFromEnvironment(key);
     if (envValue) {
@@ -631,8 +639,10 @@ int hyperionConfigGetBool(const char *key, int defaultValue) {
                        strcmp(configEntries[index].value.value.stringValue, "on") == 0;
             }
             break;
-    }
-    
+        case HYPERION_CONFIG_STYLE:
+          break;
+        }
+
     return defaultValue;
 }
 
@@ -683,8 +693,12 @@ HyperionGenerationStyle hyperionConfigGetStyle(const char *key, HyperionGenerati
                 if (strcmp(s, "descriptive") == 0) return HYPERION_STYLE_DESCRIPTIVE;
             }
             break;
-    }
-    
+        case HYPERION_CONFIG_INTEGER:
+        case HYPERION_CONFIG_FLOAT:
+        case HYPERION_CONFIG_BOOLEAN:
+          break;
+        }
+
     return defaultValue;
 }
 
@@ -865,12 +879,4 @@ int hyperionConfigApplyCommandLine(int argc, char **argv) {
     }
     
     return 0;
-}
-
-/**
- * Get a configuration value with proper hierarchy (environment > config > default)
- * This is a convenience function equivalent to hyperionConfigGetString
- */
-const char* hyperionConfigGet(const char *key, const char *defaultValue) {
-    return hyperionConfigGetString(key, defaultValue);
 }

@@ -60,6 +60,11 @@ if(IOS)
         ../../../utils/tensor.c
     )
     
+    # iOS-specific Swift files
+    set(HYPERION_IOS_SWIFT_SOURCES
+        HyperionAI.swift
+    )
+    
     # Create iOS framework
     add_library(HyperionAI STATIC
         ${HYPERION_IOS_SOURCES}
