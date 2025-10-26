@@ -1,0 +1,56 @@
+# Valgrind suppression file for Hyperion
+# This file suppresses known false positives and system-level allocations
+
+{
+   glibc_dl_init
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:_dl_new_object
+   fun:_dl_map_object_from_fd
+}
+
+{
+   glibc_dl_lookup
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:_dl_lookup_symbol_x
+}
+
+{
+   pthread_create_stack
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   fun:allocate_dtv
+   fun:_dl_allocate_tls
+   fun:allocate_stack
+   fun:pthread_create*
+}
+
+{
+   libc_dlopen_mode
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   obj:/lib/x86_64-linux-gnu/libc-*.so
+   fun:__libc_dlopen_mode
+}
+
+{
+   locale_initialization
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:_nl_*
+}
+
+{
+   hyperion_static_init
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:hyperion*
+   fun:__static_initialization*
+}

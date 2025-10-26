@@ -1,0 +1,27 @@
+services:
+  hyperion-ide:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    environment:
+      PASSWORD: ${IDE_PASSWORD}
+      PROXY_DOMAIN: localhost
+      DEFAULT_WORKSPACE: /home/coder/project
+      IDE_EXTENSIONS: ${IDE_EXTENSIONS}
+      CERT_FILE: ${CERT_FILE:-}
+      KEY_FILE: ${KEY_FILE:-}
+    ports:
+      - "${IDE_PORT}:8443"
+    volumes:
+      - ${HYPERION_HOST_PATH}:/home/coder/project:cached
+      - hyperion-ide-data:/home/coder/.local/share/code-server
+      # Uncomment the following line after providing cert/key paths to enable custom TLS
+      # - ./certs:/certs:ro
+      # Mount SSH credentials if needed for private repositories
+      # - ${HOME}/.ssh:/home/coder/.ssh:ro
+    restart: unless-stopped
+
+volumes:
+  hyperion-ide-data:

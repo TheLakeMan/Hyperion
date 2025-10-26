@@ -1,0 +1,402 @@
+name: Hyperion CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run nightly builds at 2 AM UTC
+    - cron: '0 2 * * *'
+
+env:
+  BUILD_TYPE: Release
+  HYPERION_VERSION: 1.0.0
+
+jobs:
+  # Test matrix across different platforms and configurations
+  test-matrix:
+    name: Test on ${{ matrix.os }} with ${{ matrix.compiler }}
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        compiler: [gcc, clang]
+        build_type: [Debug, Release, MinSizeRel]
+        exclude:
+          # Exclude some combinations to reduce build time
+          - os: windows-latest
+            compiler: clang
+          - os: macos-latest
+            compiler: gcc
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Set up build environment (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake build-essential valgrind
+        if [ "${{ matrix.compiler }}" = "clang" ]; then
+          sudo apt-get install -y clang
+        fi
+    
+    - name: Set up build environment (Windows)
+      if: matrix.os == 'windows-latest'
+      uses: microsoft/setup-msbuild@v1.3
+    
+    - name: Set up build environment (macOS)
+      if: matrix.os == 'macos-latest'
+      run: |
+        brew install cmake
+        if [ "${{ matrix.compiler }}" = "clang" ]; then
+          brew install llvm
+        fi
+    
+    - name: Configure CMake
+      run: |
+        if [ "${{ matrix.compiler }}" = "clang" ]; then
+          export CC=clang
+          export CXX=clang++
+        fi
+        cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DBUILD_TESTS=ON -DBUILD_EXAMPLES=ON
+      shell: bash
+    
+    - name: Build Hyperion
+      run: cmake --build build --config ${{ matrix.build_type }}
+    
+    - name: Run unit tests
+      run: |
+        cd build
+        ctest --output-on-failure --verbose
+      shell: bash
+    
+    - name: Run memory validation
+      if: matrix.os != 'windows-latest'
+      run: |
+        cd build
+        if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
+          valgrind --tool=memcheck --leak-check=full --error-exitcode=1 ./tests/memory_validation_suite
+        else
+          ./tests/memory_validation_suite
+        fi
+      shell: bash
+    
+    - name: Run performance benchmarks
+      run: |
+        cd build
+        ./tests/performance_benchmark_suite
+      shell: bash
+    
+    - name: Test example programs
+      run: |
+        cd build/examples
+        ./beginner_hello_world
+        echo "Test input" > test_input.txt
+        ./intermediate_file_processor
+      shell: bash
+    
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-results-${{ matrix.os }}-${{ matrix.compiler }}-${{ matrix.build_type }}
+        path: |
+          build/test-results/
+          build/benchmark-results/
+          build/CMakeFiles/*.log
+
+  # Memory leak detection with Valgrind (Linux only)
+  memory-leak-detection:
+    name: Memory Leak Detection
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake build-essential valgrind
+    
+    - name: Build with debug symbols
+      run: |
+        cmake -B build -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=ON -DENABLE_MEMORY_DEBUGGING=ON
+        cmake --build build
+    
+    - name: Run Valgrind memory check
+      run: |
+        cd build
+        valgrind --tool=memcheck \
+                 --leak-check=full \
+                 --show-leak-kinds=all \
+                 --track-origins=yes \
+                 --verbose \
+                 --error-exitcode=1 \
+                 --suppressions=../tests/valgrind.supp \
+                 ./tests/memory_validation_suite
+    
+    - name: Upload Valgrind logs
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: valgrind-logs
+        path: build/valgrind-*.log
+
+  # Static analysis with multiple tools
+  static-analysis:
+    name: Static Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Install analysis tools
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake build-essential cppcheck clang-tidy
+    
+    - name: Run cppcheck
+      run: |
+        cppcheck --enable=all \
+                 --error-exitcode=1 \
+                 --suppress=missingIncludeSystem \
+                 --suppress=unusedFunction \
+                 --std=c99 \
+                 --verbose \
+                 core/ models/ interface/ examples/
+    
+    - name: Configure for clang-tidy
+      run: |
+        cmake -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+    
+    - name: Run clang-tidy
+      run: |
+        clang-tidy core/*.c models/*/*.c interface/*.c \
+                   -p build \
+                   --warnings-as-errors='*' \
+                   --header-filter='.*'
+
+  # Cross-compilation testing
+  cross-compilation:
+    name: Cross-compilation Test
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        target: [arm64, armhf, mips64el]
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Set up cross-compilation environment
+      run: |
+        sudo apt-get update
+        case "${{ matrix.target }}" in
+          arm64)
+            sudo apt-get install -y gcc-aarch64-linux-gnu
+            echo "CC=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
+            ;;
+          armhf)
+            sudo apt-get install -y gcc-arm-linux-gnueabihf
+            echo "CC=arm-linux-gnueabihf-gcc" >> $GITHUB_ENV
+            ;;
+          mips64el)
+            sudo apt-get install -y gcc-mips64el-linux-gnuabi64
+            echo "CC=mips64el-linux-gnuabi64-gcc" >> $GITHUB_ENV
+            ;;
+        esac
+    
+    - name: Cross-compile Hyperion
+      run: |
+        cmake -B build-${{ matrix.target }} \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_C_COMPILER=$CC \
+              -DBUILD_TESTS=OFF \
+              -DCROSS_COMPILE=ON
+        cmake --build build-${{ matrix.target }}
+
+  # Documentation generation and validation
+  documentation:
+    name: Documentation Build
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Install documentation tools
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y doxygen graphviz
+        pip install mkdocs mkdocs-material
+    
+    - name: Generate API documentation
+      run: |
+        doxygen docs/Doxyfile
+    
+    - name: Build user documentation
+      run: |
+        mkdocs build
+    
+    - name: Validate documentation links
+      run: |
+        # Check for broken links in markdown files
+        find . -name "*.md" -exec markdown-link-check {} \;
+    
+    - name: Upload documentation
+      uses: actions/upload-artifact@v3
+      with:
+        name: documentation
+        path: |
+          site/
+          docs/html/
+
+  # Performance regression testing
+  performance-regression:
+    name: Performance Regression Test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Checkout previous version
+      run: |
+        git fetch --tags
+        PREV_TAG=$(git describe --tags --abbrev=0 HEAD~1)
+        git checkout $PREV_TAG
+        mkdir prev-build
+        cmake -B prev-build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON
+        cmake --build prev-build
+        ./prev-build/tests/performance_benchmark_suite > prev-benchmark.txt
+    
+    - name: Build current version
+      run: |
+        git checkout ${{ github.sha }}
+        cmake -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON
+        cmake --build build
+        ./build/tests/performance_benchmark_suite > curr-benchmark.txt
+    
+    - name: Compare performance
+      run: |
+        python3 scripts/compare_benchmarks.py prev-benchmark.txt curr-benchmark.txt
+
+  # Security scanning
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Run CodeQL analysis
+      uses: github/codeql-action/init@v2
+      with:
+        languages: cpp
+    
+    - name: Build for analysis
+      run: |
+        cmake -B build -DCMAKE_BUILD_TYPE=Release
+        cmake --build build
+    
+    - name: Perform CodeQL analysis
+      uses: github/codeql-action/analyze@v2
+
+  # Integration testing
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: [test-matrix]
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Build Hyperion
+      run: |
+        cmake -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_EXAMPLES=ON
+        cmake --build build
+    
+    - name: Test example integration
+      run: |
+        cd build/examples
+        # Test beginner example
+        timeout 30s ./beginner_hello_world || exit 1
+        
+        # Test intermediate example with file processing
+        mkdir -p input output
+        echo "Hello world, this is a test." > input/test1.txt
+        echo "Another test file for processing." > input/test2.txt
+        timeout 60s ./intermediate_file_processor || exit 1
+        
+        # Verify outputs were created
+        ls -la output/
+        test -f output/processed_test1.txt || exit 1
+        test -f output/processed_test2.txt || exit 1
+    
+    - name: Test build system compatibility
+      run: |
+        # Test CMake presets
+        cmake --preset=release-optimized
+        cmake --build build-release-optimized
+        
+        # Test quick build scripts
+        chmod +x build_quick.sh
+        ./build_quick.sh
+
+  # Release preparation
+  prepare-release:
+    name: Prepare Release
+    runs-on: ubuntu-latest
+    needs: [test-matrix, memory-leak-detection, static-analysis, integration-tests]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Build release artifacts
+      run: |
+        # Build for multiple architectures
+        for arch in x86_64 arm64; do
+          mkdir -p release-$arch
+          cmake -B build-$arch -DCMAKE_BUILD_TYPE=Release -DBUILD_EXAMPLES=ON
+          cmake --build build-$arch
+          
+          # Package release
+          cd build-$arch
+          cpack
+          mv *.tar.gz ../release-$arch/
+          cd ..
+        done
+    
+    - name: Upload release artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: release-packages
+        path: release-*/
+
+  # Notification on failure
+  notify-failure:
+    name: Notify on Failure
+    runs-on: ubuntu-latest
+    needs: [test-matrix, memory-leak-detection, static-analysis, integration-tests]
+    if: failure()
+    
+    steps:
+    - name: Notify team
+      run: |
+        echo "CI/CD Pipeline failed for commit ${{ github.sha }}"
+        echo "Please check the failed jobs and fix issues before merging."
+        # Add webhook notification to Slack/Discord here if needed

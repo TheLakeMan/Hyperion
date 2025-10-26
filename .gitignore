@@ -1,0 +1,78 @@
+# Build artifacts
+build/
+build-*/
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.dylib
+*.a
+*.lib
+
+# IDE and editor files
+.vscode/
+.idea/
+*.vcxproj.user
+*.sln.docstates
+*.suo
+*.user
+
+# Qoder IDE specific files
+.qoder/
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+
+# Temporary and log files
+*.log
+*.tmp
+temp/
+tmp/
+
+# OS specific files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Debug and profiling files
+*.pdb
+*.idb
+*.ilk
+
+# Package files
+*.zip
+*.tar.gz
+*.deb
+*.rpm
+
+# Test outputs
+test_results/
+coverage/
+
+# Documentation generated files
+docs/html/
+docs/latex/
+
+# Memory and performance analysis files
+*.valgrind
+*.callgrind
+*.massif
+
+# Model files (too large for git)
+*.bin
+*.model
+*.weights
+
+# Data files
+data/*.txt
+!data/sample_text.txt
+
+# Backup files
+*.bak
+*.backup
+*~

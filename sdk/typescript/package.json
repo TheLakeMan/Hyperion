@@ -1,0 +1,16 @@
+{
+  "name": "@hyperion/sdk",
+  "version": "0.1.0",
+  "description": "Hyperion TypeScript SDK for monitoring, deployment, and autoscaling APIs",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "test": "npm run build && node test/test_client.mjs"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}

@@ -1,0 +1,32 @@
+version: "3.9"
+
+services:
+  hyperion-ide:
+    image: ${IDE_IMAGE}
+    environment:
+      PASSWORD: ${IDE_PASSWORD}
+      PROXY_DOMAIN: localhost
+      DEFAULT_WORKSPACE: /home/coder/project
+      IDE_EXTENSIONS: ${IDE_EXTENSIONS}
+      CERT_FILE: ${CERT_FILE:-}
+      KEY_FILE: ${KEY_FILE:-}
+    ports:
+      - target: 8443
+        published: ${IDE_PORT}
+        protocol: tcp
+        mode: host
+    volumes:
+      - type: bind
+        source: ${HYPERION_HOST_PATH}
+        target: /home/coder/project
+      - hyperion-ide-data:/home/coder/.local/share/code-server
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+      placement:
+        constraints:
+          - node.role == manager
+
+volumes:
+  hyperion-ide-data:

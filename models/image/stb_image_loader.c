@@ -1,0 +1,288 @@
+/**
+ * @file stb_image_loader.c
+ * @brief Image loading implementation using STB Image library for Hyperion
+ */
+
+#include "image_model.h" 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+/* Define STB_IMAGE_IMPLEMENTATION in one file only */
+#define STB_IMAGE_IMPLEMENTATION
+#include "../../third_party/stb/stb_image.h"
+
+#include "image_utils.h"
+
+/**
+ * Load an image from a file using STB Image library
+ * @param filepath Path to the image file
+ * @return Newly allocated HyperionImage, or NULL on failure
+ */
+HyperionImage *hyperionImageLoadFromFile(const char *filepath)
+{
+    if (!filepath) {
+        fprintf(stderr, "Error: NULL filepath provided to hyperionImageLoadFromFile\n");
+        return NULL;
+    }
+
+    /* Load image data using STB Image */
+    int width, height, channels;
+    stbi_set_flip_vertically_on_load(1); /* Flip images so that 0,0 is bottom-left */
+
+    unsigned char *data = stbi_load(filepath, &width, &height, &channels, 0);
+    if (!data) {
+        fprintf(stderr, "Error loading image %s: %s\n", filepath, stbi_failure_reason());
+        return NULL;
+    }
+
+    /* Convert channels to our format enum */
+    HyperionImageFormat format;
+    switch (channels) {
+    case 1:
+        format = HYPERION_IMAGE_FORMAT_GRAYSCALE;
+        break;
+    case 3:
+        format = HYPERION_IMAGE_FORMAT_RGB;
+        break;
+    case 4:
+        format = HYPERION_IMAGE_FORMAT_RGBA;
+        break;
+    default:
+        fprintf(stderr, "Unsupported number of channels: %d\n", channels);
+        stbi_image_free(data);
+        return NULL;
+    }
+
+    /* Create our image structure */
+    HyperionImage *image = hyperionImageCreate(width, height, format);
+    if (!image) {
+        stbi_image_free(data);
+        return NULL;
+    }
+
+    /* Copy the data */
+    memcpy(image->data, data, width * height * channels);
+
+    /* Free STB's image data */
+    stbi_image_free(data);
+
+    return image;
+}
+
+/**
+ * Save an image to a file using STB Image Write
+ * @param image The image to save
+ * @param filepath Path where to save the image
+ * @param format Output format (jpg, png, bmp, tga)
+ * @return true on success, false on failure
+ */
+bool hyperionImageSaveToFile(const HyperionImage *image, const char *filepath, const char *format)
+{
+    if (!image || !filepath || !format) {
+        return false;
+    }
+
+    int result   = 0;
+    int channels = 0;
+
+    /* Determine channels from our format */
+    switch (image->format) {
+    case HYPERION_IMAGE_FORMAT_GRAYSCALE:
+        channels = 1;
+        break;
+    case HYPERION_IMAGE_FORMAT_RGB:
+        channels = 3;
+        break;
+    case HYPERION_IMAGE_FORMAT_BGR:
+        /* Need to convert BGR to RGB for saving */
+        {
+            unsigned char *rgb_data = (unsigned char *)malloc(image->width * image->height * 3);
+            if (!rgb_data) {
+                return false;
+            }
+
+            for (int i = 0; i < image->width * image->height; i++) {
+                rgb_data[i * 3 + 0] = image->data[i * 3 + 2]; /* R <- B */
+                rgb_data[i * 3 + 1] = image->data[i * 3 + 1]; /* G stays */
+                rgb_data[i * 3 + 2] = image->data[i * 3 + 0]; /* B <- R */
+            }
+
+            /* Save with the converted data */
+            if (strcmp(format, "png") == 0) {
+                result = stbi_write_png(filepath, image->width, image->height, 3, rgb_data,
+                                        image->width * 3);
+            }
+            else if (strcmp(format, "jpg") == 0 || strcmp(format, "jpeg") == 0) {
+                result = stbi_write_jpg(filepath, image->width, image->height, 3, rgb_data, 90);
+            }
+            else if (strcmp(format, "bmp") == 0) {
+                result = stbi_write_bmp(filepath, image->width, image->height, 3, rgb_data);
+            }
+            else if (strcmp(format, "tga") == 0) {
+                result = stbi_write_tga(filepath, image->width, image->height, 3, rgb_data);
+            }
+
+            free(rgb_data);
+            return result != 0;
+        }
+        break;
+    case HYPERION_IMAGE_FORMAT_RGBA:
+        channels = 4;
+        break;
+    default:
+        return false;
+    }
+
+    /* Save the image in the requested format */
+    if (strcmp(format, "png") == 0) {
+        result = stbi_write_png(filepath, image->width, image->height, channels, image->data,
+                                image->width * channels);
+    }
+    else if (strcmp(format, "jpg") == 0 || strcmp(format, "jpeg") == 0) {
+        result = stbi_write_jpg(filepath, image->width, image->height, channels, image->data, 90);
+    }
+    else if (strcmp(format, "bmp") == 0) {
+        result = stbi_write_bmp(filepath, image->width, image->height, channels, image->data);
+    }
+    else if (strcmp(format, "tga") == 0) {
+        result = stbi_write_tga(filepath, image->width, image->height, channels, image->data);
+    }
+    else {
+        fprintf(stderr, "Unsupported output format: %s\n", format);
+        return false;
+    }
+
+    return result != 0;
+}
+
+/**
+ * Load a set of image files (dataset) using STB Image
+ * @param filepaths Array of file paths to load
+ * @param numImages Number of images in the array
+ * @param targetWidth Width to resize all images to (0 for no resize)
+ * @param targetHeight Height to resize all images to (0 for no resize)
+ * @return Array of loaded images, or NULL on failure
+ */
+HyperionImage **hyperionImageLoadDataset(const char **filepaths, int numImages, int targetWidth,
+                                     int targetHeight)
+{
+    if (!filepaths || numImages <= 0) {
+        return NULL;
+    }
+
+    /* Allocate array for images */
+    HyperionImage **images = (HyperionImage **)malloc(numImages * sizeof(HyperionImage *));
+    if (!images) {
+        return NULL;
+    }
+
+    /* Zero out the array */
+    memset(images, 0, numImages * sizeof(HyperionImage *));
+
+    /* Load each image */
+    bool success = true;
+    for (int i = 0; i < numImages; i++) {
+        /* Load the original image */
+        images[i] = hyperionImageLoadFromFile(filepaths[i]);
+        if (!images[i]) {
+            success = false;
+            break;
+        }
+
+        /* If resize is requested */
+        if (targetWidth > 0 && targetHeight > 0 &&
+            (images[i]->width != targetWidth || images[i]->height != targetHeight)) {
+
+            /* Create a new preprocessed image */
+            HyperionImagePreprocessParams params;
+            hyperionImagePreprocessParamsDefault(&params);
+            params.targetWidth  = targetWidth;
+            params.targetHeight = targetHeight;
+
+            HyperionImage *resized = hyperionImagePreprocess(images[i], &params);
+            if (!resized) {
+                success = false;
+                break;
+            }
+
+            /* Replace the original with the resized version */
+            hyperionImageFree(images[i]);
+            images[i] = resized;
+        }
+    }
+
+    /* Clean up on failure */
+    if (!success) {
+        for (int i = 0; i < numImages; i++) {
+            if (images[i]) {
+                hyperionImageFree(images[i]);
+            }
+        }
+        free(images);
+        return NULL;
+    }
+
+    return images;
+}
+
+/**
+ * Free a dataset of images
+ * @param images Array of images to free
+ * @param numImages Number of images in the array
+ */
+void hyperionImageFreeDataset(HyperionImage **images, int numImages)
+{
+    if (!images) {
+        return;
+    }
+
+    for (int i = 0; i < numImages; i++) {
+        if (images[i]) {
+            hyperionImageFree(images[i]);
+        }
+    }
+
+    free(images);
+}
+
+/**
+ * Load an image file using stb_image
+ *
+ * @param filename Path to the image file
+ * @param width Pointer to store the width
+ * @param height Pointer to store the height
+ * @param channels Pointer to store the number of channels
+ * @return Pixel data array or NULL on error
+ */
+unsigned char *hyperionLoadImage(const char *filename, int *width, int *height, int *channels)
+{
+    if (!filename || !width || !height || !channels) {
+        fprintf(stderr, "Invalid parameters to hyperionLoadImage\n");
+        return NULL;
+    }
+
+    /* Force 3 channels (RGB) for consistency */
+    unsigned char *data = stbi_load(filename, width, height, channels, 3);
+    if (!data) {
+        fprintf(stderr, "Failed to load image %s: %s\n", filename, stbi_failure_reason());
+        return NULL;
+    }
+
+    /* Always set channels to 3 (RGB) since we forced it */
+    *channels = 3;
+
+    return data;
+}
+
+/**
+ * Free memory allocated by hyperionLoadImage
+ *
+ * @param data Pixel data to free
+ */
+void hyperionFreeImage(unsigned char *data)
+{
+    if (data) {
+        stbi_image_free(data);
+    }
+}

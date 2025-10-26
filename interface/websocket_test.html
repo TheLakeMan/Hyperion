@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hyperion WebSocket Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        
+        .status.connected {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.disconnected {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .input-group {
+            margin: 15px 0;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        input, textarea, button {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        textarea {
+            height: 100px;
+            resize: vertical;
+        }
+        
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin: 5px 0;
+        }
+        
+        button:hover {
+            background-color: #0056b3;
+        }
+        
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        .output {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            min-height: 200px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .log {
+            margin: 20px 0;
+            padding: 10px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .controls input[type="number"], .controls input[type="range"] {
+            width: auto;
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Hyperion WebSocket Test</h1>
+        
+        <div id="status" class="status disconnected">Disconnected</div>
+        
+        <div class="input-group">
+            <label for="wsUrl">WebSocket URL:</label>
+            <input type="text" id="wsUrl" value="ws://localhost:8080/ws" placeholder="ws://localhost:8080/ws">
+        </div>
+        
+        <button id="connectBtn" onclick="connect()">Connect</button>
+        <button id="disconnectBtn" onclick="disconnect()" disabled>Disconnect</button>
+        
+        <div class="input-group">
+            <label for="prompt">Prompt:</label>
+            <textarea id="prompt" placeholder="Enter your text generation prompt...">Once upon a time</textarea>
+        </div>
+        
+        <div class="controls">
+            <div style="flex: 1;">
+                <label for="maxTokens">Max Tokens: <span id="maxTokensValue">100</span></label>
+                <input type="range" id="maxTokens" min="10" max="500" value="100" oninput="updateMaxTokens()">
+            </div>
+            <div style="flex: 1;">
+                <label for="temperature">Temperature: <span id="temperatureValue">0.7</span></label>
+                <input type="range" id="temperature" min="0.1" max="2.0" step="0.1" value="0.7" oninput="updateTemperature()">
+            </div>
+        </div>
+        
+        <button id="generateBtn" onclick="generateText()" disabled>Generate Text</button>
+        <button onclick="sendStatus()">Request Status</button>
+        <button onclick="sendPing()">Send Ping</button>
+        <button onclick="clearOutput()">Clear Output</button>
+        
+        <div class="input-group">
+            <label>Generated Text:</label>
+            <div id="output" class="output"></div>
+        </div>
+        
+        <div class="input-group">
+            <label>Connection Log:</label>
+            <div id="log" class="log"></div>
+        </div>
+    </div>
+
+    <script>
+        let websocket = null;
+        let isConnected = false;
+        
+        function updateStatus(connected) {
+            isConnected = connected;
+            const statusEl = document.getElementById('status');
+            const connectBtn = document.getElementById('connectBtn');
+            const disconnectBtn = document.getElementById('disconnectBtn');
+            const generateBtn = document.getElementById('generateBtn');
+            
+            if (connected) {
+                statusEl.textContent = 'Connected';
+                statusEl.className = 'status connected';
+                connectBtn.disabled = true;
+                disconnectBtn.disabled = false;
+                generateBtn.disabled = false;
+            } else {
+                statusEl.textContent = 'Disconnected';
+                statusEl.className = 'status disconnected';
+                connectBtn.disabled = false;
+                disconnectBtn.disabled = true;
+                generateBtn.disabled = true;
+            }
+        }
+        
+        function log(message) {
+            const logEl = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logEl.innerHTML += `[${timestamp}] ${message}\n`;
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+        
+        function connect() {
+            const url = document.getElementById('wsUrl').value;
+            
+            try {
+                websocket = new WebSocket(url);
+                
+                websocket.onopen = function(event) {
+                    log('WebSocket connection opened');
+                    updateStatus(true);
+                };
+                
+                websocket.onmessage = function(event) {
+                    try {
+                        const data = JSON.parse(event.data);
+                        handleWebSocketMessage(data);
+                    } catch (e) {
+                        log('Received non-JSON message: ' + event.data);
+                    }
+                };
+                
+                websocket.onclose = function(event) {
+                    log(`WebSocket connection closed (code: ${event.code}, reason: ${event.reason})`);
+                    updateStatus(false);
+                };
+                
+                websocket.onerror = function(event) {
+                    log('WebSocket error occurred');
+                    console.error('WebSocket error:', event);
+                };
+                
+            } catch (error) {
+                log('Failed to connect: ' + error.message);
+            }
+        }
+        
+        function disconnect() {
+            if (websocket) {
+                websocket.close();
+                websocket = null;
+            }
+        }
+        
+        function handleWebSocketMessage(data) {
+            const outputEl = document.getElementById('output');
+            
+            switch (data.type) {
+                case 'start':
+                    log(`Generation started: ${data.prompt} (max_tokens: ${data.max_tokens}, temperature: ${data.temperature})`);
+                    outputEl.innerHTML = 'Generating...\n';
+                    break;
+                    
+                case 'token':
+                    log(`Token received: "${data.token}" (index: ${data.index})`);
+                    outputEl.innerHTML = data.accumulated || '';
+                    break;
+                    
+                case 'complete':
+                    log(`Generation complete: ${data.total_tokens} tokens generated`);
+                    outputEl.innerHTML = data.text || '';
+                    break;
+                    
+                case 'status':
+                    log(`Status: ${data.status}, Model: ${data.model_status}, Memory: ${data.memory_used}/${data.memory_total}, Connections: ${data.websocket_connections}`);
+                    break;
+                    
+                case 'pong':
+                    log('Received pong response');
+                    break;
+                    
+                case 'echo':
+                    log(`Echo: ${data.message}`);
+                    break;
+                    
+                case 'error':
+                    log(`Error: ${data.error || data.message}`);
+                    break;
+                    
+                default:
+                    log('Received message: ' + JSON.stringify(data));
+                    break;
+            }
+        }
+        
+        function generateText() {
+            if (!isConnected || !websocket) {
+                log('Not connected to WebSocket');
+                return;
+            }
+            
+            const prompt = document.getElementById('prompt').value;
+            const maxTokens = parseInt(document.getElementById('maxTokens').value);
+            const temperature = parseFloat(document.getElementById('temperature').value);
+            
+            if (!prompt.trim()) {
+                log('Please enter a prompt');
+                return;
+            }
+            
+            const message = {
+                type: 'generate',
+                prompt: prompt,
+                max_tokens: maxTokens,
+                temperature: temperature
+            };
+            
+            try {
+                websocket.send(JSON.stringify(message));
+                log(`Sent generation request: "${prompt}"`);
+            } catch (error) {
+                log('Failed to send message: ' + error.message);
+            }
+        }
+        
+        function sendStatus() {
+            if (!isConnected || !websocket) {
+                log('Not connected to WebSocket');
+                return;
+            }
+            
+            try {
+                websocket.send(JSON.stringify({type: 'status'}));
+                log('Sent status request');
+            } catch (error) {
+                log('Failed to send status request: ' + error.message);
+            }
+        }
+        
+        function sendPing() {
+            if (!isConnected || !websocket) {
+                log('Not connected to WebSocket');
+                return;
+            }
+            
+            try {
+                websocket.send(JSON.stringify({type: 'ping'}));
+                log('Sent ping');
+            } catch (error) {
+                log('Failed to send ping: ' + error.message);
+            }
+        }
+        
+        function clearOutput() {
+            document.getElementById('output').innerHTML = '';
+            document.getElementById('log').innerHTML = '';
+        }
+        
+        function updateMaxTokens() {
+            const value = document.getElementById('maxTokens').value;
+            document.getElementById('maxTokensValue').textContent = value;
+        }
+        
+        function updateTemperature() {
+            const value = document.getElementById('temperature').value;
+            document.getElementById('temperatureValue').textContent = value;
+        }
+        
+        // Auto-connect on page load
+        window.addEventListener('load', function() {
+            setTimeout(connect, 1000);
+        });
+    </script>
+</body>
+</html>
