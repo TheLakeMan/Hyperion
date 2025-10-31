@@ -79,3 +79,4 @@ data/*.txt
 
 .grok/
 agent*.md
+quest_*_test.c
