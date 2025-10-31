@@ -76,3 +76,6 @@ data/*.txt
 *.bak
 *.backup
 *~
+
+.grok/
+agent*.md
