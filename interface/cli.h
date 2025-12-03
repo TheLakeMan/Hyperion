@@ -4,7 +4,7 @@
 #include <stdbool.h>
 
 // Sampling strategy placeholder
-#define TINYAI_SAMPLING_TOP_P 1
+#define HYPERION_SAMPLING_TOP_P 1
 
 typedef struct {
     int maxTokens;
