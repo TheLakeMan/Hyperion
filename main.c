@@ -14,13 +14,13 @@
 #include "interface/cli.h"
 
 /* Application version */
-#define TINYAI_VERSION "0.1.0"
+#define HYPERION_VERSION "0.1.0"
 
 /**
  * Print application banner
  */
 void printBanner() {
-    printf("Hyperion v%s - Ultra-Lightweight AI Framework\n", TINYAI_VERSION);
+    printf("Hyperion v%s - Ultra-Lightweight AI Framework\n", HYPERION_VERSION);
     printf("Memory-efficient 4-bit quantized neural networks\n");
     printf("----------------------------------------------------------------\n");
 }
@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
     
     /* Set default generation parameters */
     context.params.maxTokens = 100;
-    context.params.samplingMethod = TINYAI_SAMPLING_TOP_P;
+    context.params.samplingMethod = HYPERION_SAMPLING_TOP_P;
     context.params.temperature = 0.7f;
     context.params.topK = 40;
     context.params.topP = 0.9f;
@@ -89,7 +89,11 @@ int main(int argc, char *argv[]) {
     
     /* Run CLI */
     result = hyperionCLIRun(&context, argc, argv);
-    
+
+    if (context.memReport) {
+        hyperionMemTrackDumpReport(stdout);
+    }
+
     /* Check for memory leaks in verbose mode */
     if (context.verbose) {
         int leaks = hyperionMemTrackDumpLeaks();
