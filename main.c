@@ -10,6 +10,7 @@
 #include "core/memory.h"
 #include "core/io.h"
 #include "core/config.h"
+#include "core/activation.h"
 #include "interface/cli.h"
 
 /* Application version */
