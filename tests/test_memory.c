@@ -1,4 +1,3 @@
-#define _GNU_SOURCE
 #include "core/memory.h"
 #include <assert.h>
 #include <math.h>
@@ -6,6 +5,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 static void assert_double_close(double value, double expected, double tolerance) {
     double delta = fabs(value - expected);
@@ -31,16 +34,24 @@ static void test_allocation_reporting(void) {
     hyperionMemTrackCleanup();
 }
 
+static void sleep_ms(unsigned long ms) {
+#ifdef _WIN32
+    Sleep(ms);
+#else
+    struct timespec req;
+    req.tv_sec = ms / 1000;
+    req.tv_nsec = (ms % 1000) * 1000000L;
+    nanosleep(&req, NULL);
+#endif
+}
+
 static void test_lifetime_and_free(void) {
     hyperionMemTrackInit();
 
     void *buffer = hyperionTrackedAlloc(1024, "temp_buffer");
     assert(buffer != NULL);
 
-    struct timespec req;
-    req.tv_sec = 0;
-    req.tv_nsec = 2000000; /* 2ms */
-    nanosleep(&req, NULL);
+    sleep_ms(2);
 
     hyperionTrackedFree(buffer);
 
@@ -58,13 +69,26 @@ static void test_report_output(void) {
     void *block = hyperionTrackedAlloc(4096, "report_block");
     assert(block != NULL);
 
-    char *buffer = NULL;
-    size_t length = 0;
-    FILE *stream = open_memstream(&buffer, &length);
+    FILE *stream = tmpfile();
     assert(stream != NULL);
 
     hyperionMemTrackDumpReport(stream);
     fflush(stream);
+
+    long length = 0;
+    if (fseek(stream, 0, SEEK_END) == 0) {
+        length = ftell(stream);
+    }
+    rewind(stream);
+
+    char *buffer = NULL;
+    if (length > 0) {
+        buffer = (char *)malloc((size_t)length + 1);
+        assert(buffer != NULL);
+        size_t read = fread(buffer, 1, (size_t)length, stream);
+        buffer[read] = '\0';
+    }
+
     fclose(stream);
 
     assert(buffer != NULL);
