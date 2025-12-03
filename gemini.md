@@ -1,5 +1,4 @@
-## Gemini Added Memories
-- I will use Windows MCP at the start of every new Gemini terminal window.
+## Codex Added Memories
 - The user understands and approves User Account Control (UAC) prompts for elevated permissions.
 - The user prefers project-specific instructions and startup procedures to be stored in a project's `gemini.md` file rather than in my long-term memory.
 - Plan for performance analysis: 1. Analyze system (CPU, memory, disk, errors, processes, drivers). 2. Research GitHub for open-source monitoring tools. 3. Report findings and recommend tools.
