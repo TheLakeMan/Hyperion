@@ -43,6 +43,10 @@ Hyperion is built with a layered architecture:
    - Distributed Computation: Offload heavy processing when beneficial
    - Performance Monitoring: Compare execution times for local and remote operations
 
+## Documentation
+
+- [API Reference](docs/API_REFERENCE.md): Public functions, structures, and integration walkthroughs for the C and CLI APIs.
+
 ## Building Hyperion
 
 ### Requirements
