@@ -4,8 +4,11 @@ project(Hyperion VERSION 0.1.0 LANGUAGES C)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
-add_compile_options(-Wall -Wextra -Wpedantic)
-
+if(MSVC)
+    add_compile_options(/W4) # Use MSVC warning level 4
+else()
+    add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 file(GLOB HYPERION_CORE_SOURCES "core/*.c")
