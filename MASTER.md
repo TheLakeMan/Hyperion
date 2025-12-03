@@ -930,3 +930,8 @@ After this first session and addressing build issues, the next session should fo
 2. Completing the tokenizer implementation
 3. Setting up test cases for each component
 
+
+## Related Documentation
+
+For guidance on development practices and coding agent best practices, see:
+- **[CODEAGENT.md](CODEAGENT.md)** – Best practices for automated code development, testing, and validation workflows
