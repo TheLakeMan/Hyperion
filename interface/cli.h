@@ -19,6 +19,7 @@ typedef struct {
     HyperionGenerationParams params;
     bool interactive;
     bool verbose;
+    bool memReport;
 } HyperionCLIContext;
 
 int hyperionCLIInit(HyperionCLIContext *context);

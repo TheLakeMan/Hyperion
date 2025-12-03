@@ -8,6 +8,7 @@ int hyperionCLIInit(HyperionCLIContext *context) {
     }
     context->interactive = false;
     context->verbose = false;
+    context->memReport = false;
     return 0;
 }
 
@@ -21,6 +22,8 @@ int hyperionCLIParseArgs(HyperionCLIContext *context, int argc, char **argv) {
             context->interactive = true;
         } else if (strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--verbose") == 0) {
             context->verbose = true;
+        } else if (strcmp(argv[i], "--mem-report") == 0 || strcmp(argv[i], "--debug-mem") == 0) {
+            context->memReport = true;
         }
     }
     return 0;

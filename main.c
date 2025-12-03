@@ -89,7 +89,11 @@ int main(int argc, char *argv[]) {
     
     /* Run CLI */
     result = hyperionCLIRun(&context, argc, argv);
-    
+
+    if (context.memReport) {
+        hyperionMemTrackDumpReport(stdout);
+    }
+
     /* Check for memory leaks in verbose mode */
     if (context.verbose) {
         int leaks = hyperionMemTrackDumpLeaks();
