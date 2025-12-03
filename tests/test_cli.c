@@ -25,16 +25,18 @@ static void test_default_context(void) {
     assert(hyperionCLIInit(&ctx) == 0);
     assert(ctx.interactive == false);
     assert(ctx.verbose == false);
+    assert(ctx.memReport == false);
 }
 
 static void test_argument_parsing(void) {
     HyperionCLIContext ctx;
     hyperionCLIInit(&ctx);
 
-    char *argv[] = {"hyperion", "--interactive", "--verbose"};
-    assert(hyperionCLIParseArgs(&ctx, 3, argv) == 0);
+    char *argv[] = {"hyperion", "--interactive", "--verbose", "--mem-report"};
+    assert(hyperionCLIParseArgs(&ctx, 4, argv) == 0);
     assert(ctx.interactive == true);
     assert(ctx.verbose == true);
+    assert(ctx.memReport == true);
 }
 
 #if HYPERION_HAS_POSIX_TESTS
@@ -70,7 +72,7 @@ static void test_verbose_output_streaming(void) {
 }
 #endif
 
-int main(void) {
+void run_cli_tests(void) {
     test_default_context();
     test_argument_parsing();
 #if HYPERION_HAS_POSIX_TESTS
@@ -80,5 +82,4 @@ int main(void) {
     printf("Skipping POSIX-specific CLI tests on this platform.\n");
 #endif
     printf("All CLI tests passed.\n");
-    return 0;
 }
