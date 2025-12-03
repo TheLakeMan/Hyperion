@@ -72,7 +72,7 @@ static void test_verbose_output_streaming(void) {
 }
 #endif
 
-int main(void) {
+void run_cli_tests(void) {
     test_default_context();
     test_argument_parsing();
 #if HYPERION_HAS_POSIX_TESTS

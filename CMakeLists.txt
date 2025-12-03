@@ -32,4 +32,8 @@ add_executable(hyperion_tests
     ${HYPERION_INTERFACE_SOURCES}
 )
 
+if(UNIX)
+    target_link_libraries(hyperion_tests PRIVATE m)
+endif()
+
 add_test(NAME CliTests COMMAND hyperion_tests)
