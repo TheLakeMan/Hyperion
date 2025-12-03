@@ -5,6 +5,8 @@ project(Hyperion VERSION 0.1.0 LANGUAGES C)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 +find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
+
 if(MSVC)
     add_compile_options(/W4) # Use MSVC warning level 4
 else()
@@ -38,3 +40,9 @@ if(UNIX)
 endif()
 
 add_test(NAME CliTests COMMAND hyperion_tests)
+
+add_custom_target(scaffold_core_module
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tools/core/scaffold_core_module.py --name sample_module --description "Prototype scaffold"
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Generate a prototype core module (adjust arguments as needed)"
+)

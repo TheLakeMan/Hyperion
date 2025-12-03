@@ -126,6 +126,17 @@
    - First steps
    - Simple examples
 
+### Developer Tooling and Scaffolding
+
+1. `tools/ide/README.md`
+   - Explains the provided IDE task and launch samples that mirror the CMake workflow.
+   - Points to `tools/ide/vscode/` for ready-to-copy VS Code tasks and debugger profiles.
+
+2. `tools/core/scaffold_core_module.py`
+   - Prototype helper for generating `core/<name>.c` and `core/<name>.h` files with init/shutdown stubs.
+   - Usable directly via `python tools/core/scaffold_core_module.py --name <module> --description "..."`.
+   - Available as a CMake custom target: `cmake --build build --target scaffold_core_module` (edit the target arguments to fit your module before running).
+
 #### Getting Started (`/docs/getting-started/`)
 1. `installation.md` (3.2KB)
    - Installation instructions
