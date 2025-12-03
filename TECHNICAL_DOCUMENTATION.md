@@ -4,6 +4,10 @@
 
 Hyperion is an ultra-lightweight AI model system designed to run on minimal hardware, including legacy systems as old as Windows 95. The implementation focuses on extreme efficiency through 4-bit quantization, minimal memory footprint, and CPU-only execution.
 
+## Documentation Index
+
+- [API Reference](docs/API_REFERENCE.md): Signatures for core subsystems and CLI data structures, plus integration walkthroughs.
+
 ## System Architecture
 
 ### Component Structure
