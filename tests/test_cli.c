@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #if !defined(_WIN32)
 #include <time.h>
@@ -39,6 +40,15 @@ static void test_argument_parsing(void) {
     assert(ctx.memReport == true);
 }
 
+static void test_invalid_argument(void) {
+    HyperionCLIContext ctx;
+    hyperionCLIInit(&ctx);
+
+    char *argv[] = {"hyperion", "--unknown"};
+    int result = hyperionCLIParseArgs(&ctx, 2, argv);
+    assert(result == HYPERION_CLI_ERROR);
+}
+
 #if HYPERION_HAS_POSIX_TESTS
 static void test_posix_sleep_available(void) {
     struct timespec ts = {0, 1};
@@ -70,14 +80,47 @@ static void test_verbose_output_streaming(void) {
     assert(size > 0);
     free(buffer);
 }
+
+static void test_help_output(void) {
+    HyperionCLIContext ctx;
+    hyperionCLIInit(&ctx);
+    ctx.params.maxTokens = 32;
+    ctx.params.temperature = 0.50f;
+    ctx.params.topK = 12;
+    ctx.params.topP = 0.85f;
+    ctx.params.seed = 1234;
+
+    char *buffer = NULL;
+    size_t size = 0;
+    FILE *stream = open_memstream(&buffer, &size);
+    assert(stream != NULL);
+
+    FILE *original_stdout = stdout;
+    stdout = stream;
+
+    char *argv[] = {"hyperion", "--help"};
+    int parseResult = hyperionCLIParseArgs(&ctx, 2, argv);
+
+    fflush(stream);
+    stdout = original_stdout;
+    fclose(stream);
+
+    assert(parseResult == HYPERION_CLI_EXIT);
+    assert(buffer != NULL);
+    assert(size > 0);
+    assert(strstr(buffer, "--interactive") != NULL);
+    free(buffer);
+}
 #endif
 
 void run_cli_tests(void) {
     test_default_context();
     test_argument_parsing();
+    test_invalid_argument();
 #if HYPERION_HAS_POSIX_TESTS
     test_posix_sleep_available();
     test_verbose_output_streaming();
+    test_help_output();
 #else
     printf("Skipping POSIX-specific CLI tests on this platform.\n");
 #endif

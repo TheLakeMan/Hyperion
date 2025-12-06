@@ -76,9 +76,13 @@ int main(int argc, char *argv[]) {
     }
     
     /* Parse command-line arguments */
-    if (hyperionCLIParseArgs(&context, argc, argv) != 0) {
+    int parseResult = hyperionCLIParseArgs(&context, argc, argv);
+    if (parseResult == HYPERION_CLI_ERROR) {
         fprintf(stderr, "Failed to parse command-line arguments\n");
         result = 1;
+        goto cleanup;
+    } else if (parseResult == HYPERION_CLI_EXIT) {
+        result = 0;
         goto cleanup;
     }
     
