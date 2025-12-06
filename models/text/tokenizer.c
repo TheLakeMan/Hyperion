@@ -44,12 +44,13 @@ static bool hyperionTokenizerValidateVocab(const char **vocab, size_t vocabSize)
         }
 
         for (size_t j = i + 1; j < vocabSize; ++j) {
-            if (!vocab[j]) {
+            const char *other = vocab[j];
+            if (!other) {
                 hyperionLogError("Tokenizer initialization failed: token at index %zu is NULL.", j);
                 return false;
             }
 
-            if (strcmp(token, vocab[j]) == 0) {
+            if (strcmp(token, other) == 0) {
                 hyperionLogError("Tokenizer initialization failed: duplicate token '%s' found at indices %zu and %zu.",
                                  token,
                                  i,
