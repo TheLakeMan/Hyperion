@@ -100,9 +100,40 @@ static void test_report_output(void) {
     hyperionMemTrackCleanup();
 }
 
+static void test_bucket_accounting(void) {
+    hyperionMemTrackInit();
+
+    void *small = hyperionTrackedAlloc(32, "small_block");
+    void *medium = hyperionTrackedAlloc(600, "medium_block");
+    void *large = hyperionTrackedAlloc(90000, "large_block");
+
+    assert(small != NULL && medium != NULL && large != NULL);
+
+    HyperionMemoryStats stats = hyperionMemTrackSnapshot();
+    assert(stats.peakBytes == 32 + 600 + 90000);
+    assert(stats.bucketCounts[0] == 1);
+    assert(stats.bucketCounts[2] == 1);
+    assert(stats.bucketCounts[HYPERION_MEM_BUCKET_COUNT - 1] == 1);
+
+    hyperionTrackedFree(medium);
+    stats = hyperionMemTrackSnapshot();
+    assert(stats.bucketCounts[2] == 0);
+    assert(hyperionMemTrackGetPeakBytes() == 32 + 600 + 90000);
+
+    size_t bucketSnapshot[HYPERION_MEM_BUCKET_COUNT] = {0};
+    hyperionMemTrackGetBucketCounts(bucketSnapshot, HYPERION_MEM_BUCKET_COUNT);
+    assert(bucketSnapshot[0] == 1);
+    assert(bucketSnapshot[HYPERION_MEM_BUCKET_COUNT - 1] == 1);
+
+    hyperionTrackedFree(small);
+    hyperionTrackedFree(large);
+    hyperionMemTrackCleanup();
+}
+
 void run_memory_tests(void) {
     test_allocation_reporting();
     test_lifetime_and_free();
     test_report_output();
+    test_bucket_accounting();
     printf("All memory tracking tests passed.\n");
 }

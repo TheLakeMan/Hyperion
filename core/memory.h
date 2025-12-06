@@ -4,6 +4,9 @@
 #include <stddef.h>
 #include <stdio.h>
 
+#define HYPERION_MEM_BUCKET_COUNT 7
+extern const size_t hyperionMemBucketThresholds[HYPERION_MEM_BUCKET_COUNT];
+
 typedef struct {
     size_t totalAllocations;
     size_t totalFrees;
@@ -14,6 +17,7 @@ typedef struct {
     double averageAllocationSize;
     double averageLifetimeMs;
     size_t outstandingAllocations;
+    size_t bucketCounts[HYPERION_MEM_BUCKET_COUNT];
 } HyperionMemoryStats;
 
 int hyperionMemTrackInit(void);
@@ -24,6 +28,9 @@ void hyperionTrackedFree(void *ptr);
 
 HyperionMemoryStats hyperionMemTrackSnapshot(void);
 void hyperionMemTrackDumpReport(FILE *out);
+void hyperionMemTrackDumpBucketReport(FILE *out);
 int hyperionMemTrackDumpLeaks(void);
+size_t hyperionMemTrackGetPeakBytes(void);
+void hyperionMemTrackGetBucketCounts(size_t *outCounts, size_t count);
 
 #endif // HYPERION_MEMORY_H
