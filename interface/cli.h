@@ -3,17 +3,7 @@
 
 #include <stdbool.h>
 
-// Sampling strategy placeholder
-#define HYPERION_SAMPLING_TOP_P 1
-
-typedef struct {
-    int maxTokens;
-    int samplingMethod;
-    float temperature;
-    int topK;
-    float topP;
-    int seed;
-} HyperionGenerationParams;
+#include "core/generation.h"
 
 typedef struct {
     HyperionGenerationParams params;
