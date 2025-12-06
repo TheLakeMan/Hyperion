@@ -29,7 +29,7 @@ This reference summarizes the public interfaces exposed by the current C headers
   - Start memory tracking; returns `0` on success.
 - `void hyperionMemTrackCleanup(void);`
   - Stop memory tracking and release internal bookkeeping data.
-- `int hyperionMemTrackDumpLeaks(void);`
+- `int hyperionMemTrackDumpLeaks(FILE *out);`
   - Report detected memory leaks; returns the number of leaked allocations.
 
 ## CLI Context (`interface/cli.h`)

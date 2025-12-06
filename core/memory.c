@@ -150,6 +150,22 @@ static double average_lifetime_ms(void) {
     return totalLifetimeMs / (double)totalFrees;
 }
 
+static void format_leak_record(FILE *out, const AllocationRecord *record) {
+    if (!out || !record) {
+        return;
+    }
+
+    char label[sizeof(record->label)];
+    strncpy(label, record->label, sizeof(label) - 1);
+    label[sizeof(label) - 1] = '\0';
+
+    const char *labelToPrint = label[0] != '\0' ? label : "(no label)";
+    double timestampMs = ((double)record->start / CLOCKS_PER_SEC) * 1000.0;
+
+    fprintf(out, "[memory] leak: ptr=%p size=%zu label=\"%s\" allocated_at=%.3f ms\n",
+            record->ptr, record->size, labelToPrint, timestampMs);
+}
+
 HyperionMemoryStats hyperionMemTrackSnapshot(void) {
     HyperionMemoryStats stats;
     stats.totalAllocations = totalAllocations;
@@ -178,6 +194,14 @@ void hyperionMemTrackDumpReport(FILE *out) {
     fprintf(out, "[memory] average lifetime: %.2f ms\n", stats.averageLifetimeMs);
 }
 
-int hyperionMemTrackDumpLeaks(void) {
+int hyperionMemTrackDumpLeaks(FILE *out) {
+    if (!out) {
+        out = stderr;
+    }
+
+    for (size_t i = 0; i < recordCount; ++i) {
+        format_leak_record(out, &records[i]);
+    }
+
     return (int)recordCount;
 }
