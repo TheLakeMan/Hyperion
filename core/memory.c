@@ -1,4 +1,5 @@
 #include "memory.h"
+#include "logging.h"
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -170,12 +171,17 @@ void hyperionMemTrackDumpReport(FILE *out) {
     }
 
     HyperionMemoryStats stats = hyperionMemTrackSnapshot();
-    fprintf(out, "[memory] allocations: %zu frees: %zu outstanding: %zu\n",
-            stats.totalAllocations, stats.totalFrees, stats.outstandingAllocations);
-    fprintf(out, "[memory] bytes allocated: %zu freed: %zu current: %zu peak: %zu\n",
-            stats.totalBytesAllocated, stats.totalBytesFreed, stats.currentBytes, stats.peakBytes);
-    fprintf(out, "[memory] average allocation size: %.2f bytes\n", stats.averageAllocationSize);
-    fprintf(out, "[memory] average lifetime: %.2f ms\n", stats.averageLifetimeMs);
+    hyperionLogfTo(out, HYPERION_LOG_INFO,
+                   "[memory] allocations: %zu frees: %zu outstanding: %zu",
+                   stats.totalAllocations, stats.totalFrees, stats.outstandingAllocations);
+    hyperionLogfTo(out, HYPERION_LOG_INFO,
+                   "[memory] bytes allocated: %zu freed: %zu current: %zu peak: %zu",
+                   stats.totalBytesAllocated, stats.totalBytesFreed, stats.currentBytes, stats.peakBytes);
+    hyperionLogfTo(out, HYPERION_LOG_INFO,
+                   "[memory] average allocation size: %.2f bytes",
+                   stats.averageAllocationSize);
+    hyperionLogfTo(out, HYPERION_LOG_INFO,
+                   "[memory] average lifetime: %.2f ms", stats.averageLifetimeMs);
 }
 
 int hyperionMemTrackDumpLeaks(void) {
