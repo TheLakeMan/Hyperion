@@ -22,7 +22,24 @@ typedef struct {
     bool memReport;
 } HyperionCLIContext;
 
+#define HYPERION_CLI_SUCCESS 0
+#define HYPERION_CLI_ERROR 1
+#define HYPERION_CLI_EXIT 2
+
 int hyperionCLIInit(HyperionCLIContext *context);
+/**
+ * Parse command line arguments.
+ *
+ * Supported flags:
+ *  -h, --help          Print usage and exit
+ *  -i, --interactive   Run the CLI in interactive mode
+ *  -v, --verbose       Enable verbose logging
+ *  --mem-report
+ *  --debug-mem         Print the memory report on exit
+ *
+ * Returns HYPERION_CLI_SUCCESS on success, HYPERION_CLI_EXIT when help was
+ * requested, and HYPERION_CLI_ERROR for invalid arguments.
+ */
 int hyperionCLIParseArgs(HyperionCLIContext *context, int argc, char **argv);
 int hyperionCLIRun(HyperionCLIContext *context, int argc, char **argv);
 void hyperionCLICleanup(HyperionCLIContext *context);
