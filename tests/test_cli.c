@@ -3,9 +3,11 @@
 #endif
 
 #include "interface/cli.h"
+#include "interface/generation.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #if !defined(_WIN32)
 #include <time.h>
@@ -68,9 +70,26 @@ static void test_verbose_output_streaming(void) {
 
     assert(buffer != NULL);
     assert(size > 0);
+    assert(strstr(buffer, "Hello Hyperion!") != NULL);
     free(buffer);
 }
 #endif
+
+static int accumulate_tokens_callback(const char *token, void *userData) {
+    char *cursor = (char *)userData;
+    strcat(cursor, token);
+    return 0;
+}
+
+static void test_iterator_streaming_order(void) {
+    const char *tokens[] = {"a", "b", "c"};
+    HyperionTokenIterator iterator;
+    hyperionTokenIteratorInit(&iterator, tokens, sizeof(tokens) / sizeof(tokens[0]));
+
+    char buffer[8] = {0};
+    assert(hyperionStreamTokens(&iterator, accumulate_tokens_callback, buffer) == 0);
+    assert(strcmp(buffer, "abc") == 0);
+}
 
 void run_cli_tests(void) {
     test_default_context();
@@ -81,5 +100,6 @@ void run_cli_tests(void) {
 #else
     printf("Skipping POSIX-specific CLI tests on this platform.\n");
 #endif
+    test_iterator_streaming_order();
     printf("All CLI tests passed.\n");
 }

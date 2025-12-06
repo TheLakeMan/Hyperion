@@ -1,6 +1,18 @@
 #include "cli.h"
+#include "generation.h"
 #include <stdio.h>
 #include <string.h>
+
+static int hyperionCLIPrintToken(const char *token, void *userData) {
+    (void)userData;
+    if (!token) {
+        return 1;
+    }
+
+    fputs(token, stdout);
+    fflush(stdout);
+    return 0;
+}
 
 int hyperionCLIInit(HyperionCLIContext *context) {
     if (!context) {
@@ -47,6 +59,17 @@ int hyperionCLIRun(HyperionCLIContext *context, int argc, char **argv) {
     } else {
         printf("Running in batch mode.\n");
     }
+
+    const char *demoTokens[] = {"Hello ", "Hyperion", "!"};
+    HyperionTokenIterator iterator;
+    hyperionTokenIteratorInit(&iterator, demoTokens, sizeof(demoTokens) / sizeof(demoTokens[0]));
+
+    int status = hyperionStreamTokens(&iterator, hyperionCLIPrintToken, NULL);
+    if (status != 0) {
+        return status;
+    }
+
+    puts("");
     return 0;
 }
 
