@@ -1,4 +1,6 @@
 #include "memory.h"
+#include <limits.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -21,6 +23,26 @@ static size_t totalBytesFreed = 0;
 static size_t currentBytes = 0;
 static size_t peakBytes = 0;
 static double totalLifetimeMs = 0.0;
+static size_t bucketCounts[HYPERION_MEM_BUCKET_COUNT] = {0};
+
+const size_t hyperionMemBucketThresholds[HYPERION_MEM_BUCKET_COUNT] = {
+    64,
+    256,
+    1024,
+    4096,
+    16384,
+    65536,
+    SIZE_MAX
+};
+
+static size_t find_bucket_index(size_t size) {
+    for (size_t i = 0; i < HYPERION_MEM_BUCKET_COUNT; ++i) {
+        if (size <= hyperionMemBucketThresholds[i]) {
+            return i;
+        }
+    }
+    return HYPERION_MEM_BUCKET_COUNT - 1;
+}
 
 static int ensure_capacity(void) {
     if (recordCount < recordCapacity) {
@@ -50,6 +72,7 @@ int hyperionMemTrackInit(void) {
     currentBytes = 0;
     peakBytes = 0;
     totalLifetimeMs = 0.0;
+    memset(bucketCounts, 0, sizeof(bucketCounts));
     return 0;
 }
 
@@ -65,6 +88,7 @@ void hyperionMemTrackCleanup(void) {
     currentBytes = 0;
     peakBytes = 0;
     totalLifetimeMs = 0.0;
+    memset(bucketCounts, 0, sizeof(bucketCounts));
 }
 
 void *hyperionTrackedAlloc(size_t size, const char *label) {
@@ -92,6 +116,7 @@ void *hyperionTrackedAlloc(size_t size, const char *label) {
     totalAllocations++;
     totalBytesAllocated += size;
     currentBytes += size;
+    bucketCounts[find_bucket_index(size)]++;
     if (currentBytes > peakBytes) {
         peakBytes = currentBytes;
     }
@@ -131,6 +156,10 @@ void hyperionTrackedFree(void *ptr) {
     } else {
         currentBytes = 0;
     }
+    size_t bucketIndex = find_bucket_index(record.size);
+    if (bucketCounts[bucketIndex] > 0) {
+        bucketCounts[bucketIndex]--;
+    }
 
     clock_t elapsed = clock() - record.start;
     totalLifetimeMs += ((double)elapsed / CLOCKS_PER_SEC) * 1000.0;
@@ -161,6 +190,7 @@ HyperionMemoryStats hyperionMemTrackSnapshot(void) {
     stats.averageAllocationSize = average_allocation_size();
     stats.averageLifetimeMs = average_lifetime_ms();
     stats.outstandingAllocations = recordCount;
+    memcpy(stats.bucketCounts, bucketCounts, sizeof(bucketCounts));
     return stats;
 }
 
@@ -178,6 +208,39 @@ void hyperionMemTrackDumpReport(FILE *out) {
     fprintf(out, "[memory] average lifetime: %.2f ms\n", stats.averageLifetimeMs);
 }
 
+void hyperionMemTrackDumpBucketReport(FILE *out) {
+    if (!out) {
+        return;
+    }
+
+    size_t lowerBound = 0;
+    for (size_t i = 0; i < HYPERION_MEM_BUCKET_COUNT; ++i) {
+        size_t upperBound = hyperionMemBucketThresholds[i];
+        fprintf(out, "[memory] bucket %zu (%zu-%zu bytes): %zu outstanding allocations\n",
+                i,
+                lowerBound,
+                upperBound,
+                bucketCounts[i]);
+
+        if (upperBound != SIZE_MAX) {
+            lowerBound = upperBound + 1;
+        }
+    }
+}
+
 int hyperionMemTrackDumpLeaks(void) {
     return (int)recordCount;
+}
+
+size_t hyperionMemTrackGetPeakBytes(void) {
+    return peakBytes;
+}
+
+void hyperionMemTrackGetBucketCounts(size_t *outCounts, size_t count) {
+    if (!outCounts || count == 0) {
+        return;
+    }
+
+    size_t copyCount = count < HYPERION_MEM_BUCKET_COUNT ? count : HYPERION_MEM_BUCKET_COUNT;
+    memcpy(outCounts, bucketCounts, copyCount * sizeof(size_t));
 }
