@@ -60,14 +60,6 @@ int main(int argc, char *argv[]) {
     HyperionCLIContext context;
     memset(&context, 0, sizeof(context));
     
-    /* Set default generation parameters */
-    context.params.maxTokens = 100;
-    context.params.samplingMethod = HYPERION_SAMPLING_TOP_P;
-    context.params.temperature = 0.7f;
-    context.params.topK = 40;
-    context.params.topP = 0.9f;
-    context.params.seed = 0;  /* Use random seed */
-    
     /* Initialize CLI */
     if (hyperionCLIInit(&context) != 0) {
         fprintf(stderr, "Failed to initialize CLI\n");

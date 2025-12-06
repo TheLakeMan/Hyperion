@@ -32,11 +32,12 @@ static void test_argument_parsing(void) {
     HyperionCLIContext ctx;
     hyperionCLIInit(&ctx);
 
-    char *argv[] = {"hyperion", "--interactive", "--verbose", "--mem-report"};
-    assert(hyperionCLIParseArgs(&ctx, 4, argv) == 0);
+    char *argv[] = {"hyperion", "--interactive", "--verbose", "--mem-report", "--seed", "42"};
+    assert(hyperionCLIParseArgs(&ctx, 6, argv) == 0);
     assert(ctx.interactive == true);
     assert(ctx.verbose == true);
     assert(ctx.memReport == true);
+    assert(ctx.params.seed == 42);
 }
 
 #if HYPERION_HAS_POSIX_TESTS
@@ -70,6 +71,27 @@ static void test_verbose_output_streaming(void) {
     assert(size > 0);
     free(buffer);
 }
+
+static void test_seed_is_propagated_to_model(void) {
+    HyperionGenerationParams params;
+    hyperionGenerationSetDefaults(&params);
+    params.seed = 1234;
+
+    HyperionModel modelA;
+    HyperionModel modelB;
+
+    assert(hyperionModelInit(&modelA, &params) == 0);
+    assert(hyperionModelInit(&modelB, &params) == 0);
+
+    for (int i = 0; i < 5; ++i) {
+        int tokenA = hyperionModelSampleToken(&modelA, 1000);
+        int tokenB = hyperionModelSampleToken(&modelB, 1000);
+        assert(tokenA == tokenB);
+    }
+
+    hyperionModelCleanup(&modelA);
+    hyperionModelCleanup(&modelB);
+}
 #endif
 
 void run_cli_tests(void) {
@@ -81,5 +103,6 @@ void run_cli_tests(void) {
 #else
     printf("Skipping POSIX-specific CLI tests on this platform.\n");
 #endif
+    test_seed_is_propagated_to_model();
     printf("All CLI tests passed.\n");
 }
