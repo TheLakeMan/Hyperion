@@ -27,7 +27,7 @@ int hyperionConfigParseKeyValues(const char *path, HyperionKeyValueCallback call
 
     FILE *file = fopen(path, "r");
     if (!file) {
-        return 0;
+        return 1;
     }
 
     char line[256];
