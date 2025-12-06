@@ -24,6 +24,6 @@ void hyperionTrackedFree(void *ptr);
 
 HyperionMemoryStats hyperionMemTrackSnapshot(void);
 void hyperionMemTrackDumpReport(FILE *out);
-int hyperionMemTrackDumpLeaks(void);
+int hyperionMemTrackDumpLeaks(FILE *out);
 
 #endif // HYPERION_MEMORY_H

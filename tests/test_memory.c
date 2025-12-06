@@ -100,9 +100,38 @@ static void test_report_output(void) {
     hyperionMemTrackCleanup();
 }
 
+static void test_leak_dump_contains_details(void) {
+    hyperionMemTrackInit();
+
+    void *leak = hyperionTrackedAlloc(256, "leak_test_block");
+    assert(leak != NULL);
+
+    FILE *stream = tmpfile();
+    assert(stream != NULL);
+
+    int leaks = hyperionMemTrackDumpLeaks(stream);
+    assert(leaks == 1);
+
+    fflush(stream);
+    rewind(stream);
+
+    char buffer[256];
+    size_t read = fread(buffer, 1, sizeof(buffer) - 1, stream);
+    buffer[read] = '\0';
+
+    fclose(stream);
+
+    assert(strstr(buffer, "leak_test_block") != NULL);
+    assert(strstr(buffer, "256") != NULL);
+
+    hyperionTrackedFree(leak);
+    hyperionMemTrackCleanup();
+}
+
 void run_memory_tests(void) {
     test_allocation_reporting();
     test_lifetime_and_free();
     test_report_output();
+    test_leak_dump_contains_details();
     printf("All memory tracking tests passed.\n");
 }

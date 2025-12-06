@@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {
 
     /* Check for memory leaks in verbose mode */
     if (context.verbose) {
-        int leaks = hyperionMemTrackDumpLeaks();
+        int leaks = hyperionMemTrackDumpLeaks(stderr);
         if (leaks > 0) {
             fprintf(stderr, "Warning: %d memory leaks detected\n", leaks);
         } else {
