@@ -17,11 +17,13 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 file(GLOB HYPERION_CORE_SOURCES "core/*.c")
 file(GLOB HYPERION_INTERFACE_SOURCES "interface/*.c")
+file(GLOB HYPERION_TEXT_MODEL_SOURCES "models/text/*.c")
 
 add_executable(hyperion
     main.c
     ${HYPERION_CORE_SOURCES}
     ${HYPERION_INTERFACE_SOURCES}
+    ${HYPERION_TEXT_MODEL_SOURCES}
 )
 
 if(UNIX)
@@ -34,6 +36,7 @@ add_executable(hyperion_tests
     ${HYPERION_TEST_SOURCES}
     ${HYPERION_CORE_SOURCES}
     ${HYPERION_INTERFACE_SOURCES}
+    ${HYPERION_TEXT_MODEL_SOURCES}
 )
 
 if(UNIX)
